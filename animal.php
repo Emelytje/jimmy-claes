@@ -1,0 +1,8 @@
+<?php require 'functions.php'; $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM animals WHERE slug=? AND published=1'); $st->execute([$slug]); $a=$st->fetch(); if(!$a){ http_response_code(404); die('Pagina niet gevonden'); }
+header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description']); ?>
+<section class="hero"><div><h1><?=e($a['title'])?></h1><p><?=nl2br(e($a['description']))?></p></div></section>
+<main class="wrap"><div class="gallery <?=e($a['layout'])?>">
+<?php $st=db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC'); $st->execute([$a['id']]); foreach($st as $p): ?>
+<figure class="photo"><img src="<?=e($p['image_path'])?>" alt="<?=e($p['title'])?>"><figcaption class="caption"><strong><?=e($p['title'])?></strong><br><?=nl2br(e($p['caption']))?></figcaption></figure>
+<?php endforeach; ?>
+</div></main><?php footer_html(); ?>

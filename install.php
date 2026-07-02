@@ -1,0 +1,29 @@
+<?php
+// Blokkeer herinstallatie zodra er al een config.php bestaat (beveiliging).
+if (file_exists(__DIR__.'/config.php')) {
+    die('De website is al geïnstalleerd. Verwijder install.php van de server. Wil je echt opnieuw installeren? Verwijder dan handmatig config.php via je hosting-bestandsbeheer (let op: dit kan data ontoegankelijk maken tot je de juiste gegevens opnieuw invult).');
+}
+$msg='';
+if($_SERVER['REQUEST_METHOD']==='POST'){
+    $host=trim($_POST['host']); $db=trim($_POST['db']); $user=trim($_POST['user']); $pass=$_POST['pass'];
+    $admin=trim($_POST['admin']); $adminpass=$_POST['adminpass'];
+    try{
+        $pdo=new PDO('mysql:host='.$host.';dbname='.$db.';charset=utf8mb4',$user,$pass,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec("CREATE TABLE IF NOT EXISTS users(id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(80) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS settings(name VARCHAR(80) PRIMARY KEY, value TEXT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS animals(id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(160) NOT NULL, slug VARCHAR(180) UNIQUE NOT NULL, description TEXT, cover_image VARCHAR(255), layout VARCHAR(30) DEFAULT 'masonry', published TINYINT DEFAULT 1, sort_order INT DEFAULT 0, meta_title VARCHAR(160), meta_description VARCHAR(300), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS photos(id INT AUTO_INCREMENT PRIMARY KEY, animal_id INT NOT NULL, image_path VARCHAR(255) NOT NULL, title VARCHAR(160), caption TEXT, sort_order INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(animal_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS posts(id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(160) NOT NULL, slug VARCHAR(180) UNIQUE NOT NULL, excerpt TEXT, content TEXT, cover_image VARCHAR(255), published TINYINT DEFAULT 1, meta_title VARCHAR(160), meta_description VARCHAR(300), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS albums(id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(160) NOT NULL, slug VARCHAR(180) UNIQUE NOT NULL, description TEXT, cover_image VARCHAR(255), layout VARCHAR(30) DEFAULT 'masonry', published TINYINT DEFAULT 1, sort_order INT DEFAULT 0, meta_title VARCHAR(160), meta_description VARCHAR(300), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS album_photos(id INT AUTO_INCREMENT PRIMARY KEY, album_id INT NOT NULL, image_path VARCHAR(255) NOT NULL, title VARCHAR(160), caption TEXT, sort_order INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(album_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS messages(id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(160), email VARCHAR(160), message TEXT, is_read TINYINT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $hash=password_hash($adminpass,PASSWORD_DEFAULT);
+        $st=$pdo->prepare('INSERT IGNORE INTO users(username,password_hash) VALUES(?,?)'); $st->execute([$admin,$hash]);
+        $defaults=['site_title'=>'Dieren door de lens','intro_title'=>'Dieren door de lens','intro_text'=>'Een zachte fotografieplek met verhalen, beelden en pagina’s per dier.','primary_color'=>'#7b5f46','accent_color'=>'#eadfd2','font'=>'Georgia','meta_description'=>'Dierenfotografie: verhalen en beelden per dier.'];
+        $st=$pdo->prepare('INSERT IGNORE INTO settings(name,value) VALUES(?,?)'); foreach($defaults as $k=>$v) $st->execute([$k,$v]);
+        $cfg="<?php\ndefine('DB_HOST', ".var_export($host,true).");\ndefine('DB_NAME', ".var_export($db,true).");\ndefine('DB_USER', ".var_export($user,true).");\ndefine('DB_PASS', ".var_export($pass,true).");\ndefine('SITE_URL', '');\n";
+        file_put_contents(__DIR__.'/config.php',$cfg);
+        header('Location: login.php?installed=1'); exit;
+    }catch(Exception $e){ $msg='Fout: '.$e->getMessage(); }
+}
+?><!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Installatie</title><link rel="stylesheet" href="assets/style.css"></head><body><main class="login"><form class="box" method="post"><h1>Website installeren</h1><?php if($msg) echo '<div class="notice">'.htmlspecialchars($msg).'</div>'; ?><h3>Database</h3><input name="host" placeholder="DB host bv. sqlXXX.infinityfree.com" required><input name="db" placeholder="Database naam" required><input name="user" placeholder="Database gebruiker" required><input name="pass" placeholder="Database wachtwoord" type="password"><h3>Admin account</h3><input name="admin" placeholder="Gebruikersnaam" value="admin" required><input name="adminpass" placeholder="Wachtwoord" type="password" required><button>Installeren</button></form></main></body></html>
