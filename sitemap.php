@@ -9,4 +9,5 @@ echo '<url><loc>'.e($base.'/contact.php').'</loc></url>';
 foreach(db()->query('SELECT slug FROM animals WHERE published=1') as $a){ echo '<url><loc>'.e($base.'/animal.php?slug='.$a['slug']).'</loc></url>'; }
 foreach(db()->query('SELECT slug FROM posts WHERE published=1') as $p){ echo '<url><loc>'.e($base.'/post.php?slug='.$p['slug']).'</loc></url>'; }
 foreach(db()->query('SELECT slug FROM albums WHERE published=1') as $al){ echo '<url><loc>'.e($base.'/album.php?slug='.$al['slug']).'</loc></url>'; }
+foreach(db()->query('SELECT slug FROM pages WHERE published=1') as $p){ echo '<url><loc>'.e($base.'/page.php?slug='.$p['slug']).'</loc></url>'; }
 echo '</urlset>';

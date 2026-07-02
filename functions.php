@@ -1,6 +1,7 @@
 <?php
 session_start();
 if (file_exists(__DIR__.'/config.php')) require_once __DIR__.'/config.php';
+require_once __DIR__.'/blocks.php';
 
 function installed(){ return defined('DB_HOST') && file_exists(__DIR__.'/config.php'); }
 function db(){
@@ -60,15 +61,22 @@ function meta_tags($title='', $description='', $canonical=''){
     return $full_title;
 }
 
-function header_html($title='', $description='', $canonical=''){
+function header_html($title='', $description='', $canonical='', $head_extra=''){
     $font=setting('font','Georgia'); $primary=setting('primary_color','#7b5f46'); $accent=setting('accent_color','#eadfd2');
     echo '<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     $full_title = meta_tags($title, $description, $canonical);
-    echo '<title>'.e($full_title).'</title><link rel="stylesheet" href="assets/style.css"><style>:root{--primary:'.e($primary).';--accent:'.e($accent).';--font:'.e($font).';}</style></head><body>';
+    echo '<title>'.e($full_title).'</title>';
+    echo '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+    echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap">';
+    echo '<link rel="stylesheet" href="assets/style.css"><style>:root{--primary:'.e($primary).';--accent:'.e($accent).';'.($font && $font!=='Georgia' ? "--font:'".e($font)."';" : '').'}</style>';
+    if($head_extra) echo $head_extra;
+    echo '</head><body>';
+    echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
     echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Dieren door de lens')).'</a><nav><a href="index.php">Home</a>';
     try{ foreach(db()->query('SELECT title,slug FROM animals WHERE published=1 ORDER BY sort_order,title LIMIT 8') as $a){ echo '<a href="animal.php?slug='.e($a['slug']).'">'.e($a['title']).'</a>'; }}catch(Exception $e){}
     echo '<a href="albums.php">Albums</a>';
     echo '<a href="blog.php">Blog</a>';
+    try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
     echo '<a href="contact.php">Contact</a>';
     echo '</nav></header>';
 }
