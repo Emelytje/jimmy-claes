@@ -33,6 +33,24 @@ WAT KAN DIT CMS?
 - SEO: meta title/description per dierenpagina, album en blogpost, automatische sitemap.php en robots.txt
 - CSRF-beveiliging op alle admin-formulieren en login
 - Data in MySQL, foto's in uploads map
+- Drag-and-drop pagebuilder (admin/pages.php): eigen pagina's bouwen uit
+  blokken (hero, titel, tekst, foto, fotogalerij, video, knop, divider,
+  quote, kolommen, contactformulier, eigen HTML), met live instellingen
+  voor lettertype (Google Fonts), kleur, uitlijning, padding, radius,
+  schaduw en scroll-animaties. Zie "PAGEBUILDER" hieronder.
+
+PAGEBUILDER GEBRUIKEN
+1. Log in en ga naar Beheer > Pagina's.
+2. Maak een nieuwe pagina aan (titel invullen, "Pagina aanmaken").
+3. Je komt in de canvas-editor: sleep blokken vanuit het paneel links naar
+   het canvas in het midden. Versleep blokken om ze te herordenen.
+4. Klik op een blok om het te selecteren; rechts verschijnt het
+   instellingenpaneel (stijl + inhoud). Dubbelklik tekst in het canvas om
+   ze rechtstreeks te bewerken.
+5. Klap "Instellingen" open om de pagina te publiceren, in het hoofdmenu
+   te tonen en SEO-titel/omschrijving in te stellen.
+6. Wijzigingen worden automatisch (na 1,5 sec) en bij "Opslaan" bewaard.
+7. Bekijk de live pagina via "Bekijk pagina" of jouwdomein/page.php?slug=....
 
 BIJWERKEN VAN EEN BESTAANDE INSTALLATIE (al eerder geïnstalleerd)
 Als je deze update gebruikt op een site die al draaide met de vorige
@@ -48,7 +66,10 @@ in database.sql staan ze ook als commentaar):
 Nieuwe installaties hoeven dit niet te doen, install.php maakt alles automatisch aan.
 
 NOG NIET AANWEZIG (mogelijke volgende stappen)
-- Drag-and-drop pagebuilder / thema-editor
 - Gebruikersrollen (editor/fotograaf naast admin)
 - Media-bibliotheek met zoeken/mappen
 - Automatische back-ups
+
+BIJWERKEN VOOR DE PAGEBUILDER (al eerder geïnstalleerd zonder pagebuilder)
+Voer update-pagebuilder.sql uit via phpMyAdmin > Importeren. Nieuwe
+installaties (via install.php) hoeven dit niet te doen.
