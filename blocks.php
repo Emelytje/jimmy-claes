@@ -72,7 +72,7 @@ function pb_style_attr($settings, $extra=[]){
     $decl = [];
     if(!empty($s['fontFamily'])) $decl[] = "font-family:'".str_replace("'","",$s['fontFamily'])."',var(--font-body)";
     if(!empty($s['fontSize'])) $decl[] = 'font-size:'.(int)$s['fontSize'].'px';
-    if(!empty($s['textColor'])) $decl[] = 'color:'.pb_safe_color($s['textColor']);
+    if(!empty($s['textColor'])) $decl[] = '--pb-text-color:'.pb_safe_color($s['textColor']).';color:'.pb_safe_color($s['textColor']);
     if(!empty($s['bgColor'])) $decl[] = 'background-color:'.pb_safe_color($s['bgColor']);
     if(isset($s['paddingY']) && $s['paddingY']!=='') $decl[] = 'padding-top:'.(int)$s['paddingY'].'px;padding-bottom:'.(int)$s['paddingY'].'px';
     if(isset($s['paddingX']) && $s['paddingX']!=='') $decl[] = 'padding-left:'.(int)$s['paddingX'].'px;padding-right:'.(int)$s['paddingX'].'px';

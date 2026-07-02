@@ -50,7 +50,7 @@ function styleAttr(settings, extra){
   var s = settings || {}; var decl = [];
   if(s.fontFamily){ ensureGoogleFont(s.fontFamily); decl.push("font-family:'"+s.fontFamily.replace(/'/g,'')+"',var(--font-body)"); }
   if(s.fontSize) decl.push('font-size:'+parseInt(s.fontSize,10)+'px');
-  if(s.textColor) decl.push('color:'+s.textColor);
+  if(s.textColor){ decl.push('--pb-text-color:'+s.textColor); decl.push('color:'+s.textColor); }
   if(s.bgColor) decl.push('background-color:'+s.bgColor);
   if(s.paddingY!=='' && s.paddingY!=null) decl.push('padding-top:'+parseInt(s.paddingY,10)+'px;padding-bottom:'+parseInt(s.paddingY,10)+'px');
   if(s.paddingX!=='' && s.paddingX!=null) decl.push('padding-left:'+parseInt(s.paddingX,10)+'px;padding-right:'+parseInt(s.paddingX,10)+'px');
