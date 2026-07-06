@@ -1,21 +1,35 @@
 <?php
 require __DIR__.'/inc.php';
 
+const PBE_TYPES = [
+    'page'   => ['table'=>'pages',   'list'=>'pages.php',   'view'=>'../page.php?slug=',   'label'=>"Pagina"],
+    'animal' => ['table'=>'animals', 'list'=>'animals.php', 'view'=>'../animal.php?slug=', 'label'=>'Dier'],
+    'album'  => ['table'=>'albums',  'list'=>'albums.php',  'view'=>'../album.php?slug=',  'label'=>'Album'],
+    'post'   => ['table'=>'posts',   'list'=>'posts.php',   'view'=>'../post.php?slug=',   'label'=>'Blogpost'],
+];
+
+$type = $_GET['type'] ?? 'page';
+if(!isset(PBE_TYPES[$type])) $type = 'page';
+$typeInfo = PBE_TYPES[$type];
+
 $id = (int)($_GET['id'] ?? 0);
-$st = db()->prepare('SELECT * FROM pages WHERE id=?');
+$st = db()->prepare("SELECT * FROM {$typeInfo['table']} WHERE id=?");
 $st->execute([$id]);
 $page = $st->fetch();
-if(!$page){ header('Location: pages.php'); exit; }
+if(!$page){ header('Location: '.$typeInfo['list']); exit; }
 
-$blocks = pb_decode_blocks($page['blocks']);
+$blocks = pb_decode_blocks($page['blocks'] ?? null);
 $initial = [
+    'type' => $type,
     'id' => (int)$page['id'],
     'title' => $page['title'],
     'slug' => $page['slug'],
     'meta_title' => $page['meta_title'],
     'meta_description' => $page['meta_description'],
     'published' => (bool)$page['published'],
-    'show_in_nav' => (bool)$page['show_in_nav'],
+    'show_in_nav' => (bool)($page['show_in_nav'] ?? false),
+    'is_homepage' => (bool)($page['is_homepage'] ?? false),
+    'cover_image' => $page['cover_image'] ?? '',
     'blocks' => $blocks,
     'csrf' => csrf_token(),
 ];
@@ -33,15 +47,15 @@ $initial = [
 
 <div class="pbe">
   <div class="pbe-topbar">
-    <a href="pages.php" title="Terug naar pagina's" style="color:#fff;font-size:1.1rem">&larr;</a>
-    <input type="text" class="pbe-title" id="pbeTitleInput" value="<?=e($page['title'])?>" placeholder="Paginatitel">
+    <a href="<?=e($typeInfo['list'])?>" title="Terug" style="color:#fff;font-size:1.1rem">&larr;</a>
+    <input type="text" class="pbe-title" id="pbeTitleInput" value="<?=e($page['title'])?>" placeholder="Titel">
     <div class="pbe-device-toggle">
       <button type="button" data-device="desktop" class="is-active">Desktop</button>
       <button type="button" data-device="mobile">Mobiel</button>
     </div>
     <div class="spacer"></div>
     <span class="pbe-savestate" id="pbeSaveState">Alles opgeslagen</span>
-    <a href="../page.php?slug=<?=e($page['slug'])?>" id="pbeViewLink" target="_blank">Bekijk pagina &#8599;</a>
+    <a href="<?=e($typeInfo['view'].$page['slug'])?>" id="pbeViewLink" target="_blank">Bekijk <?=strtolower(e($typeInfo['label']))?> &#8599;</a>
     <button type="button" class="a-btn a-btn-sm" id="pbeSettingsBtn">Instellingen</button>
     <button type="button" class="a-btn a-btn-sm" id="pbeSaveBtn">Opslaan</button>
   </div>
@@ -60,12 +74,23 @@ $initial = [
 <div class="pbe-modal-backdrop" id="pbeSettingsModal">
   <div class="pbe-modal">
     <button type="button" class="pbe-modal-close" data-close-modal>&times;</button>
-    <h2>Pagina-instellingen</h2>
-    <label class="pbe-check"><input type="checkbox" id="pbePublished" <?=$page['published']?'checked':''?>> Pagina is live (gepubliceerd)</label>
+    <h2><?=e($typeInfo['label'])?>-instellingen</h2>
+    <label class="pbe-check"><input type="checkbox" id="pbePublished" <?=$page['published']?'checked':''?>> Live (gepubliceerd)</label>
+    <?php if($type==='page'): ?>
     <label class="pbe-check"><input type="checkbox" id="pbeShowNav" <?=$page['show_in_nav']?'checked':''?>> Tonen in hoofdmenu</label>
+    <label class="pbe-check"><input type="checkbox" id="pbeIsHomepage" <?=!empty($page['is_homepage'])?'checked':''?>> Instellen als homepage</label>
+    <p style="font-size:.78rem;color:#8a7c6c;margin-top:-8px">Als homepage vervangt deze pagina de standaard-voorpagina volledig.</p>
+    <?php else: ?>
+    <div class="pbe-field">
+      <label>Coverfoto (gebruikt in overzichten)</label>
+      <?php if(!empty($page['cover_image'])): ?><img src="../<?=e($page['cover_image'])?>" style="width:100%;border-radius:8px;margin-bottom:8px"><?php endif; ?>
+      <button type="button" class="pbe-upload-btn" id="pbeCoverUploadBtn"><?=!empty($page['cover_image'])?'Andere foto kiezen':'Foto uploaden'?></button>
+      <input type="file" accept="image/*" style="display:none" id="pbeCoverFile">
+    </div>
+    <?php endif; ?>
     <div class="pbe-field"><label>SEO-titel</label><input type="text" id="pbeMetaTitle" value="<?=e($page['meta_title'])?>" placeholder="<?=e($page['title'])?>"></div>
     <div class="pbe-field"><label>SEO-omschrijving</label><textarea id="pbeMetaDesc" rows="3" placeholder="Korte omschrijving voor zoekmachines"><?=e($page['meta_description'])?></textarea></div>
-    <p style="font-size:.78rem;color:#8a7c6c">URL: <code>/page.php?slug=<?=e($page['slug'])?></code> (past automatisch mee met de titel bij opslaan)</p>
+    <p style="font-size:.78rem;color:#8a7c6c">URL: <code><?=e($typeInfo['view'].$page['slug'])?></code> (past automatisch mee met de titel bij opslaan)</p>
   </div>
 </div>
 

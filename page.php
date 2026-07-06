@@ -5,6 +5,7 @@ $st = db()->prepare('SELECT * FROM pages WHERE slug=? AND published=1');
 $st->execute([$slug]);
 $page = $st->fetch();
 if(!$page){ http_response_code(404); die('Pagina niet gevonden'); }
+track_view('pages', $page['id']);
 
 $blocks = pb_decode_blocks($page['blocks']);
 $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));

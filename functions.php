@@ -16,6 +16,11 @@ function setting($key,$default=''){
     try{ $st=db()->prepare('SELECT value FROM settings WHERE name=?'); $st->execute([$key]); $r=$st->fetch(); return $r?$r['value']:$default; }catch(Exception $e){ return $default; }
 }
 function set_setting($key,$value){ $st=db()->prepare('INSERT INTO settings(name,value) VALUES(?,?) ON DUPLICATE KEY UPDATE value=VALUES(value)'); $st->execute([$key,$value]); }
+function track_view($table, $id){
+    $allowed = ['pages','animals','albums','posts'];
+    if(!in_array($table, $allowed, true) || !$id) return;
+    try{ db()->prepare("UPDATE $table SET views = views + 1 WHERE id = ?")->execute([(int)$id]); }catch(Exception $e){}
+}
 function is_admin(){ return !empty($_SESSION['admin_id']); }
 function require_admin(){ if(!is_admin()){ header('Location: ../login.php'); exit; } }
 function slugify($text){ $text=strtolower(trim($text)); $text=preg_replace('/[^a-z0-9]+/','-',$text); return trim($text,'-') ?: 'item'; }

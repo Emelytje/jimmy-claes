@@ -6,7 +6,7 @@
  * [
  *   {
  *     "id":       "b_xxxxxxxx"        unique within the page,
- *     "type":     "hero|title|text|image|gallery|video|button|divider|quote|columns|row|contact|html",
+ *     "type":     "hero|title|text|image|gallery|video|button|divider|quote|columns|row|recent|contact|html",
  *     "settings": {
  *       "fontFamily": "" | "Playfair Display" | ...   (Google Font family name),
  *       "fontSize":   "" | "16" (px, applies to block's main text),
@@ -150,6 +150,7 @@ function render_block($block, $depth=0){
         case 'quote':      $inner = pb_render_quote($data); break;
         case 'columns':    $inner = pb_render_columns($data, $depth); break;
         case 'row':        $inner = pb_render_row($data, $depth); break;
+        case 'recent':     $inner = pb_render_recent($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
         case 'contact':    $inner = pb_render_contact($data); break;
         case 'html':       $inner = (string)($data['code'] ?? ''); break;
@@ -292,6 +293,38 @@ function pb_render_hero($d, $settings, $id){
     if(!empty($d['buttonText'])) $html .= '<a class="pb-btn pb-btn-solid pb-btn-lg" href="'.e(pb_safe_href($d['buttonHref'] ?? '#')).'">'.e($d['buttonText']).'</a>';
     $html .= '</div></section>';
     return $html;
+}
+
+function pb_fetch_recent_items($source, $count){
+    $defs = [
+        'animals' => ['url'=>'animal.php?slug=', 'cols'=>'title, slug, cover_image, created_at'],
+        'albums'  => ['url'=>'album.php?slug=',  'cols'=>'title, slug, cover_image, created_at'],
+        'posts'   => ['url'=>'post.php?slug=',   'cols'=>'title, slug, cover_image, created_at'],
+        'pages'   => ['url'=>'page.php?slug=',   'cols'=>'title, slug, NULL AS cover_image, updated_at AS created_at'],
+    ];
+    $sources = $source === 'mixed' ? ['animals','albums','posts'] : (isset($defs[$source]) ? [$source] : ['animals']);
+    $all = [];
+    foreach($sources as $s){
+        $def = $defs[$s];
+        $st = db()->query("SELECT {$def['cols']} FROM $s WHERE published=1 ORDER BY created_at DESC LIMIT ".(int)$count);
+        foreach($st as $row){ $row['url'] = $def['url'].$row['slug']; $all[] = $row; }
+    }
+    usort($all, function($a,$b){ return strtotime($b['created_at']) <=> strtotime($a['created_at']); });
+    return array_slice($all, 0, $count);
+}
+
+function pb_render_recent($d){
+    $source = $d['source'] ?? 'mixed';
+    if(!in_array($source, ['mixed','animals','albums','posts','pages'], true)) $source = 'mixed';
+    $count = max(1, min(12, (int)($d['count'] ?? 3)));
+    $rows = pb_fetch_recent_items($source, $count);
+    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog geen content om te tonen.</p>';
+    $html = '<div class="grid">';
+    foreach($rows as $r){
+        $img = !empty($r['cover_image']) ? '<img src="'.e($r['cover_image']).'" alt="" loading="lazy">' : '';
+        $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3><a class="btn" href="'.e($r['url']).'">Bekijk</a></div></article>';
+    }
+    return $html.'</div>';
 }
 
 function pb_render_contact($d){

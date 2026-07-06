@@ -33,11 +33,16 @@ WAT KAN DIT CMS?
 - SEO: meta title/description per dierenpagina, album en blogpost, automatische sitemap.php en robots.txt
 - CSRF-beveiliging op alle admin-formulieren en login
 - Data in MySQL, foto's in uploads map
-- Drag-and-drop pagebuilder (admin/pages.php): eigen pagina's bouwen uit
-  blokken (hero, titel, tekst, foto, fotogalerij, video, knop, divider,
-  quote, kolommen, contactformulier, eigen HTML), met live instellingen
-  voor lettertype (Google Fonts), kleur, uitlijning, padding, radius,
-  schaduw en scroll-animaties. Zie "PAGEBUILDER" hieronder.
+- Drag-and-drop pagebuilder (admin/pages.php, admin/content.php): eigen
+  pagina's, dierenpagina's, albums en blogposts bouwen uit blokken (hero,
+  titel, tekst, foto, fotogalerij, video, knop, divider, quote, kolommen,
+  vrije rijen met naast-elkaar-slepen en resizen, "recent toegevoegd",
+  contactformulier, eigen HTML), met live instellingen voor lettertype
+  (Google Fonts), kleur, uitlijning, padding, radius, schaduw en
+  scroll-animaties. Zie "PAGEBUILDER" hieronder.
+- Eén pagina instellen als homepage (vervangt de standaard-voorpagina).
+- Bezoekstatistieken per pagina/dier/album/blogpost + "meest bekeken"
+  overzicht in het dashboard.
 
 PAGEBUILDER GEBRUIKEN
 1. Log in en ga naar Beheer > Pagina's.
@@ -72,4 +77,8 @@ NOG NIET AANWEZIG (mogelijke volgende stappen)
 
 BIJWERKEN VOOR DE PAGEBUILDER (al eerder geïnstalleerd zonder pagebuilder)
 Voer update-pagebuilder.sql uit via phpMyAdmin > Importeren. Nieuwe
+installaties (via install.php) hoeven dit niet te doen.
+
+BIJWERKEN VOOR DIEREN/ALBUMS/BLOG VIA DE PAGEBUILDER + STATISTIEKEN
+Voer update-content-types.sql uit via phpMyAdmin > Importeren. Nieuwe
 installaties (via install.php) hoeven dit niet te doen.

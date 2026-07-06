@@ -1,4 +1,18 @@
-<?php require 'functions.php'; header_html('', setting('meta_description')); ?>
+<?php require 'functions.php';
+
+$homepage = db()->query("SELECT * FROM pages WHERE is_homepage=1 AND published=1 LIMIT 1")->fetch();
+if($homepage){
+    track_view('pages', $homepage['id']);
+    $blocks = pb_decode_blocks($homepage['blocks']);
+    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
+    $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
+    header_html($homepage['meta_title'] ?: '', $homepage['meta_description'] ?: setting('meta_description'), '', $headExtra);
+    echo '<main class="pb-page">'.render_blocks($blocks).'</main>';
+    footer_html();
+    exit;
+}
+
+header_html('', setting('meta_description')); ?>
 <section class="hero"><div><h1><?=e(setting('intro_title','Dieren door de lens'))?></h1><p><?=e(setting('intro_text','Een zachte fotografieplek met verhalen, beelden en pagina’s per dier.'))?></p></div></section>
 <main class="wrap"><h2>Pagina’s per dier</h2><div class="grid">
 <?php foreach(db()->query('SELECT * FROM animals WHERE published=1 ORDER BY sort_order,title') as $a): ?>
