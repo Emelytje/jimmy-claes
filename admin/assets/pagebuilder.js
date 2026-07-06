@@ -211,6 +211,15 @@ var BLOCKS = {
       return wrap('row', id, s, html);
     }
   },
+  recent: {
+    label:'Recent toegevoegd', icon:'&#128337;', group:'Layout',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
+    data:function(){ return {source:'mixed', count:3}; },
+    render:function(d, s, id){
+      var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch de nieuwste gepubliceerde content.</div>';
+      return wrap('recent', id, s, html);
+    }
+  },
   contact: {
     label:'Contactformulier', icon:'&#9993;', group:'Formulier',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
@@ -969,6 +978,14 @@ function contentFieldsHtml(block){
       html += '<div class="pbe-field"><label>Knoptekst</label><input type="text" data-bind="data.buttonText" value="'+esc(d.buttonText||'')+'"></div>';
       html += '<p style="font-size:.78rem;color:#8a7c6c">Dubbelklik de titel in het canvas om te wijzigen. Berichten komen terecht in de <code>messages</code>-tabel.</p>';
       break;
+    case 'recent':
+      html += '<div class="pbe-field"><label>Bron</label><select data-bind="data.source">'
+        + [['mixed','Dieren + albums + blog (gemengd)'],['animals','Enkel dieren'],['albums','Enkel albums'],['posts','Enkel blogposts'],['pages','Enkel pagina\'s']]
+          .map(function(o){ return '<option value="'+o[0]+'" '+(d.source===o[0]?'selected':'')+'>'+o[1]+'</option>'; }).join('')
+        + '</select></div>';
+      html += '<div class="pbe-field"><label>Aantal</label><input type="number" min="1" max="12" data-bind="data.count" value="'+(d.count!=null?d.count:3)+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch de nieuwste gepubliceerde content, ververst vanzelf.</p>';
+      break;
     case 'html':
       html += '<div class="pbe-field"><label>HTML-code</label><textarea data-bind="data.code" rows="10" style="font-family:monospace;font-size:.78rem">'+esc(d.code||'')+'</textarea></div>';
       html += '<p style="font-size:.78rem;color:#8a7c6c">Geavanceerd: wordt ongefilterd op de pagina geplaatst.</p>';
@@ -1137,17 +1154,27 @@ function markDirty(){
 }
 var scheduleAutosave = debounce(function(){ saveNow(); }, 1500);
 
+var TYPE_VIEW_PREFIX = { page:'../page.php?slug=', animal:'../animal.php?slug=', album:'../album.php?slug=', post:'../post.php?slug=' };
+var contentType = PAGE.type || 'page';
+var coverImage = PAGE.cover_image || '';
+
 function collectPayload(){
-  return {
-    csrf: PAGE.csrf, id: state.id,
+  var payload = {
+    csrf: PAGE.csrf, id: state.id, type: contentType,
     title: titleInput.value.trim() || state.title,
     slug: state.slug,
     meta_title: document.getElementById('pbeMetaTitle').value,
     meta_description: document.getElementById('pbeMetaDesc').value,
     published: document.getElementById('pbePublished').checked,
-    show_in_nav: document.getElementById('pbeShowNav').checked,
     blocks: state.blocks
   };
+  if(contentType === 'page'){
+    payload.show_in_nav = document.getElementById('pbeShowNav').checked;
+    payload.is_homepage = document.getElementById('pbeIsHomepage').checked;
+  } else {
+    payload.cover_image = coverImage;
+  }
+  return payload;
 }
 function saveNow(){
   if(!dirty) return;
@@ -1162,15 +1189,33 @@ function saveNow(){
       dirty = false;
       state.slug = j.slug; state.title = payload.title;
       saveStateEl.textContent = 'Opgeslagen ✓';
-      document.getElementById('pbeViewLink').href = '../page.php?slug='+encodeURIComponent(j.slug);
+      document.getElementById('pbeViewLink').href = TYPE_VIEW_PREFIX[contentType]+encodeURIComponent(j.slug);
     } else {
       saveStateEl.textContent = 'Fout: '+(j.error||'onbekend');
     }
   }).catch(function(){ saveStateEl.textContent = 'Opslaan mislukt (netwerk)'; });
 }
 document.getElementById('pbeSaveBtn').addEventListener('click', saveNow);
-[titleInput, document.getElementById('pbeMetaTitle'), document.getElementById('pbeMetaDesc'), document.getElementById('pbePublished'), document.getElementById('pbeShowNav')]
-  .forEach(function(el){ el.addEventListener('input', markDirty); el.addEventListener('change', markDirty); });
+var watchedSettingsFields = [titleInput, document.getElementById('pbeMetaTitle'), document.getElementById('pbeMetaDesc'), document.getElementById('pbePublished')];
+if(contentType === 'page'){
+  watchedSettingsFields.push(document.getElementById('pbeShowNav'), document.getElementById('pbeIsHomepage'));
+} else {
+  var coverBtn = document.getElementById('pbeCoverUploadBtn');
+  var coverFile = document.getElementById('pbeCoverFile');
+  if(coverBtn && coverFile){
+    coverBtn.addEventListener('click', function(){ coverFile.click(); });
+    coverFile.addEventListener('change', function(){
+      if(!coverFile.files[0]) return;
+      coverBtn.textContent = 'Bezig met uploaden...';
+      uploadImage(coverFile.files[0]).then(function(path){
+        coverImage = path;
+        coverBtn.textContent = 'Andere foto kiezen';
+        markDirty();
+      }).catch(function(err){ alert(err); coverBtn.textContent = 'Foto uploaden'; });
+    });
+  }
+}
+watchedSettingsFields.forEach(function(el){ el.addEventListener('input', markDirty); el.addEventListener('change', markDirty); });
 
 window.addEventListener('beforeunload', function(e){
   if(dirty){ e.preventDefault(); e.returnValue=''; }
