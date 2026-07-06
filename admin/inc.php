@@ -11,7 +11,7 @@ function admin_header($title, $active=''){
     echo '</head><body class="admin">';
     echo '<div class="admin-shell">';
     echo '<aside class="admin-side"><a class="admin-brand" href="index.php">Dieren door de lens</a><nav>';
-    $links = ['index'=>['index.php','Dashboard'], 'pages'=>['pages.php','Pagina\'s']];
+    $links = ['index'=>['index.php','Dashboard'], 'pages'=>['pages.php','Pagina\'s'], 'settings'=>['settings.php','Site-instellingen']];
     foreach($links as $key=>$l){ echo '<a href="'.e($l[0]).'" class="'.($active===$key?'is-active':'').'">'.e($l[1]).'</a>'; }
     echo '</nav><div class="admin-side-bottom"><a href="../index.php" target="_blank">Bekijk site &#8599;</a><a href="logout.php">Uitloggen</a></div></aside>';
     echo '<main class="admin-main"><div class="admin-topbar"><h1>'.e($title).'</h1></div><div class="admin-content">';

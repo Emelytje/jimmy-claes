@@ -6,7 +6,7 @@
  * [
  *   {
  *     "id":       "b_xxxxxxxx"        unique within the page,
- *     "type":     "hero|title|text|image|gallery|video|button|divider|quote|columns|contact|html",
+ *     "type":     "hero|title|text|image|gallery|video|button|divider|quote|columns|row|contact|html",
  *     "settings": {
  *       "fontFamily": "" | "Playfair Display" | ...   (Google Font family name),
  *       "fontSize":   "" | "16" (px, applies to block's main text),
@@ -26,6 +26,13 @@
  *
  * Columns blocks nest an array of the same block objects one level deep
  * (data.cols[i].blocks[]); render_blocks() is reused recursively for those.
+ *
+ * Row blocks are the freeform side-by-side layout created by dragging a
+ * block against the edge of another one in the editor: data.cells is an
+ * array of {"widthPct": 0-100, "blocks": [...block objects, same as a
+ * columns column...]}, data.mobileStack (default true) stacks cells on
+ * narrow screens. Image blocks may carry data.aspectRatio (a width/height
+ * number, e.g. 1.5) to fix their height responsively via CSS aspect-ratio.
  */
 
 const PB_SHADOWS = [
@@ -72,7 +79,7 @@ function pb_style_attr($settings, $extra=[]){
     $decl = [];
     if(!empty($s['fontFamily'])) $decl[] = "font-family:'".str_replace("'","",$s['fontFamily'])."',var(--font-body)";
     if(!empty($s['fontSize'])) $decl[] = 'font-size:'.(int)$s['fontSize'].'px';
-    if(!empty($s['textColor'])) $decl[] = 'color:'.pb_safe_color($s['textColor']);
+    if(!empty($s['textColor'])) $decl[] = '--pb-text-color:'.pb_safe_color($s['textColor']).';color:'.pb_safe_color($s['textColor']);
     if(!empty($s['bgColor'])) $decl[] = 'background-color:'.pb_safe_color($s['bgColor']);
     if(isset($s['paddingY']) && $s['paddingY']!=='') $decl[] = 'padding-top:'.(int)$s['paddingY'].'px;padding-bottom:'.(int)$s['paddingY'].'px';
     if(isset($s['paddingX']) && $s['paddingX']!=='') $decl[] = 'padding-left:'.(int)$s['paddingX'].'px;padding-right:'.(int)$s['paddingX'].'px';
@@ -104,6 +111,9 @@ function pb_font_families_used($blocks){
         if(!empty($b['settings']['fontFamily'])) $fonts[$b['settings']['fontFamily']] = true;
         if(($b['type']??'')==='columns'){
             foreach(($b['data']['cols']??[]) as $col){ foreach(pb_font_families_used($col['blocks']??[]) as $f) $fonts[$f]=true; }
+        }
+        if(($b['type']??'')==='row'){
+            foreach(($b['data']['cells']??[]) as $cell){ foreach(pb_font_families_used($cell['blocks']??[]) as $f) $fonts[$f]=true; }
         }
     }
     return array_keys($fonts);
@@ -139,6 +149,7 @@ function render_block($block, $depth=0){
         case 'divider':    $inner = pb_render_divider($data); break;
         case 'quote':      $inner = pb_render_quote($data); break;
         case 'columns':    $inner = pb_render_columns($data, $depth); break;
+        case 'row':        $inner = pb_render_row($data, $depth); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
         case 'contact':    $inner = pb_render_contact($data); break;
         case 'html':       $inner = (string)($data['code'] ?? ''); break;
@@ -164,10 +175,21 @@ function pb_render_image($d){
     if($src==='') return '';
     $alt = e($d['alt'] ?? '');
     $cls = ($d['width'] ?? 'contained') === 'full' ? 'pb-img-full' : 'pb-img-contained';
-    $img = '<img src="'.$src.'" alt="'.$alt.'" loading="lazy" class="'.$cls.'">';
+    $arStyle = '';
+    if(!empty($d['aspectRatio'])){
+        $ar = pb_safe_aspect_ratio($d['aspectRatio']);
+        if($ar) $arStyle = ' style="aspect-ratio:'.e($ar).';object-fit:cover;height:auto"';
+    }
+    $img = '<img src="'.$src.'" alt="'.$alt.'" loading="lazy" class="'.$cls.'"'.$arStyle.'>';
     if(!empty($d['link'])) $img = '<a href="'.e($d['link']).'">'.$img.'</a>';
     $caption = !empty($d['caption']) ? '<figcaption>'.e($d['caption']).'</figcaption>' : '';
     return '<figure class="pb-figure">'.$img.$caption.'</figure>';
+}
+
+function pb_safe_aspect_ratio($v){
+    $n = (float)$v;
+    if($n < 0.2 || $n > 6) return null;
+    return (string)round($n, 4);
 }
 
 function pb_render_gallery($d){
@@ -236,9 +258,23 @@ function pb_render_columns($d, $depth){
     $cols = $d['cols'] ?? [];
     $count = max(1, min(4, count($cols) ?: (int)($d['count'] ?? 2)));
     $gap = isset($d['gap']) ? (int)$d['gap'] : 32;
-    $html = '<div class="pb-columns pb-columns-'.$count.'" style="--pb-gap:'.$gap.'px">';
+    $html = '<div class="pb-columns-grid pb-columns-'.$count.'" style="--pb-gap:'.$gap.'px">';
     foreach($cols as $col){
         $html .= '<div class="pb-column">'.render_blocks($col['blocks'] ?? [], $depth+1).'</div>';
+    }
+    return $html.'</div>';
+}
+
+function pb_render_row($d, $depth){
+    $cells = $d['cells'] ?? [];
+    if(!$cells) return '';
+    $gap = isset($d['gap']) ? (int)$d['gap'] : 24;
+    $stack = (!array_key_exists('mobileStack', $d) || $d['mobileStack']) ? 1 : 0;
+    $html = '<div class="pb-row-flex" data-stack="'.$stack.'" style="--pb-row-gap:'.$gap.'px">';
+    $count = count($cells);
+    foreach($cells as $cell){
+        $w = isset($cell['widthPct']) ? max(5, min(95, (float)$cell['widthPct'])) : (100 / max(1,$count));
+        $html .= '<div class="pb-cell" style="width:'.round($w,4).'%">'.render_blocks($cell['blocks'] ?? [], $depth+1).'</div>';
     }
     return $html.'</div>';
 }

@@ -50,7 +50,7 @@ function styleAttr(settings, extra){
   var s = settings || {}; var decl = [];
   if(s.fontFamily){ ensureGoogleFont(s.fontFamily); decl.push("font-family:'"+s.fontFamily.replace(/'/g,'')+"',var(--font-body)"); }
   if(s.fontSize) decl.push('font-size:'+parseInt(s.fontSize,10)+'px');
-  if(s.textColor) decl.push('color:'+s.textColor);
+  if(s.textColor){ decl.push('--pb-text-color:'+s.textColor); decl.push('color:'+s.textColor); }
   if(s.bgColor) decl.push('background-color:'+s.bgColor);
   if(s.paddingY!=='' && s.paddingY!=null) decl.push('padding-top:'+parseInt(s.paddingY,10)+'px;padding-bottom:'+parseInt(s.paddingY,10)+'px');
   if(s.paddingX!=='' && s.paddingX!=null) decl.push('padding-left:'+parseInt(s.paddingX,10)+'px;padding-right:'+parseInt(s.paddingX,10)+'px');
@@ -109,11 +109,12 @@ var BLOCKS = {
   image: {
     label:'Foto', icon:'&#128247;', group:'Media',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {src:'', alt:'', caption:'', width:'contained', link:''}; },
+    data:function(){ return {src:'', alt:'', caption:'', width:'contained', link:'', aspectRatio:null}; },
     render:function(d, s, id){
       if(!d.src) return wrap('image', id, s, '<div class="pbe-empty-col" style="min-height:140px">Geen foto gekozen — kies er een rechts &#8594;</div>');
       var cls = d.width==='full' ? 'pb-img-full' : 'pb-img-contained';
-      var img = '<img src="'+esc(imgSrc(d.src))+'" alt="'+esc(d.alt)+'" class="'+cls+'">';
+      var arStyle = d.aspectRatio ? ' style="aspect-ratio:'+d.aspectRatio+';object-fit:cover;height:auto"' : '';
+      var img = '<img src="'+esc(imgSrc(d.src))+'" alt="'+esc(d.alt)+'" class="'+cls+'"'+arStyle+'>';
       var cap = '<figcaption data-edit-field="caption">'+esc(d.caption||'')+'</figcaption>';
       return wrap('image', id, s, '<figure class="pb-figure">'+img+cap+'</figure>');
     }
@@ -179,7 +180,7 @@ var BLOCKS = {
     data:function(){ return {count:2, gap:32, cols:[{blocks:[]},{blocks:[]}]}; },
     render:function(d, s, id, depth){
       var count = clamp(d.cols ? d.cols.length : (d.count||2), 1, 4);
-      var html = '<div class="pb-columns pb-columns-'+count+'" style="--pb-gap:'+(d.gap!=null?d.gap:32)+'px">';
+      var html = '<div class="pb-columns-grid pb-columns-'+count+'" style="--pb-gap:'+(d.gap!=null?d.gap:32)+'px">';
       (d.cols||[]).forEach(function(col, i){
         html += '<div class="pb-column pbe-sortable-zone" data-col-owner="'+id+'" data-col-index="'+i+'">';
         html += renderList(col.blocks||[], depth+1);
@@ -188,6 +189,26 @@ var BLOCKS = {
       });
       html += '</div>';
       return wrap('columns', id, s, html);
+    }
+  },
+  row: {
+    label:'Rij', icon:'&#8596;', group:'Layout', hidden:true,
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {paddingY:0, paddingX:0, animation:'none'}); },
+    data:function(){ return {cells:[{widthPct:50,blocks:[]},{widthPct:50,blocks:[]}], mobileStack:true, gap:24}; },
+    render:function(d, s, id, depth){
+      var cells = d.cells || [];
+      var html = '<div class="pb-row-flex" data-row-id="'+id+'" data-stack="'+((!('mobileStack' in d)||d.mobileStack)?1:0)+'" style="--pb-row-gap:'+(d.gap!=null?d.gap:24)+'px">';
+      html += '<button type="button" class="pbe-row-tab" data-action="select-row" data-row-select="'+id+'">Rij</button>';
+      cells.forEach(function(cell, i){
+        var w = cell.widthPct!=null ? cell.widthPct : (100/cells.length);
+        html += '<div class="pb-cell pbe-sortable-zone" data-cell-owner="'+id+'" data-cell-index="'+i+'" style="width:'+w+'%">';
+        html += renderList(cell.blocks||[], depth+1);
+        if(!cell.blocks || !cell.blocks.length) html += '<div class="pbe-empty-col">Sleep hier een blok</div>';
+        html += '</div>';
+        if(i < cells.length-1) html += '<div class="pbe-col-resizer" data-row-id="'+id+'" data-left-index="'+i+'" data-right-index="'+(i+1)+'"><span class="pbe-col-resizer-handle"></span></div>';
+      });
+      html += '</div>';
+      return wrap('row', id, s, html);
     }
   },
   contact: {
@@ -256,12 +277,17 @@ var selectedId = null;
 var blocksById = {};
 var dirty = false;
 
+function childArraysOf(block){
+  if(block.type==='columns') return (block.data.cols||[]).map(function(c){ return c.blocks; });
+  if(block.type==='row') return (block.data.cells||[]).map(function(c){ return c.blocks; });
+  return [];
+}
 function rebuildIndex(){
   blocksById = {};
   (function walk(list){
     (list||[]).forEach(function(b){
       blocksById[b.id] = b;
-      if(b.type==='columns'){ (b.data.cols||[]).forEach(function(c){ walk(c.blocks); }); }
+      childArraysOf(b).forEach(walk);
     });
   })(state.blocks);
 }
@@ -270,10 +296,8 @@ function findAndRemove(id){
   function walk(list){
     for(var i=0;i<list.length;i++){
       if(list[i].id===id){ found = list.splice(i,1)[0]; return true; }
-      if(list[i].type==='columns'){
-        var cols = list[i].data.cols||[];
-        for(var c=0;c<cols.length;c++){ if(walk(cols[c].blocks)) return true; }
-      }
+      var children = childArraysOf(list[i]);
+      for(var c=0;c<children.length;c++){ if(walk(children[c])) return true; }
     }
     return false;
   }
@@ -282,6 +306,10 @@ function findAndRemove(id){
 }
 function arrayForZone(zoneEl){
   if(zoneEl.id==='pbeCanvas') return state.blocks;
+  if(zoneEl.hasAttribute('data-cell-owner')){
+    var rowOwner = blocksById[zoneEl.getAttribute('data-cell-owner')];
+    return rowOwner.data.cells[parseInt(zoneEl.getAttribute('data-cell-index'),10)].blocks;
+  }
   var ownerId = zoneEl.getAttribute('data-col-owner');
   var idx = parseInt(zoneEl.getAttribute('data-col-index'),10);
   var owner = blocksById[ownerId];
@@ -308,6 +336,7 @@ function renderCanvas(){
     canvasEl.innerHTML = renderList(state.blocks, 0);
   }
   applySelectionVisual();
+  attachResizeHandles();
   initSortables();
   markDirty();
 }
@@ -321,7 +350,8 @@ function updateBlockDom(id){
   var newEl = tmp.firstElementChild;
   el.replaceWith(newEl);
   if(selectedId===id) newEl.classList.add('is-selected');
-  if(block.type==='columns') initSortables();
+  if(block.type==='columns' || block.type==='row') initSortables();
+  attachResizeHandles();
   markDirty();
 }
 function applySelectionVisual(){
@@ -334,12 +364,27 @@ function applySelectionVisual(){
 function selectBlock(id){
   selectedId = id;
   applySelectionVisual();
+  attachResizeHandles();
   renderSettingsPanel();
 }
 function deselect(){
   selectedId = null;
   applySelectionVisual();
+  attachResizeHandles();
   renderSettingsPanel();
+}
+
+function findParentRow(blockId){
+  for(var i=0;i<state.blocks.length;i++){
+    var b = state.blocks[i];
+    if(b.type==='row'){
+      for(var c=0;c<b.data.cells.length;c++){
+        var blocks = b.data.cells[c].blocks||[];
+        for(var k=0;k<blocks.length;k++){ if(blocks[k].id===blockId) return {row:b, cellIndex:c}; }
+      }
+    }
+  }
+  return null;
 }
 
 /* ============================================================
@@ -353,30 +398,118 @@ function initSortables(){
   var palette = document.getElementById('pbePalette');
   sortableInstances.push(new Sortable(palette, {
     group: { name:'pb-blocks', pull:'clone', put:false },
-    sort:false, animation:150,
-    ghostClass:'pbe-sortable-ghost', dragClass:'pbe-sortable-drag'
+    sort:false, animation:150, forceFallback:true,
+    ghostClass:'pbe-sortable-ghost', dragClass:'pbe-sortable-drag',
+    onStart: function(evt){ startEdgeTracking(evt); },
+    onEnd: function(){ stopEdgeTracking(); }
   }));
 
   document.querySelectorAll('.pbe-sortable-zone').forEach(function(zone){
     sortableInstances.push(new Sortable(zone, {
       group: { name:'pb-blocks', pull:true, put:true },
-      animation:150, handle:'.pbe-drag-handle',
+      animation:150, handle:'.pbe-drag-handle', forceFallback:true,
       ghostClass:'pbe-sortable-ghost', dragClass:'pbe-sortable-drag',
-      onAdd: handleSortEnd, onUpdate: handleSortEnd, onRemove: handleSortEnd
+      onAdd: handleSortEnd, onUpdate: handleSortEnd, onRemove: handleSortEnd,
+      onStart: function(evt){ startEdgeTracking(evt); },
+      onEnd: function(){ stopEdgeTracking(); }
     }));
   });
 }
+
+/* ---- edge-drag-to-row detection (top-level canvas only) ----
+   Sortable's own onMove callback fires too irregularly (heavily
+   throttled/coalesced) to reliably drive this, so a plain document-level
+   mousemove listener does the hover/edge-zone math independently; the
+   final drop still goes through Sortable's onAdd/onUpdate/onRemove. */
+var pendingEdgeDrop = null;
+var edgeIndicatorEl = null;
+var dragActive = false;
+var draggedBlockId = null;
+function startEdgeTracking(evt){
+  dragActive = true;
+  draggedBlockId = evt.item.getAttribute('data-block-id') || null;
+  pendingEdgeDrop = null;
+  clearEdgeIndicator();
+}
+function stopEdgeTracking(){
+  dragActive = false;
+  draggedBlockId = null;
+  clearEdgeIndicator();
+}
+function computeEdgeDrop(clientX, clientY){
+  // elementFromPoint() alone would hit Sortable's fixed-position drag
+  // ghost (it tracks the cursor exactly); walk the full z-order stack and
+  // skip past it to find the real block underneath.
+  var stack = document.elementsFromPoint(clientX, clientY);
+  var related = null;
+  for(var i=0;i<stack.length;i++){
+    var candidate = stack[i].closest && stack[i].closest('.pb-block');
+    if(candidate && canvasEl.contains(candidate)){ related = candidate; break; }
+  }
+  if(!related){ pendingEdgeDrop = null; clearEdgeIndicator(); return; }
+  var targetId = related.getAttribute('data-block-id');
+  if(!targetId || targetId === draggedBlockId){ pendingEdgeDrop = null; clearEdgeIndicator(); return; }
+  var parentRow = findParentRow(targetId);
+  var isTop = !parentRow && state.blocks.some(function(b){ return b.id===targetId; });
+  if(!parentRow && !isTop){ pendingEdgeDrop = null; clearEdgeIndicator(); return; }
+
+  var rect = related.getBoundingClientRect();
+  var zone = rect.width * 0.25;
+  var side = null;
+  if(clientX - rect.left < zone) side = 'left';
+  else if(rect.right - clientX < zone) side = 'right';
+  if(!side){ pendingEdgeDrop = null; clearEdgeIndicator(); return; }
+
+  pendingEdgeDrop = { targetId: targetId, side: side, parentRow: parentRow ? parentRow.row.id : null, cellIndex: parentRow ? parentRow.cellIndex : null };
+  showEdgeIndicator(related, side);
+}
+document.addEventListener('mousemove', function(e){
+  if(!dragActive) return;
+  computeEdgeDrop(e.clientX, e.clientY);
+});
+// Sortable resolves its own drop position from the mouseup coordinates
+// directly, which may land somewhere no mousemove was ever delivered for
+// (mousemove is heavily coalesced) - recompute one last time here so
+// pendingEdgeDrop reflects the true final cursor position.
+document.addEventListener('mouseup', function(e){
+  if(!dragActive) return;
+  computeEdgeDrop(e.clientX, e.clientY);
+}, true);
+function showEdgeIndicator(el, side){
+  if(!edgeIndicatorEl){
+    edgeIndicatorEl = document.createElement('div');
+    edgeIndicatorEl.className = 'pbe-edge-indicator';
+    document.body.appendChild(edgeIndicatorEl);
+  }
+  var rect = el.getBoundingClientRect();
+  edgeIndicatorEl.style.top = rect.top+'px';
+  edgeIndicatorEl.style.height = rect.height+'px';
+  edgeIndicatorEl.style.left = (side==='left' ? rect.left-2 : rect.right-2)+'px';
+  edgeIndicatorEl.style.display = 'block';
+}
+function clearEdgeIndicator(){
+  if(edgeIndicatorEl) edgeIndicatorEl.style.display = 'none';
+}
+
 var sortHandled = false;
 function handleSortEnd(evt){
   if(sortHandled) return; sortHandled = true;
   setTimeout(function(){ sortHandled = false; }, 0);
+
+  var edge = pendingEdgeDrop;
+  pendingEdgeDrop = null;
+  clearEdgeIndicator();
+  if(edge){
+    handleEdgeDrop(evt, edge);
+    return;
+  }
 
   var newType = evt.item.getAttribute('data-new-type');
   var targetArr = arrayForZone(evt.to);
 
   if(newType){
     evt.item.remove();
-    if(evt.to !== canvasEl && newType==='columns'){
+    if(evt.to !== canvasEl && (newType==='columns' || newType==='row')){
       alert('Kolommen kunnen niet in kolommen genest worden.');
       renderCanvas();
       return;
@@ -398,8 +531,8 @@ function handleSortEnd(evt){
     markDirty();
   } else {
     var movingBlock = blocksById[id];
-    if(movingBlock && movingBlock.type==='columns' && evt.to !== canvasEl){
-      alert('Kolommen kunnen niet in kolommen genest worden.');
+    if(movingBlock && (movingBlock.type==='columns' || movingBlock.type==='row') && evt.to !== canvasEl){
+      alert('Kolommen/rijen kunnen niet in kolommen genest worden.');
       renderCanvas();
       return;
     }
@@ -411,6 +544,56 @@ function handleSortEnd(evt){
     }
   }
 }
+
+function handleEdgeDrop(evt, pending){
+  var newType = evt.item.getAttribute('data-new-type');
+  var draggedBlock;
+  if(newType){
+    evt.item.remove();
+    if(newType==='row' || newType==='columns'){
+      alert('Kan geen rij/kolommen-blok naast een ander blok slepen.');
+      renderCanvas();
+      return;
+    }
+    draggedBlock = createBlock(newType);
+  } else {
+    var id = evt.item.getAttribute('data-block-id');
+    if(id === pending.targetId){ renderCanvas(); return; }
+    draggedBlock = findAndRemove(id);
+    if(!draggedBlock){ renderCanvas(); return; }
+    if(draggedBlock.type==='row' || draggedBlock.type==='columns'){
+      state.blocks.push(draggedBlock);
+      alert('Rijen/kolommen-blokken kunnen niet naast een ander blok geplaatst worden.');
+      renderCanvas();
+      return;
+    }
+  }
+
+  if(pending.parentRow){
+    var row = blocksById[pending.parentRow];
+    if(!row){ state.blocks.push(draggedBlock); renderCanvas(); return; }
+    var insertIdx = pending.side==='left' ? pending.cellIndex : pending.cellIndex+1;
+    row.data.cells.splice(insertIdx, 0, {widthPct:null, blocks:[draggedBlock]});
+    redistributeCellWidths(row.data.cells);
+  } else {
+    var target = blocksById[pending.targetId];
+    var idx = target ? state.blocks.indexOf(target) : -1;
+    if(idx === -1){ state.blocks.push(draggedBlock); renderCanvas(); return; }
+    var newCells = pending.side==='left'
+      ? [{widthPct:50, blocks:[draggedBlock]}, {widthPct:50, blocks:[target]}]
+      : [{widthPct:50, blocks:[target]}, {widthPct:50, blocks:[draggedBlock]}];
+    var newRow = { id: uid(), type:'row', settings: BLOCKS.row.settings(), data: { cells:newCells, mobileStack:true, gap:24 } };
+    state.blocks.splice(idx, 1, newRow);
+  }
+  renderCanvas();
+  selectBlock(draggedBlock.id);
+}
+function redistributeCellWidths(cells){
+  var n = cells.length;
+  cells.forEach(function(c){ c.widthPct = round2(100/n); });
+}
+function clampNum(n,min,max){ return Math.max(min,Math.min(max,n)); }
+function round2(n){ return Math.round(n*100)/100; }
 
 /* ============================================================
    Canvas interactions (select, toolbar actions, inline edit)
@@ -426,6 +609,8 @@ canvasEl.addEventListener('click', function(e){
       if(confirm('Dit blok verwijderen?')){ findAndRemove(id); if(selectedId===id) selectedId=null; renderCanvas(); renderSettingsPanel(); }
     } else if(action==='duplicate'){
       duplicateBlock(id);
+    } else if(action==='select-row'){
+      selectBlock(id);
     }
     return;
   }
@@ -440,15 +625,13 @@ function duplicateBlock(id){
   var block = blocksById[id];
   if(!block) return;
   var copy = JSON.parse(JSON.stringify(block));
-  (function reid(b){ b.id = uid(); if(b.type==='columns'){ (b.data.cols||[]).forEach(function(c){ (c.blocks||[]).forEach(reid); }); } })(copy);
+  (function reid(b){ b.id = uid(); childArraysOf(b).forEach(function(arr){ arr.forEach(reid); }); })(copy);
   // find owning array + index of original, insert copy after it
   function insertAfter(list){
     for(var i=0;i<list.length;i++){
       if(list[i]===block){ list.splice(i+1,0,copy); return true; }
-      if(list[i].type==='columns'){
-        var cols = list[i].data.cols||[];
-        for(var c=0;c<cols.length;c++){ if(insertAfter(cols[c].blocks)) return true; }
-      }
+      var children = childArraysOf(list[i]);
+      for(var c=0;c<children.length;c++){ if(insertAfter(children[c])) return true; }
     }
     return false;
   }
@@ -494,6 +677,169 @@ canvasEl.addEventListener('dblclick', function(e){
   field.setAttribute('contenteditable','true');
   field.focus();
 });
+
+/* ============================================================
+   Resize handles (row cell width + image height/aspect ratio)
+   ============================================================ */
+function attachResizeHandles(){
+  canvasEl.querySelectorAll('.pbe-resize-handle').forEach(function(h){ h.remove(); });
+  if(!selectedId) return;
+  var el = canvasEl.querySelector('[data-block-id="'+selectedId+'"]');
+  var block = blocksById[selectedId];
+  if(!el || !block) return;
+  var cell = el.closest('.pb-cell');
+  var inRow = !!cell;
+  var isImage = block.type === 'image' && !!block.data.src;
+
+  var dirs = [];
+  if(inRow) dirs.push('w','e');
+  if(isImage) dirs.push('n','s');
+  if(inRow && isImage) dirs.push('nw','ne','sw','se');
+  if(!dirs.length) return;
+
+  dirs.forEach(function(dir){
+    var handle = document.createElement('div');
+    handle.className = 'pbe-resize-handle pbe-resize-'+dir;
+    handle.setAttribute('data-dir', dir);
+    el.appendChild(handle);
+  });
+}
+
+canvasEl.addEventListener('mousedown', function(e){
+  var divider = e.target.closest('.pbe-col-resizer');
+  if(divider){ startDividerResize(e, divider); return; }
+  var handle = e.target.closest('.pbe-resize-handle');
+  if(handle){ startBlockResize(e, handle); return; }
+});
+
+function showDimensionBadge(){
+  var badge = document.createElement('div');
+  badge.className = 'pbe-dim-badge';
+  document.body.appendChild(badge);
+  return badge;
+}
+function updateDimensionBadge(badge, x, y, text){
+  badge.textContent = text;
+  badge.style.left = (x+18)+'px';
+  badge.style.top = (y+18)+'px';
+}
+function removeDimensionBadge(badge){ badge.remove(); }
+
+function startDividerResize(e, divider){
+  e.preventDefault();
+  var rowId = divider.getAttribute('data-row-id');
+  var leftIdx = parseInt(divider.getAttribute('data-left-index'),10);
+  var rightIdx = parseInt(divider.getAttribute('data-right-index'),10);
+  var rowBlock = blocksById[rowId];
+  var rowEl = canvasEl.querySelector('.pb-row-flex[data-row-id="'+rowId+'"]');
+  if(!rowBlock || !rowEl) return;
+  var rowRect = rowEl.getBoundingClientRect();
+  var startX = e.clientX;
+  var cells = rowBlock.data.cells;
+  var n = cells.length;
+  var startLeftPct = cells[leftIdx].widthPct != null ? cells[leftIdx].widthPct : (100/n);
+  var startRightPct = cells[rightIdx].widthPct != null ? cells[rightIdx].widthPct : (100/n);
+  var totalPct = startLeftPct + startRightPct;
+  var badge = showDimensionBadge();
+
+  function onMove(ev){
+    var deltaPct = ((ev.clientX - startX) / rowRect.width) * 100;
+    var newLeft = clampNum(round2(startLeftPct + deltaPct), 5, totalPct-5);
+    var newRight = round2(totalPct - newLeft);
+    cells[leftIdx].widthPct = newLeft;
+    cells[rightIdx].widthPct = newRight;
+    var cellEls = rowEl.querySelectorAll(':scope > .pb-cell');
+    if(cellEls[leftIdx]) cellEls[leftIdx].style.width = newLeft+'%';
+    if(cellEls[rightIdx]) cellEls[rightIdx].style.width = newRight+'%';
+    updateDimensionBadge(badge, ev.clientX, ev.clientY, Math.round(newLeft)+'% / '+Math.round(newRight)+'%');
+  }
+  function onUp(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    removeDimensionBadge(badge);
+    markDirty();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function startBlockResize(e, handle){
+  e.preventDefault();
+  var dir = handle.getAttribute('data-dir');
+  var el = handle.closest('.pb-block');
+  var block = blocksById[el.getAttribute('data-block-id')];
+  var cell = el.closest('.pb-cell');
+  var rowBlock = null, rowEl = null, cellIndex = null, neighborIndex = null, startCellPct = null, startNeighborPct = null;
+
+  var hasWidthDrag = cell && /[ew]/.test(dir);
+  if(hasWidthDrag){
+    var rowId = cell.getAttribute('data-cell-owner');
+    rowBlock = blocksById[rowId];
+    rowEl = canvasEl.querySelector('.pb-row-flex[data-row-id="'+rowId+'"]');
+    cellIndex = parseInt(cell.getAttribute('data-cell-index'),10);
+    var n = rowBlock.data.cells.length;
+    startCellPct = rowBlock.data.cells[cellIndex].widthPct != null ? rowBlock.data.cells[cellIndex].widthPct : (100/n);
+    neighborIndex = dir.indexOf('e')>=0 ? cellIndex+1 : cellIndex-1;
+    if(!rowBlock.data.cells[neighborIndex]){ hasWidthDrag = false; neighborIndex = null; }
+    else startNeighborPct = rowBlock.data.cells[neighborIndex].widthPct != null ? rowBlock.data.cells[neighborIndex].widthPct : (100/n);
+  }
+
+  var imgEl = el.querySelector('.pb-figure img');
+  var hasHeightDrag = !!imgEl && /[ns]/.test(dir);
+
+  var startX = e.clientX, startY = e.clientY;
+  var startW = el.getBoundingClientRect().width;
+  var startH = imgEl ? imgEl.getBoundingClientRect().height : 0;
+  var badge = showDimensionBadge();
+
+  function onMove(ev){
+    var dx = ev.clientX - startX, dy = ev.clientY - startY;
+    var labelParts = [];
+
+    if(hasWidthDrag){
+      var signedDx = dir.indexOf('w')>=0 ? -dx : dx;
+      var totalPct = startCellPct + startNeighborPct;
+      var deltaPct = (signedDx / rowEl.getBoundingClientRect().width) * 100;
+      var newSelf = clampNum(round2(startCellPct + deltaPct), 5, totalPct-5);
+      var newNeighbor = round2(totalPct - newSelf);
+      rowBlock.data.cells[cellIndex].widthPct = newSelf;
+      rowBlock.data.cells[neighborIndex].widthPct = newNeighbor;
+      var cellEls = rowEl.querySelectorAll(':scope > .pb-cell');
+      if(cellEls[cellIndex]) cellEls[cellIndex].style.width = newSelf+'%';
+      if(cellEls[neighborIndex]) cellEls[neighborIndex].style.width = newNeighbor+'%';
+      labelParts.push(Math.round(newSelf)+'% breed');
+    }
+
+    if(hasHeightDrag){
+      var signedDy = dir.indexOf('n')>=0 ? -dy : dy;
+      var newH = clampNum(startH + signedDy, 60, 1200);
+      var newW = startW;
+      if(dir.length===2){
+        if(ev.shiftKey){
+          var signedDx2 = dir.indexOf('w')>=0 ? -dx : dx;
+          newW = clampNum(startW + signedDx2, 60, 2000);
+        } else {
+          newW = startW * (newH / startH);
+        }
+      }
+      var newAspect = round2(newW / newH);
+      block.data.aspectRatio = newAspect;
+      imgEl.style.aspectRatio = newAspect;
+      imgEl.style.height = 'auto';
+      labelParts.push(Math.round(newH)+'px hoog');
+    }
+
+    updateDimensionBadge(badge, ev.clientX, ev.clientY, labelParts.join(' · '));
+  }
+  function onUp(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    removeDimensionBadge(badge);
+    markDirty();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
 
 /* ============================================================
    Settings panel
@@ -627,6 +973,12 @@ function contentFieldsHtml(block){
       html += '<div class="pbe-field"><label>HTML-code</label><textarea data-bind="data.code" rows="10" style="font-family:monospace;font-size:.78rem">'+esc(d.code||'')+'</textarea></div>';
       html += '<p style="font-size:.78rem;color:#8a7c6c">Geavanceerd: wordt ongefilterd op de pagina geplaatst.</p>';
       break;
+    case 'row':
+      html += '<label class="pbe-check-inline"><input type="checkbox" data-bind="data.mobileStack" '+((!('mobileStack' in d)||d.mobileStack)?'checked':'')+'> Naast elkaar houden op mobiel</label>';
+      html += '<div class="pbe-field" style="margin-top:14px"><label>Tussenruimte (px)</label><input type="number" min="0" max="120" data-bind="data.gap" value="'+(d.gap!=null?d.gap:24)+'"></div>';
+      html += '<button type="button" class="pbe-upload-btn" id="pbeUnwrapRow" style="margin-top:10px">Rij opheffen (blokken terugzetten)</button>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:10px">Tip: sleep de deelstreep tussen de foto\'s/blokken om de breedte te verdelen, of gebruik de resize-handles wanneer een blok geselecteerd is.</p>';
+      break;
   }
   html += '</div>';
   return html;
@@ -648,7 +1000,7 @@ settingsEl.addEventListener('input', function(e){
   if(!el) return;
   var block = blocksById[selectedId]; if(!block) return;
   var path = el.getAttribute('data-bind');
-  var val = el.value;
+  var val = el.type === 'checkbox' ? el.checked : el.value;
   set(block, path, val);
   // sync sibling color inputs
   var row = el.closest('.pbe-color-row');
@@ -687,6 +1039,20 @@ settingsEl.addEventListener('click', function(e){
     block3.data.images.splice(parseInt(galRemove.getAttribute('data-gallery-remove'),10),1);
     renderSettingsPanel();
     updateBlockDom(block3.id);
+    return;
+  }
+  var unwrapBtn = e.target.closest('#pbeUnwrapRow');
+  if(unwrapBtn){
+    var rowBlock = blocksById[selectedId];
+    if(!rowBlock || rowBlock.type!=='row') return;
+    var idx = state.blocks.indexOf(rowBlock);
+    if(idx===-1) return;
+    var flat = [];
+    rowBlock.data.cells.forEach(function(c){ flat = flat.concat(c.blocks||[]); });
+    state.blocks.splice.apply(state.blocks, [idx,1].concat(flat));
+    selectedId = null;
+    renderCanvas();
+    renderSettingsPanel();
     return;
   }
 });
@@ -828,7 +1194,7 @@ document.querySelectorAll('.pbe-device-toggle button').forEach(function(btn){
   var palette = document.getElementById('pbePalette');
   var html = '';
   GROUP_ORDER.forEach(function(group){
-    var items = Object.keys(BLOCKS).filter(function(k){ return BLOCKS[k].group===group; });
+    var items = Object.keys(BLOCKS).filter(function(k){ return BLOCKS[k].group===group && !BLOCKS[k].hidden; });
     if(!items.length) return;
     html += '<div class="pbe-section-title">'+group+'</div>';
     items.forEach(function(type){
