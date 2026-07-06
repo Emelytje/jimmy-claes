@@ -196,6 +196,16 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-lightbox.is-open{ opacity:1; pointer-events:auto; }
 .pb-lightbox img{ max-width:100%; max-height:90vh; border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); }
 .pb-lightbox-close{ position:absolute; top:24px; right:28px; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.4); background:transparent; color:#fff; font-size:1.4rem; cursor:pointer; }
+.pb-lightbox-nav{ position:absolute; top:50%; transform:translateY(-50%); width:52px; height:52px; border-radius:50%; border:1px solid rgba(255,255,255,.4); background:rgba(0,0,0,.25); color:#fff; font-size:1.8rem; line-height:1; cursor:pointer; transition:background .2s,transform .2s; }
+.pb-lightbox-nav:hover{ background:rgba(255,255,255,.15); }
+.pb-lightbox-prev{ left:20px; }
+.pb-lightbox-next{ right:20px; }
+.pb-lightbox-counter{ position:absolute; bottom:24px; left:50%; transform:translateX(-50%); color:#fff; font-size:.85rem; letter-spacing:.03em; background:rgba(0,0,0,.35); padding:5px 14px; border-radius:999px; }
+@media(max-width:600px){
+  .pb-lightbox-nav{ width:40px; height:40px; font-size:1.4rem; }
+  .pb-lightbox-prev{ left:8px; }
+  .pb-lightbox-next{ right:8px; }
+}
 
 @media(prefers-reduced-motion:reduce){
   html{ scroll-behavior:auto; }
