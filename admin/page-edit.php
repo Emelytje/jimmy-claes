@@ -2,10 +2,10 @@
 require __DIR__.'/inc.php';
 
 const PBE_TYPES = [
-    'page'   => ['table'=>'pages',   'list'=>'pages.php',   'view'=>'../page.php?slug=',   'label'=>"Pagina"],
-    'animal' => ['table'=>'animals', 'list'=>'animals.php', 'view'=>'../animal.php?slug=', 'label'=>'Dier'],
-    'album'  => ['table'=>'albums',  'list'=>'albums.php',  'view'=>'../album.php?slug=',  'label'=>'Album'],
-    'post'   => ['table'=>'posts',   'list'=>'posts.php',   'view'=>'../post.php?slug=',   'label'=>'Blogpost'],
+    'page'   => ['table'=>'pages',   'list'=>'pages.php',                 'view'=>'../page.php?slug=',   'label'=>"Pagina", 'desc_col'=>null],
+    'animal' => ['table'=>'animals', 'list'=>'content.php?type=animal',   'view'=>'../animal.php?slug=', 'label'=>'Dier', 'desc_col'=>'description'],
+    'album'  => ['table'=>'albums',  'list'=>'content.php?type=album',    'view'=>'../album.php?slug=',  'label'=>'Album', 'desc_col'=>'description'],
+    'post'   => ['table'=>'posts',   'list'=>'content.php?type=post',     'view'=>'../post.php?slug=',   'label'=>'Blogpost', 'desc_col'=>'excerpt'],
 ];
 
 $type = $_GET['type'] ?? 'page';
@@ -30,6 +30,7 @@ $initial = [
     'show_in_nav' => (bool)($page['show_in_nav'] ?? false),
     'is_homepage' => (bool)($page['is_homepage'] ?? false),
     'cover_image' => $page['cover_image'] ?? '',
+    'description' => $typeInfo['desc_col'] ? ($page[$typeInfo['desc_col']] ?? '') : '',
     'blocks' => $blocks,
     'csrf' => csrf_token(),
 ];
@@ -87,6 +88,11 @@ $initial = [
       <button type="button" class="pbe-upload-btn" id="pbeCoverUploadBtn"><?=!empty($page['cover_image'])?'Andere foto kiezen':'Foto uploaden'?></button>
       <input type="file" accept="image/*" style="display:none" id="pbeCoverFile">
     </div>
+    <div class="pbe-field">
+      <label>Korte omschrijving</label>
+      <textarea id="pbeDescription" rows="3" placeholder="Tekst die zichtbaar is onder de titel in overzichten (bv. op de homepage)"><?=e($page[$typeInfo['desc_col']] ?? '')?></textarea>
+    </div>
+    <p style="font-size:.78rem;color:#8a7c6c;margin-top:-8px">Dit is andere, zichtbare tekst dan de SEO-omschrijving hieronder (die is enkel voor zoekmachines).</p>
     <?php endif; ?>
     <div class="pbe-field"><label>SEO-titel</label><input type="text" id="pbeMetaTitle" value="<?=e($page['meta_title'])?>" placeholder="<?=e($page['title'])?>"></div>
     <div class="pbe-field"><label>SEO-omschrijving</label><textarea id="pbeMetaDesc" rows="3" placeholder="Korte omschrijving voor zoekmachines"><?=e($page['meta_description'])?></textarea></div>

@@ -1211,6 +1211,7 @@ function collectPayload(){
     payload.is_homepage = document.getElementById('pbeIsHomepage').checked;
   } else {
     payload.cover_image = coverImage;
+    payload.description = document.getElementById('pbeDescription').value;
   }
   return payload;
 }
