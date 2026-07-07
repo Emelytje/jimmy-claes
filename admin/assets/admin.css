@@ -29,7 +29,7 @@ body.pbe-body{ margin:0; height:100vh; overflow:hidden; }
 .admin-topbar h1{ font-size:1.4rem; margin:0; }
 .admin-content{ padding:36px 40px; }
 
-.a-btn{ display:inline-flex; align-items:center; gap:8px; background:var(--a-primary); color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:600; font-size:.9rem; cursor:pointer; text-decoration:none; transition:background .18s,transform .18s; }
+.a-btn{ display:inline-flex; align-items:center; gap:8px; background:var(--a-primary); color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:600; font-size:.9rem; cursor:pointer; text-decoration:none; transition:background .18s,transform .18s; width:auto; flex:0 0 auto; }
 .a-btn:hover{ background:#5c4630; color:#fff; transform:translateY(-1px); }
 .a-btn.a-btn-ghost{ background:transparent; color:var(--a-ink); border:1.5px solid var(--a-line); }
 .a-btn.a-btn-ghost:hover{ background:var(--a-bg); transform:none; }
