@@ -40,8 +40,8 @@ $initial = [
 <title><?=e($page['title'])?> - Pagebuilder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/style.css">
-<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="../assets/style.css?v=<?=asset_v(__DIR__.'/../assets/style.css')?>">
+<link rel="stylesheet" href="assets/admin.css?v=<?=asset_v(__DIR__.'/assets/admin.css')?>">
 </head>
 <body class="admin pbe-body">
 
@@ -94,9 +94,9 @@ $initial = [
   </div>
 </div>
 
-<script src="assets/sortable.min.js"></script>
+<script src="assets/sortable.min.js?v=<?=asset_v(__DIR__.'/assets/sortable.min.js')?>"></script>
 <script>window.PBE_INITIAL = <?=json_encode($initial, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP)?>;</script>
-<script src="assets/pagebuilder.js"></script>
+<script src="assets/pagebuilder.js?v=<?=asset_v(__DIR__.'/assets/pagebuilder.js')?>"></script>
 <script>
 (function(){
   var modal = document.getElementById('pbeSettingsModal');
