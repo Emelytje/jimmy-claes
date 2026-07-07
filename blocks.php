@@ -206,7 +206,8 @@ function pb_render_gallery($d){
     $html = '<div class="pb-gallery pb-gallery-'.$layout.'" style="--pb-cols:'.$cols.'">';
     foreach(($d['images'] ?? []) as $img){
         if(empty($img['src'])) continue;
-        $html .= '<figure class="pb-gallery-item"><img src="'.e($img['src']).'" alt="'.e($img['alt'] ?? '').'" loading="lazy">';
+        $cls = 'pb-gallery-item'.((($img['size'] ?? '') === 'large') ? ' pb-gallery-item-lg' : '');
+        $html .= '<figure class="'.$cls.'"><img src="'.e($img['src']).'" alt="'.e($img['alt'] ?? '').'" loading="lazy">';
         if(!empty($img['caption'])) $html .= '<figcaption>'.e($img['caption']).'</figcaption>';
         $html .= '</figure>';
     }

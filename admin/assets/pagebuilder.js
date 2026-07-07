@@ -130,7 +130,8 @@ var BLOCKS = {
       if(!d.images || !d.images.length) return wrap('gallery', id, s, '<div class="pbe-empty-col" style="min-height:140px">Nog geen foto\'s — voeg ze toe rechts &#8594;</div>');
       var html = '<div class="pb-gallery pb-gallery-'+layout+'" style="--pb-cols:'+cols+'">';
       d.images.forEach(function(img){
-        html += '<figure class="pb-gallery-item"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
+        var cls = 'pb-gallery-item'+(img.size==='large' ? ' pb-gallery-item-lg' : '');
+        html += '<figure class="'+cls+'"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
           + (img.caption ? '<figcaption>'+esc(img.caption)+'</figcaption>' : '') + '</figure>';
       });
       html += '</div>';
@@ -970,7 +971,8 @@ function contentFieldsHtml(block){
       break;
     case 'gallery':
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
-        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'"><button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
+        var sizeBtn = d.layout!=='masonry' ? '<button type="button" class="pbe-gallery-size-btn'+(img.size==='large'?' is-active':'')+'" data-gallery-size="'+i+'" title="Grote tegel (2x zo groot in het raster)">&#9974;</button>' : '';
+        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+sizeBtn+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
       html += '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen</button>';
       html += '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">';
@@ -1083,6 +1085,15 @@ settingsEl.addEventListener('click', function(e){
     block3.data.images.splice(parseInt(galRemove.getAttribute('data-gallery-remove'),10),1);
     renderSettingsPanel();
     updateBlockDom(block3.id);
+    return;
+  }
+  var galSize = e.target.closest('[data-gallery-size]');
+  if(galSize){
+    var block4 = blocksById[selectedId]; if(!block4) return;
+    var img4 = block4.data.images[parseInt(galSize.getAttribute('data-gallery-size'),10)];
+    img4.size = img4.size==='large' ? '' : 'large';
+    renderSettingsPanel();
+    updateBlockDom(block4.id);
     return;
   }
   var unwrapBtn = e.target.closest('#pbeUnwrapRow');
