@@ -7,8 +7,20 @@
       var open = document.body.classList.toggle('nav-open');
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-    document.querySelectorAll('.top nav a').forEach(function(a){
+    document.querySelectorAll('.top nav a:not(.nav-dropdown-toggle)').forEach(function(a){
       a.addEventListener('click', function(){ document.body.classList.remove('nav-open'); toggle.setAttribute('aria-expanded','false'); });
+    });
+  }
+
+  // On mobile the "Dieren" nav item taps open/closed instead of navigating
+  // straight away, since there's no hover to reveal the submenu on touch.
+  var dropdownToggle = document.querySelector('.nav-dropdown-toggle');
+  if(dropdownToggle){
+    dropdownToggle.addEventListener('click', function(e){
+      if(window.matchMedia('(max-width:760px)').matches){
+        e.preventDefault();
+        dropdownToggle.closest('.nav-dropdown').classList.toggle('is-open');
+      }
     });
   }
 
