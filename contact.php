@@ -10,6 +10,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     } else {
         $st=db()->prepare('INSERT INTO messages(name,email,message) VALUES(?,?,?)');
         $st->execute([$name,$email,$message]);
+        notify_contact_message($name, $email, $message);
         $sent=true;
     }
 }

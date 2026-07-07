@@ -22,5 +22,6 @@ if($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)){
 
 $st = db()->prepare('INSERT INTO messages(name,email,message) VALUES(?,?,?)');
 $st->execute([$name, $email, $message]);
+notify_contact_message($name, $email, $message);
 
 header('Location: '.$redirect.$sep.'msg=sent'); exit;
