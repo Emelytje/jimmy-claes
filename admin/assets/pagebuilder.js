@@ -702,9 +702,9 @@ function attachResizeHandles(){
   var isImage = block.type === 'image' && !!block.data.src;
 
   var dirs = [];
-  if(inRow) dirs.push('w','e');
+  if(inRow || isImage) dirs.push('w','e');
   if(isImage) dirs.push('n','s');
-  if(inRow && isImage) dirs.push('nw','ne','sw','se');
+  if(isImage) dirs.push('nw','ne','sw','se');
   if(!dirs.length) return;
 
   dirs.forEach(function(dir){
@@ -795,6 +795,14 @@ function startBlockResize(e, handle){
   }
 
   var imgEl = el.querySelector('.pb-figure img');
+  var isImage = block.type === 'image' && !!imgEl;
+  var figureEl = isImage ? el.querySelector('.pb-figure') : null;
+  var hasFigureWidthDrag = !cell && isImage && /[ew]/.test(dir);
+  var containerW, startFigurePct;
+  if(hasFigureWidthDrag){
+    containerW = el.getBoundingClientRect().width;
+    startFigurePct = (block.data.widthPct!=null && block.data.widthPct!=='') ? block.data.widthPct : 100;
+  }
   var hasHeightDrag = !!imgEl && /[ns]/.test(dir);
 
   var startX = e.clientX, startY = e.clientY;
@@ -818,6 +826,17 @@ function startBlockResize(e, handle){
       if(cellEls[cellIndex]) cellEls[cellIndex].style.width = newSelf+'%';
       if(cellEls[neighborIndex]) cellEls[neighborIndex].style.width = newNeighbor+'%';
       labelParts.push(Math.round(newSelf)+'% breed');
+    }
+
+    if(hasFigureWidthDrag){
+      var signedDxFig = dir.indexOf('w')>=0 ? -dx : dx;
+      var deltaPctFig = (signedDxFig / containerW) * 100;
+      var newPct = clampNum(round2(startFigurePct + deltaPctFig), 10, 100);
+      block.data.widthPct = newPct;
+      figureEl.style.maxWidth = newPct+'%';
+      figureEl.style.marginLeft = 'auto';
+      figureEl.style.marginRight = 'auto';
+      labelParts.push(Math.round(newPct)+'% breed');
     }
 
     if(hasHeightDrag){
@@ -845,6 +864,9 @@ function startBlockResize(e, handle){
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onUp);
     removeDimensionBadge(badge);
+    if(hasFigureWidthDrag){
+      settingsEl.querySelectorAll('[data-bind="data.widthPct"]').forEach(function(inp){ inp.value = block.data.widthPct; });
+    }
     markDirty();
   }
   document.addEventListener('mousemove', onMove);
