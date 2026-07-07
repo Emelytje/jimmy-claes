@@ -2,8 +2,24 @@
 require __DIR__.'/inc.php';
 header('Content-Type: application/json');
 
-const PBS_TABLES = ['page'=>'pages', 'animal'=>'animals', 'album'=>'albums', 'post'=>'posts'];
-const PBS_DESC_COLS = ['animal'=>'description', 'album'=>'description', 'post'=>'excerpt'];
+const PBS_TABLES = ['page'=>'pages', 'animal'=>'animals', 'album'=>'albums', 'post'=>'posts', 'category'=>'categories'];
+const PBS_DESC_COLS = ['animal'=>'description', 'album'=>'description', 'post'=>'excerpt', 'category'=>'description'];
+
+// Loopt van $parentId omhoog via parent_id-links en geeft true terug als
+// $id ergens in die keten voorkomt (voorkomt dat een categorie zichzelf of
+// een eigen afstammeling als bovenliggende categorie krijgt).
+function pbs_category_creates_cycle($id, $parentId){
+    $guard = 0;
+    while($parentId && $guard++ < 50){
+        if((int)$parentId === (int)$id) return true;
+        $st = db()->prepare('SELECT parent_id FROM categories WHERE id=?');
+        $st->execute([$parentId]);
+        $row = $st->fetch();
+        if(!$row) break;
+        $parentId = $row['parent_id'];
+    }
+    return false;
+}
 
 if($_SERVER['REQUEST_METHOD']!=='POST'){ http_response_code(405); echo json_encode(['ok'=>false,'error'=>'Methode niet toegestaan.']); exit; }
 
@@ -48,12 +64,25 @@ if($type === 'page'){
     if($is_homepage) db()->exec('UPDATE pages SET is_homepage=0');
     $st = db()->prepare('UPDATE pages SET title=?, slug=?, blocks=?, published=?, show_in_nav=?, is_homepage=?, meta_title=?, meta_description=? WHERE id=?');
     $st->execute([$title, $slug, $blocksJson, $published, $show_in_nav, $is_homepage, $meta_title, $meta_description, $id]);
+} elseif($type === 'category'){
+    $cover_image = trim((string)($body['cover_image'] ?? ''));
+    $description = trim((string)($body['description'] ?? ''));
+    $parent_id = (int)($body['parent_id'] ?? 0) ?: null;
+    if($parent_id && pbs_category_creates_cycle($id, $parent_id)) $parent_id = null;
+    $st = db()->prepare('UPDATE categories SET title=?, slug=?, blocks=?, published=?, cover_image=?, description=?, parent_id=?, meta_title=?, meta_description=? WHERE id=?');
+    $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $parent_id, $meta_title, $meta_description, $id]);
 } else {
     $cover_image = trim((string)($body['cover_image'] ?? ''));
     $description = trim((string)($body['description'] ?? ''));
     $descCol = PBS_DESC_COLS[$type];
-    $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, meta_title=?, meta_description=? WHERE id=?");
-    $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $meta_title, $meta_description, $id]);
+    if($type === 'animal'){
+        $category_id = (int)($body['category_id'] ?? 0) ?: null;
+        $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, category_id=?, meta_title=?, meta_description=? WHERE id=?");
+        $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $category_id, $meta_title, $meta_description, $id]);
+    } else {
+        $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, meta_title=?, meta_description=? WHERE id=?");
+        $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $meta_title, $meta_description, $id]);
+    }
 }
 
 echo json_encode(['ok'=>true, 'slug'=>$slug]);
