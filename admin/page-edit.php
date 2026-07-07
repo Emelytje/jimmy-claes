@@ -2,10 +2,10 @@
 require __DIR__.'/inc.php';
 
 const PBE_TYPES = [
-    'page'   => ['table'=>'pages',   'list'=>'pages.php',   'view'=>'../page.php?slug=',   'label'=>"Pagina"],
-    'animal' => ['table'=>'animals', 'list'=>'animals.php', 'view'=>'../animal.php?slug=', 'label'=>'Dier'],
-    'album'  => ['table'=>'albums',  'list'=>'albums.php',  'view'=>'../album.php?slug=',  'label'=>'Album'],
-    'post'   => ['table'=>'posts',   'list'=>'posts.php',   'view'=>'../post.php?slug=',   'label'=>'Blogpost'],
+    'page'   => ['table'=>'pages',   'list'=>'pages.php',                 'view'=>'../page.php?slug=',   'label'=>"Pagina", 'desc_col'=>null],
+    'animal' => ['table'=>'animals', 'list'=>'content.php?type=animal',   'view'=>'../animal.php?slug=', 'label'=>'Dier', 'desc_col'=>'description'],
+    'album'  => ['table'=>'albums',  'list'=>'content.php?type=album',    'view'=>'../album.php?slug=',  'label'=>'Album', 'desc_col'=>'description'],
+    'post'   => ['table'=>'posts',   'list'=>'content.php?type=post',     'view'=>'../post.php?slug=',   'label'=>'Blogpost', 'desc_col'=>'excerpt'],
 ];
 
 $type = $_GET['type'] ?? 'page';
@@ -30,6 +30,7 @@ $initial = [
     'show_in_nav' => (bool)($page['show_in_nav'] ?? false),
     'is_homepage' => (bool)($page['is_homepage'] ?? false),
     'cover_image' => $page['cover_image'] ?? '',
+    'description' => $typeInfo['desc_col'] ? ($page[$typeInfo['desc_col']] ?? '') : '',
     'blocks' => $blocks,
     'csrf' => csrf_token(),
 ];
@@ -40,8 +41,8 @@ $initial = [
 <title><?=e($page['title'])?> - Pagebuilder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="../assets/style.css">
-<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="../assets/style.css?v=<?=asset_v(__DIR__.'/../assets/style.css')?>">
+<link rel="stylesheet" href="assets/admin.css?v=<?=asset_v(__DIR__.'/assets/admin.css')?>">
 </head>
 <body class="admin pbe-body">
 
@@ -87,6 +88,11 @@ $initial = [
       <button type="button" class="pbe-upload-btn" id="pbeCoverUploadBtn"><?=!empty($page['cover_image'])?'Andere foto kiezen':'Foto uploaden'?></button>
       <input type="file" accept="image/*" style="display:none" id="pbeCoverFile">
     </div>
+    <div class="pbe-field">
+      <label>Korte omschrijving</label>
+      <textarea id="pbeDescription" rows="3" placeholder="Tekst die zichtbaar is onder de titel in overzichten (bv. op de homepage)"><?=e($page[$typeInfo['desc_col']] ?? '')?></textarea>
+    </div>
+    <p style="font-size:.78rem;color:#8a7c6c;margin-top:-8px">Dit is andere, zichtbare tekst dan de SEO-omschrijving hieronder (die is enkel voor zoekmachines).</p>
     <?php endif; ?>
     <div class="pbe-field"><label>SEO-titel</label><input type="text" id="pbeMetaTitle" value="<?=e($page['meta_title'])?>" placeholder="<?=e($page['title'])?>"></div>
     <div class="pbe-field"><label>SEO-omschrijving</label><textarea id="pbeMetaDesc" rows="3" placeholder="Korte omschrijving voor zoekmachines"><?=e($page['meta_description'])?></textarea></div>
@@ -94,9 +100,9 @@ $initial = [
   </div>
 </div>
 
-<script src="assets/sortable.min.js"></script>
+<script src="assets/sortable.min.js?v=<?=asset_v(__DIR__.'/assets/sortable.min.js')?>"></script>
 <script>window.PBE_INITIAL = <?=json_encode($initial, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP)?>;</script>
-<script src="assets/pagebuilder.js"></script>
+<script src="assets/pagebuilder.js?v=<?=asset_v(__DIR__.'/assets/pagebuilder.js')?>"></script>
 <script>
 (function(){
   var modal = document.getElementById('pbeSettingsModal');

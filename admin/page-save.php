@@ -3,6 +3,7 @@ require __DIR__.'/inc.php';
 header('Content-Type: application/json');
 
 const PBS_TABLES = ['page'=>'pages', 'animal'=>'animals', 'album'=>'albums', 'post'=>'posts'];
+const PBS_DESC_COLS = ['animal'=>'description', 'album'=>'description', 'post'=>'excerpt'];
 
 if($_SERVER['REQUEST_METHOD']!=='POST'){ http_response_code(405); echo json_encode(['ok'=>false,'error'=>'Methode niet toegestaan.']); exit; }
 
@@ -49,8 +50,10 @@ if($type === 'page'){
     $st->execute([$title, $slug, $blocksJson, $published, $show_in_nav, $is_homepage, $meta_title, $meta_description, $id]);
 } else {
     $cover_image = trim((string)($body['cover_image'] ?? ''));
-    $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, meta_title=?, meta_description=? WHERE id=?");
-    $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $meta_title, $meta_description, $id]);
+    $description = trim((string)($body['description'] ?? ''));
+    $descCol = PBS_DESC_COLS[$type];
+    $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, meta_title=?, meta_description=? WHERE id=?");
+    $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $meta_title, $meta_description, $id]);
 }
 
 echo json_encode(['ok'=>true, 'slug'=>$slug]);

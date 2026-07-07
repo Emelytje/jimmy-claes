@@ -12,6 +12,7 @@ function db(){
     return $pdo;
 }
 function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+function asset_v($absPath){ $v = @filemtime($absPath); return $v ?: time(); }
 function setting($key,$default=''){
     try{ $st=db()->prepare('SELECT value FROM settings WHERE name=?'); $st->execute([$key]); $r=$st->fetch(); return $r?$r['value']:$default; }catch(Exception $e){ return $default; }
 }
@@ -73,16 +74,18 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     echo '<title>'.e($full_title).'</title>';
     echo '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap">';
-    echo '<link rel="stylesheet" href="assets/style.css"><style>:root{--primary:'.e($primary).';--accent:'.e($accent).';'.($font && $font!=='Georgia' ? "--font:'".e($font)."';" : '').'}</style>';
+    echo '<link rel="stylesheet" href="assets/style.css?v='.asset_v(__DIR__.'/assets/style.css').'"><style>:root{--primary:'.e($primary).';--accent:'.e($accent).';'.($font && $font!=='Georgia' ? "--font:'".e($font)."';" : '').'}</style>';
     if($head_extra) echo $head_extra;
     echo '</head><body>';
     echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
     echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Dieren door de lens')).'</a><nav><a href="index.php">Home</a>';
-    try{ foreach(db()->query('SELECT title,slug FROM animals WHERE published=1 ORDER BY sort_order,title LIMIT 8') as $a){ echo '<a href="animal.php?slug='.e($a['slug']).'">'.e($a['title']).'</a>'; }}catch(Exception $e){}
+    echo '<div class="nav-dropdown"><a href="animals.php" class="nav-dropdown-toggle">Dieren</a><div class="nav-dropdown-menu">';
+    try{ foreach(db()->query('SELECT title,slug FROM animals WHERE published=1 ORDER BY sort_order,title') as $a){ echo '<a href="animal.php?slug='.e($a['slug']).'">'.e($a['title']).'</a>'; }}catch(Exception $e){}
+    echo '</div></div>';
     echo '<a href="albums.php">Albums</a>';
     echo '<a href="blog.php">Blog</a>';
     try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
     echo '<a href="contact.php">Contact</a>';
     echo '</nav></header>';
 }
-function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Dieren door de lens')).'</footer><script src="assets/app.js"></script></body></html>'; }
+function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Dieren door de lens')).' &middot; Website door <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }
