@@ -2,11 +2,13 @@
 require __DIR__.'/inc.php';
 
 const PBE_TYPES = [
-    'page'   => ['table'=>'pages',   'list'=>'pages.php',                 'view'=>'../page.php?slug=',   'label'=>"Pagina", 'desc_col'=>null],
-    'animal' => ['table'=>'animals', 'list'=>'content.php?type=animal',   'view'=>'../animal.php?slug=', 'label'=>'Dier', 'desc_col'=>'description'],
-    'album'  => ['table'=>'albums',  'list'=>'content.php?type=album',    'view'=>'../album.php?slug=',  'label'=>'Album', 'desc_col'=>'description'],
-    'post'   => ['table'=>'posts',   'list'=>'content.php?type=post',     'view'=>'../post.php?slug=',   'label'=>'Blogpost', 'desc_col'=>'excerpt'],
+    'page'     => ['table'=>'pages',      'list'=>'pages.php',                 'view'=>'../page.php?slug=',   'label'=>"Pagina", 'desc_col'=>null],
+    'animal'   => ['table'=>'animals',    'list'=>'content.php?type=animal',   'view'=>'../animal.php?slug=', 'label'=>'Dier', 'desc_col'=>'description'],
+    'album'    => ['table'=>'albums',     'list'=>'content.php?type=album',    'view'=>'../album.php?slug=',  'label'=>'Album', 'desc_col'=>'description'],
+    'post'     => ['table'=>'posts',      'list'=>'content.php?type=post',     'view'=>'../post.php?slug=',   'label'=>'Blogpost', 'desc_col'=>'excerpt'],
+    'category' => ['table'=>'categories', 'list'=>'content.php?type=category', 'view'=>'../category.php?slug=', 'label'=>'Categorie', 'desc_col'=>'description'],
 ];
+
 
 $type = $_GET['type'] ?? 'page';
 if(!isset(PBE_TYPES[$type])) $type = 'page';
@@ -93,6 +95,24 @@ $initial = [
       <textarea id="pbeDescription" rows="3" placeholder="Tekst die zichtbaar is onder de titel in overzichten (bv. op de homepage)"><?=e($page[$typeInfo['desc_col']] ?? '')?></textarea>
     </div>
     <p style="font-size:.78rem;color:#8a7c6c;margin-top:-8px">Dit is andere, zichtbare tekst dan de SEO-omschrijving hieronder (die is enkel voor zoekmachines).</p>
+    <?php if($type==='category'): ?>
+    <div class="pbe-field">
+      <label>Bovenliggende categorie</label>
+      <select id="pbeParentCategory">
+        <option value="">Geen (hoofdcategorie)</option>
+        <?=pbe_category_options($page['parent_id'] ?? null, $page['id'])?>
+      </select>
+    </div>
+    <?php endif; ?>
+    <?php if($type==='animal'): ?>
+    <div class="pbe-field">
+      <label>Categorie</label>
+      <select id="pbeAnimalCategory">
+        <option value="">Geen categorie</option>
+        <?=pbe_category_options($page['category_id'] ?? null)?>
+      </select>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
     <div class="pbe-field"><label>SEO-titel</label><input type="text" id="pbeMetaTitle" value="<?=e($page['meta_title'])?>" placeholder="<?=e($page['title'])?>"></div>
     <div class="pbe-field"><label>SEO-omschrijving</label><textarea id="pbeMetaDesc" rows="3" placeholder="Korte omschrijving voor zoekmachines"><?=e($page['meta_description'])?></textarea></div>

@@ -138,6 +138,27 @@ var BLOCKS = {
       return wrap('gallery', id, s, html);
     }
   },
+  slideshow: {
+    label:'Fotoslideshow', icon:'&#127909;', group:'Media',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
+    data:function(){ return {images:[], interval:5}; },
+    render:function(d, s, id){
+      if(!d.images || !d.images.length) return wrap('slideshow', id, s, '<div class="pbe-empty-col" style="min-height:140px">Nog geen foto\'s — voeg ze toe rechts &#8594;</div>');
+      var html = '<div class="pb-slideshow"><div class="pb-slideshow-track">';
+      d.images.forEach(function(img, i){
+        html += '<figure class="pb-slideshow-slide'+(i===0?' is-active':'')+'"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
+          + (img.caption ? '<figcaption>'+esc(img.caption)+'</figcaption>' : '') + '</figure>';
+      });
+      html += '</div>';
+      if(d.images.length>1){
+        html += '<div class="pb-slideshow-dots">';
+        d.images.forEach(function(img,i){ html += '<span class="pb-slideshow-dot'+(i===0?' is-active':'')+'"></span>'; });
+        html += '</div>';
+      }
+      html += '</div>';
+      return wrap('slideshow', id, s, html);
+    }
+  },
   video: {
     label:'Video', icon:'&#9654;', group:'Media',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
@@ -220,6 +241,24 @@ var BLOCKS = {
     render:function(d, s, id){
       var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch de nieuwste gepubliceerde content.</div>';
       return wrap('recent', id, s, html);
+    }
+  },
+  subcategories: {
+    label:'Sub-categorieën', icon:'&#128193;', group:'Layout',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
+    data:function(){ return {}; },
+    render:function(d, s, id){
+      var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch de sub-categorieën en dieren in déze categorie. Werkt enkel op een categoriepagina.</div>';
+      return wrap('subcategories', id, s, html);
+    }
+  },
+  photocount: {
+    label:"Fototeller", icon:'&#128202;', group:'Layout',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
+    data:function(){ return {label:"foto's op deze website"}; },
+    render:function(d, s, id){
+      var html = '<div class="pb-photocount"><span class="pb-photocount-num">—</span><span class="pb-photocount-label">'+esc(d.label||"foto's op deze website")+'</span></div>';
+      return wrap('photocount', id, s, html);
     }
   },
   contact: {
@@ -1026,6 +1065,20 @@ function contentFieldsHtml(block){
       html += '<button type="button" class="pbe-upload-btn" id="pbeUnwrapRow" style="margin-top:10px">Rij opheffen (blokken terugzetten)</button>';
       html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:10px">Tip: sleep de deelstreep tussen de foto\'s/blokken om de breedte te verdelen, of gebruik de resize-handles wanneer een blok geselecteerd is.</p>';
       break;
+    case 'slideshow':
+      html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
+        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'"><button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
+      }).join('') + '</div>';
+      html += '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen</button>';
+      html += '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">';
+      html += '<div class="pbe-field" style="margin-top:14px"><label>Wisseltijd (seconden)</label><input type="number" min="2" max="15" data-bind="data.interval" value="'+(d.interval!=null?d.interval:5)+'"></div>';
+      break;
+    case 'photocount':
+      html += '<div class="pbe-field"><label>Tekst naast het getal</label><input type="text" data-bind="data.label" value="'+esc(d.label||"foto's op deze website")+'"></div>';
+      break;
+    case 'subcategories':
+      html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle sub-categorieën en dieren binnen déze categorie, met coverfoto — enkel zinvol op een categoriepagina.</p>';
+      break;
   }
   html += '</div>';
   return html;
@@ -1213,6 +1266,12 @@ function collectPayload(){
   } else {
     payload.cover_image = coverImage;
     payload.description = document.getElementById('pbeDescription').value;
+    if(contentType === 'category'){
+      payload.parent_id = document.getElementById('pbeParentCategory').value;
+    }
+    if(contentType === 'animal'){
+      payload.category_id = document.getElementById('pbeAnimalCategory').value;
+    }
   }
   return payload;
 }

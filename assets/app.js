@@ -12,17 +12,18 @@
     });
   }
 
-  // On mobile the "Dieren" nav item taps open/closed instead of navigating
-  // straight away, since there's no hover to reveal the submenu on touch.
-  var dropdownToggle = document.querySelector('.nav-dropdown-toggle');
-  if(dropdownToggle){
-    dropdownToggle.addEventListener('click', function(e){
-      if(window.matchMedia('(max-width:760px)').matches){
-        e.preventDefault();
-        dropdownToggle.closest('.nav-dropdown').classList.toggle('is-open');
-      }
-    });
-  }
+  // On mobile every dropdown level (Dieren, and any nested category with
+  // children) taps open/closed instead of navigating straight away, since
+  // there's no hover to reveal the submenu on touch. Delegated so it also
+  // covers dropdowns nested arbitrarily deep in the category tree.
+  document.addEventListener('click', function(e){
+    var dropdownToggle = e.target.closest('.nav-dropdown-toggle');
+    if(!dropdownToggle) return;
+    if(window.matchMedia('(max-width:760px)').matches){
+      e.preventDefault();
+      dropdownToggle.closest('.nav-dropdown').classList.toggle('is-open');
+    }
+  });
 
   var animated = document.querySelectorAll('[data-animate]');
   if(animated.length){
@@ -100,4 +101,27 @@
       else if(e.key === 'ArrowRight') next();
     });
   }
+
+  document.querySelectorAll('.pb-slideshow').forEach(function(show){
+    var slides = Array.prototype.slice.call(show.querySelectorAll('.pb-slideshow-slide'));
+    var dots = Array.prototype.slice.call(show.querySelectorAll('.pb-slideshow-dot'));
+    if(slides.length < 2) return;
+    var interval = parseInt(show.getAttribute('data-interval'), 10) || 5000;
+    var current = 0, timer;
+
+    function show_(i){
+      current = (i + slides.length) % slides.length;
+      slides.forEach(function(s, idx){ s.classList.toggle('is-active', idx === current); });
+      dots.forEach(function(d, idx){ d.classList.toggle('is-active', idx === current); });
+    }
+    function restart(){ clearInterval(timer); timer = setInterval(function(){ show_(current + 1); }, interval); }
+
+    var prev = show.querySelector('.pb-slideshow-prev');
+    var next = show.querySelector('.pb-slideshow-next');
+    if(prev) prev.addEventListener('click', function(){ show_(current - 1); restart(); });
+    if(next) next.addEventListener('click', function(){ show_(current + 1); restart(); });
+    dots.forEach(function(d, idx){ d.addEventListener('click', function(){ show_(idx); restart(); }); });
+
+    restart();
+  });
 })();

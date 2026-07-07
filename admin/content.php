@@ -2,9 +2,10 @@
 require __DIR__.'/inc.php';
 
 const CONTENT_TYPES = [
-    'animal' => ['table'=>'animals', 'label'=>'Dieren', 'singular'=>'dier', 'view'=>'../animal.php?slug=', 'nav'=>'animals'],
-    'album'  => ['table'=>'albums',  'label'=>'Albums', 'singular'=>'album', 'view'=>'../album.php?slug=', 'nav'=>'albums'],
-    'post'   => ['table'=>'posts',   'label'=>'Blog',   'singular'=>'blogpost', 'view'=>'../post.php?slug=', 'nav'=>'posts'],
+    'animal'   => ['table'=>'animals',    'label'=>'Dieren',      'singular'=>'dier',       'view'=>'../animal.php?slug=',   'nav'=>'animals'],
+    'album'    => ['table'=>'albums',     'label'=>'Albums',      'singular'=>'album',      'view'=>'../album.php?slug=',    'nav'=>'albums'],
+    'post'     => ['table'=>'posts',      'label'=>'Blog',        'singular'=>'blogpost',   'view'=>'../post.php?slug=',     'nav'=>'posts'],
+    'category' => ['table'=>'categories', 'label'=>'Categorieën', 'singular'=>'categorie',  'view'=>'../category.php?slug=', 'nav'=>'categories'],
 ];
 
 $type = $_GET['type'] ?? '';
@@ -23,12 +24,25 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $base = $slug; $i = 2;
             $chk = db()->prepare("SELECT COUNT(*) c FROM $table WHERE slug=?");
             while(true){ $chk->execute([$slug]); if((int)$chk->fetch()['c']===0) break; $slug = $base.'-'.$i; $i++; }
-            $st = db()->prepare("INSERT INTO $table(title,slug,blocks,published) VALUES(?,?,?,0)");
-            $st->execute([$title, $slug, '[]']);
+            if($type === 'category'){
+                $parent_id = (int)($_POST['parent_id'] ?? 0) ?: null;
+                $st = db()->prepare('INSERT INTO categories(title,slug,parent_id,blocks,published) VALUES(?,?,?,?,0)');
+                $st->execute([$title, $slug, $parent_id, '[]']);
+            } else {
+                $st = db()->prepare("INSERT INTO $table(title,slug,blocks,published) VALUES(?,?,?,0)");
+                $st->execute([$title, $slug, '[]']);
+            }
             header('Location: page-edit.php?type='.$type.'&id='.db()->lastInsertId()); exit;
         }
     } elseif($action==='delete'){
         $id = (int)($_POST['id'] ?? 0);
+        if($type === 'category' && $id){
+            $st = db()->prepare('SELECT parent_id FROM categories WHERE id=?');
+            $st->execute([$id]);
+            $parentOfDeleted = $st->fetch()['parent_id'] ?? null;
+            db()->prepare('UPDATE categories SET parent_id=? WHERE parent_id=?')->execute([$parentOfDeleted, $id]);
+            db()->prepare('UPDATE animals SET category_id=NULL WHERE category_id=?')->execute([$id]);
+        }
         db()->prepare("DELETE FROM $table WHERE id=?")->execute([$id]);
     } elseif($action==='toggle_published'){
         $id = (int)($_POST['id'] ?? 0);
@@ -37,7 +51,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location: content.php?type='.$type); exit;
 }
 
-$items = db()->query("SELECT * FROM $table ORDER BY created_at DESC")->fetchAll();
+$items = $type === 'category' ? pbe_category_tree_flat() : db()->query("SELECT * FROM $table ORDER BY created_at DESC")->fetchAll();
 admin_header($info['label'], $info['nav']);
 ?>
 <div class="a-card">
@@ -46,6 +60,15 @@ admin_header($info['label'], $info['nav']);
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">
       <div class="a-field"><label>Titel van het nieuwe <?=e($info['singular'])?></label><input type="text" name="title" placeholder="Titel" required></div>
+      <?php if($type === 'category'): ?>
+      <div class="a-field">
+        <label>Bovenliggende categorie</label>
+        <select name="parent_id">
+          <option value="">Geen (hoofdcategorie)</option>
+          <?=pbe_category_options(null)?>
+        </select>
+      </div>
+      <?php endif; ?>
       <button class="a-btn" type="submit">+ Aanmaken</button>
     </form>
   </div>
@@ -57,7 +80,7 @@ admin_header($info['label'], $info['nav']);
     <tr><th>Titel</th><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
-      <td><strong><?=e($p['title'])?></strong></td>
+      <td><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
       <td><code><?=e($info['view'].$p['slug'])?></code></td>
       <td>
         <form method="post" style="display:inline">

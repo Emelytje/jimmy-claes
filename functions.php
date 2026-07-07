@@ -13,6 +13,51 @@ function db(){
 }
 function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function asset_v($absPath){ $v = @filemtime($absPath); return $v ?: time(); }
+
+// Bouwt een ingesprongen lijst van alle categorieën voor een <select>, met
+// optioneel een uitgesloten id + zijn afstammelingen (om te voorkomen dat een
+// categorie zichzelf of een eigen kind als bovenliggende categorie kiest).
+function pbe_category_options($selectedId, $excludeId=null){
+    $rows = db()->query('SELECT id, title, parent_id FROM categories ORDER BY sort_order, title')->fetchAll();
+    $byParent = [];
+    foreach($rows as $r){ $byParent[(int)$r['parent_id']][] = $r; }
+    $excludeIds = [];
+    if($excludeId){
+        $stack = [(int)$excludeId];
+        while($stack){
+            $cur = array_pop($stack); $excludeIds[$cur] = true;
+            foreach(($byParent[$cur] ?? []) as $child){ $stack[] = (int)$child['id']; }
+        }
+    }
+    $html = '';
+    $walk = function($parentId, $depth) use (&$walk, &$html, $byParent, $selectedId, $excludeIds){
+        foreach(($byParent[$parentId] ?? []) as $row){
+            if(isset($excludeIds[(int)$row['id']])) continue;
+            $html .= '<option value="'.(int)$row['id'].'" '.((int)$selectedId===(int)$row['id']?'selected':'').'>'.str_repeat('&mdash; ', $depth).e($row['title']).'</option>';
+            $walk((int)$row['id'], $depth+1);
+        }
+    };
+    $walk(0, 0);
+    return $html;
+}
+
+// Geeft alle categorieën terug als platte lijst in boomvolgorde, elk met een
+// toegevoegde 'depth' sleutel — handig om ingesprongen te tonen in een tabel.
+function pbe_category_tree_flat(){
+    $rows = db()->query('SELECT * FROM categories ORDER BY sort_order, title')->fetchAll();
+    $byParent = [];
+    foreach($rows as $r){ $byParent[(int)$r['parent_id']][] = $r; }
+    $out = [];
+    $walk = function($parentId, $depth) use (&$walk, &$out, $byParent){
+        foreach(($byParent[$parentId] ?? []) as $row){
+            $row['depth'] = $depth;
+            $out[] = $row;
+            $walk((int)$row['id'], $depth+1);
+        }
+    };
+    $walk(0, 0);
+    return $out;
+}
 function setting($key,$default=''){
     try{ $st=db()->prepare('SELECT value FROM settings WHERE name=?'); $st->execute([$key]); $r=$st->fetch(); return $r?$r['value']:$default; }catch(Exception $e){ return $default; }
 }
@@ -29,7 +74,7 @@ function notify_contact_message($name, $email, $message){
     try{ @mail($to, $subject, $body, $headers); }catch(Exception $e){}
 }
 function track_view($table, $id){
-    $allowed = ['pages','animals','albums','posts'];
+    $allowed = ['pages','animals','albums','posts','categories'];
     if(!in_array($table, $allowed, true) || !$id) return;
     try{ db()->prepare("UPDATE $table SET views = views + 1 WHERE id = ?")->execute([(int)$id]); }catch(Exception $e){}
 }
@@ -48,6 +93,29 @@ function csrf_verify(){
         $ok = !empty($_POST['csrf']) && !empty($_SESSION['csrf']) && hash_equals($_SESSION['csrf'], $_POST['csrf']);
         if(!$ok){ http_response_code(400); die('Beveiligingscontrole mislukt (csrf). Ga terug, herlaad de pagina en probeer opnieuw.'); }
     }
+}
+
+// Bouwt recursief de dieren-categorieboom op voor de navigatie. Een
+// categorie met eigen sub-categorieën wordt een geneste dropdown; een
+// categorie zonder kinderen wordt gewoon een link (geen lege pijl-naar-niets).
+function nav_render_categories($parentId=null){
+    if($parentId === null){
+        $rows = db()->query('SELECT id, title, slug FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
+    } else {
+        $st = db()->prepare('SELECT id, title, slug FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
+        $st->execute([$parentId]);
+        $rows = $st->fetchAll();
+    }
+    $html = '';
+    foreach($rows as $c){
+        $childHtml = nav_render_categories((int)$c['id']);
+        if($childHtml !== ''){
+            $html .= '<div class="nav-dropdown"><a href="category.php?slug='.e($c['slug']).'" class="nav-dropdown-toggle">'.e($c['title']).'</a><div class="nav-dropdown-menu">'.$childHtml.'</div></div>';
+        } else {
+            $html .= '<a href="category.php?slug='.e($c['slug']).'">'.e($c['title']).'</a>';
+        }
+    }
+    return $html;
 }
 
 function upload_image($file){
@@ -90,9 +158,12 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     echo '</head><body>';
     echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
     echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Dieren door de lens')).'</a><nav><a href="index.php">Home</a>';
-    echo '<div class="nav-dropdown"><a href="animals.php" class="nav-dropdown-toggle">Dieren</a><div class="nav-dropdown-menu">';
-    try{ foreach(db()->query('SELECT title,slug FROM animals WHERE published=1 ORDER BY sort_order,title') as $a){ echo '<a href="animal.php?slug='.e($a['slug']).'">'.e($a['title']).'</a>'; }}catch(Exception $e){}
-    echo '</div></div>';
+    try{ $catNav = nav_render_categories(); }catch(Exception $e){ $catNav = ''; }
+    if($catNav !== ''){
+        echo '<div class="nav-dropdown"><a href="animals.php" class="nav-dropdown-toggle">Dieren</a><div class="nav-dropdown-menu">'.$catNav.'</div></div>';
+    } else {
+        echo '<a href="animals.php">Dieren</a>';
+    }
     echo '<a href="albums.php">Albums</a>';
     echo '<a href="blog.php">Blog</a>';
     try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}

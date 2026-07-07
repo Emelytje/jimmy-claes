@@ -126,14 +126,14 @@ function pb_google_fonts_link_href($families){
     return 'https://fonts.googleapis.com/css2?'.implode('&',$parts).'&display=swap';
 }
 
-function render_blocks($blocks, $depth=0){
+function render_blocks($blocks, $depth=0, $ctx=[]){
     if(!is_array($blocks) || $depth > 2) return '';
     $out = '';
-    foreach($blocks as $block){ $out .= render_block($block, $depth); }
+    foreach($blocks as $block){ $out .= render_block($block, $depth, $ctx); }
     return $out;
 }
 
-function render_block($block, $depth=0){
+function render_block($block, $depth=0, $ctx=[]){
     $type = $block['type'] ?? '';
     $data = $block['data'] ?? [];
     $settings = $block['settings'] ?? [];
@@ -148,9 +148,12 @@ function render_block($block, $depth=0){
         case 'button':     $inner = pb_render_button($data); break;
         case 'divider':    $inner = pb_render_divider($data); break;
         case 'quote':      $inner = pb_render_quote($data); break;
-        case 'columns':    $inner = pb_render_columns($data, $depth); break;
-        case 'row':        $inner = pb_render_row($data, $depth); break;
+        case 'columns':    $inner = pb_render_columns($data, $depth, $ctx); break;
+        case 'row':        $inner = pb_render_row($data, $depth, $ctx); break;
         case 'recent':     $inner = pb_render_recent($data); break;
+        case 'subcategories': $inner = pb_render_subcategories($data, $ctx); break;
+        case 'photocount': $inner = pb_render_photocount($data); break;
+        case 'slideshow':  $inner = pb_render_slideshow($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
         case 'contact':    $inner = pb_render_contact($data); break;
         case 'html':       $inner = (string)($data['code'] ?? ''); break;
@@ -263,18 +266,18 @@ function pb_render_quote($d){
     return '<blockquote class="pb-quote"><p>'.e($d['text'] ?? '').'</p>'.$author.'</blockquote>';
 }
 
-function pb_render_columns($d, $depth){
+function pb_render_columns($d, $depth, $ctx=[]){
     $cols = $d['cols'] ?? [];
     $count = max(1, min(4, count($cols) ?: (int)($d['count'] ?? 2)));
     $gap = isset($d['gap']) ? (int)$d['gap'] : 32;
     $html = '<div class="pb-columns-grid pb-columns-'.$count.'" style="--pb-gap:'.$gap.'px">';
     foreach($cols as $col){
-        $html .= '<div class="pb-column">'.render_blocks($col['blocks'] ?? [], $depth+1).'</div>';
+        $html .= '<div class="pb-column">'.render_blocks($col['blocks'] ?? [], $depth+1, $ctx).'</div>';
     }
     return $html.'</div>';
 }
 
-function pb_render_row($d, $depth){
+function pb_render_row($d, $depth, $ctx=[]){
     $cells = $d['cells'] ?? [];
     if(!$cells) return '';
     $gap = isset($d['gap']) ? (int)$d['gap'] : 24;
@@ -283,7 +286,7 @@ function pb_render_row($d, $depth){
     $count = count($cells);
     foreach($cells as $cell){
         $w = isset($cell['widthPct']) ? max(5, min(95, (float)$cell['widthPct'])) : (100 / max(1,$count));
-        $html .= '<div class="pb-cell" style="width:'.round($w,4).'%">'.render_blocks($cell['blocks'] ?? [], $depth+1).'</div>';
+        $html .= '<div class="pb-cell" style="width:'.round($w,4).'%">'.render_blocks($cell['blocks'] ?? [], $depth+1, $ctx).'</div>';
     }
     return $html.'</div>';
 }
@@ -346,4 +349,61 @@ function pb_render_contact($d){
         .'<label>Bericht<textarea name="message" rows="5" required></textarea></label>'
         .'<button type="submit" class="pb-btn pb-btn-solid pb-btn-md">'.e($d['buttonText'] ?? 'Versturen').'</button>'
         .'</form>';
+}
+
+function pb_render_subcategories($d, $ctx=[]){
+    $catId = (int)($ctx['category_id'] ?? 0);
+    if(!$catId) return '';
+    $rows = [];
+    $st = db()->prepare('SELECT title, slug, description, cover_image FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
+    $st->execute([$catId]);
+    foreach($st as $r){ $r['url'] = 'category.php?slug='.$r['slug']; $rows[] = $r; }
+    $st = db()->prepare('SELECT title, slug, description, cover_image FROM animals WHERE category_id=? AND published=1 ORDER BY sort_order, title');
+    $st->execute([$catId]);
+    foreach($st as $r){ $r['url'] = 'animal.php?slug='.$r['slug']; $rows[] = $r; }
+    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog niets in deze categorie.</p>';
+    $html = '<div class="grid">';
+    foreach($rows as $r){
+        $img = !empty($r['cover_image']) ? '<img src="'.e($r['cover_image']).'" alt="" loading="lazy">' : '';
+        $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3>'
+            .(!empty($r['description']) ? '<p>'.e($r['description']).'</p>' : '')
+            .'<a class="btn" href="'.e($r['url']).'">Bekijk</a></div></article>';
+    }
+    return $html.'</div>';
+}
+
+function pb_count_total_photos(){
+    try{
+        $a = (int)db()->query('SELECT COUNT(*) c FROM photos')->fetch()['c'];
+        $b = (int)db()->query('SELECT COUNT(*) c FROM album_photos')->fetch()['c'];
+        return $a + $b;
+    }catch(Exception $e){ return 0; }
+}
+
+function pb_render_photocount($d){
+    $count = pb_count_total_photos();
+    $label = trim($d['label'] ?? '') ?: "foto's op deze website";
+    return '<div class="pb-photocount"><span class="pb-photocount-num">'.number_format($count, 0, ',', '.').'</span><span class="pb-photocount-label">'.e($label).'</span></div>';
+}
+
+function pb_render_slideshow($d){
+    $images = $d['images'] ?? [];
+    if(!$images) return '<div class="pbe-empty-col" style="min-height:140px">Nog geen foto\'s in de slideshow.</div>';
+    $interval = max(2, min(15, (int)($d['interval'] ?? 5)));
+    $html = '<div class="pb-slideshow" data-interval="'.$interval.'000">';
+    $html .= '<div class="pb-slideshow-track">';
+    foreach($images as $i => $img){
+        if(empty($img['src'])) continue;
+        $html .= '<figure class="pb-slideshow-slide'.($i===0?' is-active':'').'"><img src="'.e($img['src']).'" alt="'.e($img['alt'] ?? '').'" loading="lazy">'
+            .(!empty($img['caption']) ? '<figcaption>'.e($img['caption']).'</figcaption>' : '').'</figure>';
+    }
+    $html .= '</div>';
+    if(count($images) > 1){
+        $html .= '<button type="button" class="pb-slideshow-nav pb-slideshow-prev" aria-label="Vorige">&#8249;</button>';
+        $html .= '<button type="button" class="pb-slideshow-nav pb-slideshow-next" aria-label="Volgende">&#8250;</button>';
+        $html .= '<div class="pb-slideshow-dots">';
+        foreach($images as $i => $img){ $html .= '<button type="button" class="pb-slideshow-dot'.($i===0?' is-active':'').'" data-slide="'.$i.'" aria-label="Ga naar foto '.($i+1).'"></button>'; }
+        $html .= '</div>';
+    }
+    return $html.'</div>';
 }
