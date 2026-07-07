@@ -109,14 +109,15 @@ var BLOCKS = {
   image: {
     label:'Foto', icon:'&#128247;', group:'Media',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {src:'', alt:'', caption:'', width:'contained', link:'', aspectRatio:null}; },
+    data:function(){ return {src:'', alt:'', caption:'', width:'contained', link:'', aspectRatio:null, widthPct:''}; },
     render:function(d, s, id){
       if(!d.src) return wrap('image', id, s, '<div class="pbe-empty-col" style="min-height:140px">Geen foto gekozen — kies er een rechts &#8594;</div>');
       var cls = d.width==='full' ? 'pb-img-full' : 'pb-img-contained';
       var arStyle = d.aspectRatio ? ' style="aspect-ratio:'+d.aspectRatio+';object-fit:cover;height:auto"' : '';
       var img = '<img src="'+esc(imgSrc(d.src))+'" alt="'+esc(d.alt)+'" class="'+cls+'"'+arStyle+'>';
       var cap = '<figcaption data-edit-field="caption">'+esc(d.caption||'')+'</figcaption>';
-      return wrap('image', id, s, '<figure class="pb-figure">'+img+cap+'</figure>');
+      var figStyle = (d.widthPct!=null && d.widthPct!=='') ? ' style="max-width:'+d.widthPct+'%;margin-left:auto;margin-right:auto"' : '';
+      return wrap('image', id, s, '<figure class="pb-figure"'+figStyle+'>'+img+cap+'</figure>');
     }
   },
   gallery: {
@@ -463,7 +464,7 @@ function computeEdgeDrop(clientX, clientY){
   if(!parentRow && !isTop){ pendingEdgeDrop = null; clearEdgeIndicator(); return; }
 
   var rect = related.getBoundingClientRect();
-  var zone = rect.width * 0.25;
+  var zone = Math.min(rect.width * 0.18, 140);
   var side = null;
   if(clientX - rect.left < zone) side = 'left';
   else if(rect.right - clientX < zone) side = 'right';
@@ -939,7 +940,11 @@ function contentFieldsHtml(block){
       html += '<div class="pbe-field"><label>Alt-tekst (SEO)</label><input type="text" data-bind="data.alt" value="'+esc(d.alt||'')+'"></div>';
       html += '<div class="pbe-field"><label>Link (optioneel)</label><input type="text" data-bind="data.link" value="'+esc(d.link||'')+'" placeholder="https://..."></div>';
       html += '<div class="pbe-field"><label>Breedte</label><div class="pbe-seg" data-seg="data.width"><button type="button" data-val="contained" class="'+(d.width!=='full'?'is-active':'')+'">Passend</button><button type="button" data-val="full" class="'+(d.width==='full'?'is-active':'')+'">Volledig</button></div></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Tip: dubbelklik het bijschrift onder de foto om het te wijzigen.</p>';
+      html += '<div class="pbe-field"><label>Aangepaste breedte (% — laat leeg voor automatisch)</label><div style="display:flex;gap:8px;align-items:center">'
+        + '<input type="range" min="10" max="100" style="flex:1" data-bind="data.widthPct" value="'+(d.widthPct!==''&&d.widthPct!=null?d.widthPct:100)+'">'
+        + '<input type="number" min="10" max="100" style="width:60px" data-bind="data.widthPct" value="'+esc(d.widthPct!=null?d.widthPct:'')+'"></div>'
+        + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="data.widthPct" style="margin-top:4px">wis (automatisch)</button></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">Tip: sleep de foto tegen de rand van een ander blok om ze naast elkaar te zetten, of gebruik hierboven een vaste breedte om de foto kleiner te maken. Dubbelklik het bijschrift om het te wijzigen.</p>';
       break;
     case 'gallery':
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
@@ -1019,9 +1024,9 @@ settingsEl.addEventListener('input', function(e){
   var path = el.getAttribute('data-bind');
   var val = el.type === 'checkbox' ? el.checked : el.value;
   set(block, path, val);
-  // sync sibling color inputs
-  var row = el.closest('.pbe-color-row');
-  if(row){ row.querySelectorAll('[data-bind="'+path+'"]').forEach(function(sib){ if(sib!==el) sib.value = val; }); }
+  // sync any other input bound to the same path (e.g. color swatch + hex
+  // text, or a range slider + its numeric twin)
+  settingsEl.querySelectorAll('[data-bind="'+path+'"]').forEach(function(sib){ if(sib!==el) sib.value = val; });
   updateBlockDom(block.id);
 });
 settingsEl.addEventListener('click', function(e){
