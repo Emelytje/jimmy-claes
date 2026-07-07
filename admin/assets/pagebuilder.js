@@ -109,7 +109,7 @@ var BLOCKS = {
   image: {
     label:'Foto', icon:'&#128247;', group:'Media',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {src:'', alt:'', caption:'', width:'contained', link:'', aspectRatio:null, widthPct:''}; },
+    data:function(){ return {src:'', alt:'', caption:'', width:'full', link:'', aspectRatio:null, widthPct:''}; },
     render:function(d, s, id){
       if(!d.src) return wrap('image', id, s, '<div class="pbe-empty-col" style="min-height:140px">Geen foto gekozen — kies er een rechts &#8594;</div>');
       var cls = d.width==='full' ? 'pb-img-full' : 'pb-img-contained';

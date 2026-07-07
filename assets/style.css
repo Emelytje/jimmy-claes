@@ -132,6 +132,7 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-figure{ margin:0; }
 .pb-figure img{ border-radius:var(--radius-md); width:100%; box-shadow:var(--shadow-sm); }
 .pb-img-contained{ max-width:760px; margin:0 auto; }
+.pb-cell .pb-img-contained{ max-width:none; margin:0; }
 .pb-figure figcaption{ text-align:center; color:var(--pb-text-color,var(--ink-soft)); font-size:.88rem; margin-top:10px; }
 
 .pb-gallery{ display:grid; grid-template-columns:repeat(var(--pb-cols,3),1fr); gap:20px; }
