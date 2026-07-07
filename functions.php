@@ -17,6 +17,17 @@ function setting($key,$default=''){
     try{ $st=db()->prepare('SELECT value FROM settings WHERE name=?'); $st->execute([$key]); $r=$st->fetch(); return $r?$r['value']:$default; }catch(Exception $e){ return $default; }
 }
 function set_setting($key,$value){ $st=db()->prepare('INSERT INTO settings(name,value) VALUES(?,?) ON DUPLICATE KEY UPDATE value=VALUES(value)'); $st->execute([$key,$value]); }
+function notify_contact_message($name, $email, $message){
+    $to = setting('contact_email', '');
+    if($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return;
+    $site = setting('site_title', 'Dieren door de lens');
+    $subject = 'Nieuw contactbericht via '.$site;
+    $body = "Naam: $name\nE-mail: ".($email ?: '(niet opgegeven)')."\n\nBericht:\n$message";
+    $headers = "Content-Type: text/plain; charset=UTF-8\r\n";
+    $headers .= 'From: '.$site.' <no-reply@'.($_SERVER['HTTP_HOST'] ?? 'localhost').">\r\n";
+    if($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) $headers .= 'Reply-To: '.$email."\r\n";
+    try{ @mail($to, $subject, $body, $headers); }catch(Exception $e){}
+}
 function track_view($table, $id){
     $allowed = ['pages','animals','albums','posts'];
     if(!in_array($table, $allowed, true) || !$id) return;
