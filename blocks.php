@@ -176,15 +176,22 @@ function pb_render_image($d){
     if($src==='') return '';
     $alt = e($d['alt'] ?? '');
     $cls = ($d['width'] ?? 'contained') === 'full' ? 'pb-img-full' : 'pb-img-contained';
-    $arStyle = '';
+    $imgStyleParts = [];
     if(!empty($d['aspectRatio'])){
         $ar = pb_safe_aspect_ratio($d['aspectRatio']);
-        if($ar) $arStyle = ' style="aspect-ratio:'.e($ar).';object-fit:cover;height:auto"';
+        if($ar){ $imgStyleParts[] = 'aspect-ratio:'.$ar; $imgStyleParts[] = 'object-fit:cover'; $imgStyleParts[] = 'height:auto'; }
     }
-    $img = '<img src="'.$src.'" alt="'.$alt.'" loading="lazy" class="'.$cls.'"'.$arStyle.'>';
+    $imgStyle = $imgStyleParts ? ' style="'.e(implode(';',$imgStyleParts)).'"' : '';
+    $img = '<img src="'.$src.'" alt="'.$alt.'" loading="lazy" class="'.$cls.'"'.$imgStyle.'>';
     if(!empty($d['link'])) $img = '<a href="'.e($d['link']).'">'.$img.'</a>';
     $caption = !empty($d['caption']) ? '<figcaption>'.e($d['caption']).'</figcaption>' : '';
-    return '<figure class="pb-figure">'.$img.$caption.'</figure>';
+
+    $figureStyle = '';
+    if(isset($d['widthPct']) && $d['widthPct']!==''){
+        $wp = max(10, min(100, (float)$d['widthPct']));
+        $figureStyle = ' style="max-width:'.$wp.'%;margin-left:auto;margin-right:auto"';
+    }
+    return '<figure class="pb-figure"'.$figureStyle.'>'.$img.$caption.'</figure>';
 }
 
 function pb_safe_aspect_ratio($v){
