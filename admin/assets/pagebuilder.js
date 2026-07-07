@@ -1020,7 +1020,8 @@ function contentFieldsHtml(block){
       html += '<p style="font-size:.78rem;color:#8a7c6c">Geavanceerd: wordt ongefilterd op de pagina geplaatst.</p>';
       break;
     case 'row':
-      html += '<label class="pbe-check-inline"><input type="checkbox" data-bind="data.mobileStack" '+((!('mobileStack' in d)||d.mobileStack)?'checked':'')+'> Naast elkaar houden op mobiel</label>';
+      html += '<label class="pbe-check-inline"><input type="checkbox" data-bind="data.mobileStack" '+((!('mobileStack' in d)||d.mobileStack)?'checked':'')+'> Onder elkaar tonen op mobiel</label>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:4px">Uitvinken houdt de blokken naast elkaar, ook op een telefoon.</p>';
       html += '<div class="pbe-field" style="margin-top:14px"><label>Tussenruimte (px)</label><input type="number" min="0" max="120" data-bind="data.gap" value="'+(d.gap!=null?d.gap:24)+'"></div>';
       html += '<button type="button" class="pbe-upload-btn" id="pbeUnwrapRow" style="margin-top:10px">Rij opheffen (blokken terugzetten)</button>';
       html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:10px">Tip: sleep de deelstreep tussen de foto\'s/blokken om de breedte te verdelen, of gebruik de resize-handles wanneer een blok geselecteerd is.</p>';

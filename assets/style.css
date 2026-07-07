@@ -228,7 +228,8 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 }
 @media(max-width:760px){
   .nav-toggle{ display:block; }
-  .top{ padding:18px 24px; }
+  .top{ padding:18px 76px 18px 24px; }
+  .brand{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .top nav{
     position:fixed; inset:0; z-index:50; background:var(--paper);
     flex-direction:column; justify-content:center; align-items:center; gap:26px;
@@ -236,7 +237,8 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
   }
   body.nav-open .top nav{ transform:translateX(0); }
   .nav-dropdown{ display:flex; flex-direction:column; align-items:center; gap:14px; }
-  .nav-dropdown-menu{ display:flex; position:static; flex-direction:column; align-items:center; gap:14px; border:none; box-shadow:none; padding:0; background:none; font-size:.9rem; }
+  .nav-dropdown-menu{ display:none; position:static; flex-direction:column; align-items:center; gap:14px; border:none; box-shadow:none; padding:0; background:none; font-size:.9rem; }
+  .nav-dropdown.is-open .nav-dropdown-menu{ display:flex; }
   .wrap{ padding:40px 18px; }
   .hero{ padding:70px 20px; }
   .pb-hero{ padding:80px 20px; }
