@@ -729,6 +729,99 @@ canvasEl.addEventListener('dblclick', function(e){
 });
 
 /* ============================================================
+   Rich-text toolbar — per-selection bold/italic/underline/color/
+   font-size/link, for [data-edit-html] fields (i.e. text blocks).
+   ============================================================ */
+var rtToolbar = document.createElement('div');
+rtToolbar.className = 'pbe-rt-toolbar';
+rtToolbar.innerHTML =
+  '<button type="button" data-rt="bold" title="Vet"><b>V</b></button>'
+  + '<button type="button" data-rt="italic" title="Cursief"><i>C</i></button>'
+  + '<button type="button" data-rt="underline" title="Onderstreept"><u>O</u></button>'
+  + '<input type="color" data-rt="color" title="Tekstkleur" value="#222222">'
+  + '<input type="number" data-rt="fontsize" title="Lettergrootte (px)" min="8" max="96" placeholder="px" style="width:52px">'
+  + '<button type="button" data-rt="link" title="Link toevoegen">&#128279;</button>';
+document.body.appendChild(rtToolbar);
+
+var rtActiveField = null;
+function rtHide(){ rtToolbar.classList.remove('is-open'); rtActiveField = null; }
+function rtShow(field, range){
+  rtActiveField = field;
+  var rect = range.getBoundingClientRect();
+  rtToolbar.classList.add('is-open');
+  var top = rect.top + window.scrollY - rtToolbar.offsetHeight - 8;
+  var left = rect.left + window.scrollX + (rect.width/2) - (rtToolbar.offsetWidth/2);
+  rtToolbar.style.top = Math.max(8, top)+'px';
+  rtToolbar.style.left = Math.max(8, left)+'px';
+}
+var rtSavedRange = null;
+document.addEventListener('selectionchange', function(){
+  if(document.activeElement && rtToolbar.contains(document.activeElement)) return; // interacting with the toolbar itself
+  var sel = window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.rangeCount){ rtHide(); return; }
+  var range = sel.getRangeAt(0);
+  var field = range.commonAncestorContainer;
+  field = field.nodeType===1 ? field : field.parentElement;
+  field = field ? field.closest('[data-edit-html][contenteditable="true"]') : null;
+  if(!field){ rtHide(); return; }
+  rtSavedRange = range.cloneRange();
+  rtShow(field, range);
+});
+// Clicking a toolbar <input> (color/fontsize) blurs the contenteditable field
+// and can clear its selection, so the range is restored from rtSavedRange
+// right before styling instead of trusting the live window selection.
+function rtApplyStyle(styleDecl){
+  if(!rtSavedRange) return;
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(rtSavedRange);
+  var range = sel.getRangeAt(0);
+  var span = document.createElement('span');
+  span.style.cssText = styleDecl;
+  try{
+    range.surroundContents(span);
+  }catch(e){
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  var newRange = document.createRange();
+  newRange.selectNodeContents(span);
+  sel.addRange(newRange);
+  rtSavedRange = newRange.cloneRange();
+}
+rtToolbar.addEventListener('mousedown', function(e){
+  if(e.target.closest('button[data-rt]')) e.preventDefault(); // keep focus/selection in the field for exec-command buttons
+});
+rtToolbar.addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-rt]');
+  if(!btn || !rtActiveField) return;
+  var action = btn.getAttribute('data-rt');
+  if(action==='bold') document.execCommand('bold');
+  else if(action==='italic') document.execCommand('italic');
+  else if(action==='underline') document.execCommand('underline');
+  else if(action==='link'){
+    var url = prompt('Link naar welke URL?', 'https://');
+    if(url) document.execCommand('createLink', false, url);
+  }
+  // Don't call updateBlockDom() here: it replaces the block's DOM wholesale,
+  // which would destroy this still-focused contenteditable field (and its
+  // live selection) mid-session, breaking any further formatting clicks.
+  syncEditableField(rtActiveField);
+});
+rtToolbar.querySelector('[data-rt="color"]').addEventListener('input', function(e){
+  if(!rtActiveField) return;
+  rtApplyStyle('color:'+e.target.value);
+  syncEditableField(rtActiveField);
+});
+rtToolbar.querySelector('[data-rt="fontsize"]').addEventListener('change', function(e){
+  if(!rtActiveField || !e.target.value) return;
+  rtApplyStyle('font-size:'+e.target.value+'px');
+  syncEditableField(rtActiveField);
+});
+
+/* ============================================================
    Resize handles (row cell width + image height/aspect ratio)
    ============================================================ */
 function attachResizeHandles(){
@@ -1015,6 +1108,7 @@ function contentFieldsHtml(block){
       }).join('') + '</div>';
       html += '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen</button>';
       html += '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">';
+      if(googleDriveConfigured) html += '<button type="button" class="pbe-upload-btn pbe-drive-btn" id="pbeGalleryDrive" style="margin-top:6px">Kies uit Google Drive</button>';
       html += '<div class="pbe-row" style="margin-top:14px"><div class="pbe-field"><label>Kolommen</label><select data-bind="data.columns">'+[2,3,4].map(function(c){return '<option value="'+c+'" '+(d.columns==c?'selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
         + '<div class="pbe-field"><label>Layout</label><div class="pbe-seg" data-seg="data.layout"><button type="button" data-val="grid" class="'+(d.layout!=='masonry'?'is-active':'')+'">Grid</button><button type="button" data-val="masonry" class="'+(d.layout==='masonry'?'is-active':'')+'">Pinterest</button></div></div></div>';
       break;
@@ -1071,6 +1165,7 @@ function contentFieldsHtml(block){
       }).join('') + '</div>';
       html += '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen</button>';
       html += '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">';
+      if(googleDriveConfigured) html += '<button type="button" class="pbe-upload-btn pbe-drive-btn" id="pbeGalleryDrive" style="margin-top:6px">Kies uit Google Drive</button>';
       html += '<div class="pbe-field" style="margin-top:14px"><label>Wisseltijd (seconden)</label><input type="number" min="2" max="15" data-bind="data.interval" value="'+(d.interval!=null?d.interval:5)+'"></div>';
       break;
     case 'photocount':
@@ -1089,6 +1184,7 @@ function imageFieldHtml(src, fieldKey, label){
   if(src) html += '<img src="'+esc(imgSrc(src))+'" style="width:100%;border-radius:8px;margin-bottom:8px">';
   html += '<button type="button" class="pbe-upload-btn" data-image-field="'+fieldKey+'">'+(src?'Andere foto kiezen':'Foto uploaden')+'</button>';
   html += '<input type="file" accept="image/*" style="display:none" data-image-file="'+fieldKey+'">';
+  if(googleDriveConfigured) html += '<button type="button" class="pbe-upload-btn pbe-drive-btn" data-drive-field="'+fieldKey+'" style="margin-top:6px">Kies uit Google Drive</button>';
   if(src) html += '<button type="button" class="pbe-clear-btn" data-clear-image="'+fieldKey+'" style="margin-top:8px">Foto verwijderen</button>';
   html += '</div>';
   return html;
@@ -1209,6 +1305,17 @@ function bindImageUploadButtons(block){
       updateBlockDom(block.id);
     });
   });
+  settingsEl.querySelectorAll('[data-drive-field]').forEach(function(btn){
+    var key = btn.getAttribute('data-drive-field');
+    btn.addEventListener('click', function(){
+      var original = btn.textContent;
+      btn.textContent = 'Bezig...';
+      openGooglePicker().then(function(path){
+        if(path){ block.data[key] = path; renderSettingsPanel(); updateBlockDom(block.id); }
+        else btn.textContent = original;
+      }).catch(function(err){ alert(err.message||err); btn.textContent = original; });
+    });
+  });
 }
 function bindGalleryButtons(block){
   var addBtn = document.getElementById('pbeGalleryAdd');
@@ -1225,6 +1332,18 @@ function bindGalleryButtons(block){
       updateBlockDom(block.id);
     }).catch(function(err){ alert(err); }).finally(function(){ addBtn.textContent = "+ Foto's toevoegen"; });
   });
+  var driveBtn = document.getElementById('pbeGalleryDrive');
+  if(driveBtn){
+    driveBtn.addEventListener('click', function(){
+      var original = driveBtn.textContent;
+      driveBtn.textContent = 'Bezig...';
+      openGooglePicker().then(function(path){
+        if(path) block.data.images.push({src:path, alt:'', caption:''});
+        renderSettingsPanel();
+        updateBlockDom(block.id);
+      }).catch(function(err){ alert(err.message||err); driveBtn.textContent = original; });
+    });
+  }
 }
 
 function uploadImage(file){
@@ -1234,6 +1353,81 @@ function uploadImage(file){
   return fetch('upload-block-image.php', { method:'POST', body: fd, credentials:'same-origin' })
     .then(function(r){ return r.json(); })
     .then(function(j){ if(!j.ok) throw new Error(j.error||'Upload mislukt'); return j.path; });
+}
+
+/* ============================================================
+   Google Drive picker — lets you pick an image from Drive instead
+   of your own device; the picked file is fetched client-side and
+   piped through the normal upload endpoint so it ends up stored
+   on this site the same as any other upload.
+   ============================================================ */
+var googleApiKey = PAGE.googleApiKey || '';
+var googleClientId = PAGE.googleClientId || '';
+var googleDriveConfigured = !!(googleApiKey && googleClientId);
+var gPickerReady = false, gTokenClient = null, gAccessToken = null;
+
+function ensureGooglePickerLoaded(){
+  if(!googleDriveConfigured) return Promise.reject(new Error('Google Drive is niet ingesteld (zie Site-instellingen).'));
+  if(gPickerReady) return Promise.resolve();
+  return new Promise(function(resolve, reject){
+    var s1 = document.createElement('script');
+    s1.src = 'https://apis.google.com/js/api.js';
+    s1.onload = function(){
+      gapi.load('picker', function(){
+        var s2 = document.createElement('script');
+        s2.src = 'https://accounts.google.com/gsi/client';
+        s2.onload = function(){ gPickerReady = true; resolve(); };
+        s2.onerror = function(){ reject(new Error('Kon Google-inlogscript niet laden.')); };
+        document.head.appendChild(s2);
+      });
+    };
+    s1.onerror = function(){ reject(new Error('Kon Google Picker niet laden.')); };
+    document.head.appendChild(s1);
+  });
+}
+// Resolves with an uploaded server path (same shape as uploadImage()), or
+// null if the user closed the picker without choosing anything.
+function openGooglePicker(){
+  return ensureGooglePickerLoaded().then(function(){
+    return new Promise(function(resolve, reject){
+      function showPicker(){
+        var view = new google.picker.DocsView(google.picker.ViewId.DOCS_IMAGES).setIncludeFolders(true);
+        var picker = new google.picker.PickerBuilder()
+          .addView(view)
+          .setOAuthToken(gAccessToken)
+          .setDeveloperKey(googleApiKey)
+          .setCallback(function(data){
+            if(data.action === google.picker.Action.PICKED){
+              var doc = data.docs[0];
+              fetch('https://www.googleapis.com/drive/v3/files/'+doc.id+'?alt=media', {
+                headers: { Authorization: 'Bearer '+gAccessToken }
+              }).then(function(r){
+                if(!r.ok) throw new Error('Kon bestand niet ophalen uit Drive.');
+                return r.blob();
+              }).then(function(blob){
+                var namedBlob = new File([blob], doc.name || 'drive-foto', { type: blob.type || doc.mimeType || 'image/jpeg' });
+                return uploadImage(namedBlob);
+              }).then(resolve).catch(reject);
+            } else if(data.action === google.picker.Action.CANCEL){
+              resolve(null);
+            }
+          })
+          .build();
+        picker.setVisible(true);
+      }
+      if(gAccessToken){ showPicker(); return; }
+      gTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: googleClientId,
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
+        callback: function(resp){
+          if(resp.error){ reject(new Error('Google-autorisatie mislukt.')); return; }
+          gAccessToken = resp.access_token;
+          showPicker();
+        }
+      });
+      gTokenClient.requestAccessToken();
+    });
+  });
 }
 
 /* ============================================================
@@ -1311,6 +1505,21 @@ if(contentType === 'page'){
         coverBtn.textContent = 'Andere foto kiezen';
         markDirty();
       }).catch(function(err){ alert(err); coverBtn.textContent = 'Foto uploaden'; });
+    });
+  }
+  var coverDriveBtn = document.getElementById('pbeCoverDrive');
+  if(coverDriveBtn){
+    coverDriveBtn.addEventListener('click', function(){
+      var original = coverDriveBtn.textContent;
+      coverDriveBtn.textContent = 'Bezig...';
+      openGooglePicker().then(function(path){
+        if(path){
+          coverImage = path;
+          if(coverBtn) coverBtn.textContent = 'Andere foto kiezen';
+          markDirty();
+        }
+        coverDriveBtn.textContent = original;
+      }).catch(function(err){ alert(err.message||err); coverDriveBtn.textContent = original; });
     });
   }
 }

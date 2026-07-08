@@ -79,7 +79,7 @@ footer{ text-align:center; padding:48px 24px 64px; color:var(--ink-soft); font-s
 footer .secret{ color:inherit; }
 
 /* ---------- hero (index/animal/album) ---------- */
-.hero{ background:linear-gradient(180deg,var(--accent),var(--paper)); text-align:center; padding:100px 24px; }
+.hero{ background:var(--accent); text-align:center; padding:100px 24px; }
 .hero > div{ max-width:720px; margin:0 auto; }
 .hero p{ color:var(--ink-soft); font-size:1.15rem; }
 
@@ -188,7 +188,7 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-hero-inner{ position:relative; z-index:2; max-width:720px; }
 .pb-hero-has-bg h1,.pb-hero-has-bg .pb-hero-subtitle{ color:var(--pb-text-color,#fff); }
 .pb-hero-subtitle{ font-size:1.2rem; color:var(--pb-text-color,var(--ink-soft)); margin-bottom:28px; }
-.pb-hero:not(.pb-hero-has-bg){ background:linear-gradient(180deg,var(--accent),var(--paper)); }
+.pb-hero:not(.pb-hero-has-bg){ background:var(--accent); }
 
 .pb-contact-form{ max-width:560px; margin:0 auto; text-align:left; }
 .pb-contact-form label{ margin-bottom:16px; }

@@ -35,6 +35,8 @@ $initial = [
     'description' => $typeInfo['desc_col'] ? ($page[$typeInfo['desc_col']] ?? '') : '',
     'blocks' => $blocks,
     'csrf' => csrf_token(),
+    'googleApiKey' => setting('google_api_key', ''),
+    'googleClientId' => setting('google_client_id', ''),
 ];
 ?><!doctype html>
 <html lang="nl">
@@ -89,6 +91,9 @@ $initial = [
       <?php if(!empty($page['cover_image'])): ?><img src="../<?=e($page['cover_image'])?>" style="width:100%;border-radius:8px;margin-bottom:8px"><?php endif; ?>
       <button type="button" class="pbe-upload-btn" id="pbeCoverUploadBtn"><?=!empty($page['cover_image'])?'Andere foto kiezen':'Foto uploaden'?></button>
       <input type="file" accept="image/*" style="display:none" id="pbeCoverFile">
+      <?php if(setting('google_api_key','') && setting('google_client_id','')): ?>
+      <button type="button" class="pbe-upload-btn pbe-drive-btn" id="pbeCoverDrive" style="margin-top:6px">Kies uit Google Drive</button>
+      <?php endif; ?>
     </div>
     <div class="pbe-field">
       <label>Korte omschrijving</label>

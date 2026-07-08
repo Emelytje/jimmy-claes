@@ -2,6 +2,7 @@
 require __DIR__.'/inc.php';
 
 $fields = ['site_title','intro_title','intro_text','primary_color','accent_color','font','meta_description','contact_email'];
+$googleFields = ['google_api_key','google_client_id'];
 $saved = false;
 $accountSaved = false;
 $accountError = '';
@@ -43,6 +44,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 $accountSaved = true;
             }
         }
+    } elseif($action === 'google'){
+        foreach($googleFields as $f){ set_setting($f, trim($_POST[$f] ?? '')); }
+        $saved = true;
     } else {
         foreach($fields as $f){
             $val = trim($_POST[$f] ?? '');
@@ -60,6 +64,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $values = [];
 foreach($fields as $f) $values[$f] = setting($f, '');
+foreach($googleFields as $f) $values[$f] = setting($f, '');
 
 $currentUser = null;
 if(!empty($_SESSION['admin_id'])){
@@ -97,6 +102,20 @@ admin_header('Site-instellingen', 'settings');
         </select>
       </div>
 
+      <button class="a-btn" type="submit">Opslaan</button>
+    </form>
+  </div>
+</div>
+
+<div class="a-card">
+  <div class="a-card-pad">
+    <h2 style="margin-top:0">Google Drive (optioneel)</h2>
+    <p style="font-size:.85rem;color:#8a7c6c;margin-top:-8px">Vul dit in om foto's rechtstreeks vanuit Google Drive te kunnen kiezen bij het uploaden, in plaats van enkel vanaf je computer.</p>
+    <form method="post">
+      <?=csrf_field()?>
+      <input type="hidden" name="action" value="google">
+      <div class="a-field"><label>Google API-sleutel</label><input type="text" name="google_api_key" value="<?=e($values['google_api_key'])?>" placeholder="AIza..."></div>
+      <div class="a-field"><label>Google OAuth Client-ID</label><input type="text" name="google_client_id" value="<?=e($values['google_client_id'])?>" placeholder="123456789-xxxx.apps.googleusercontent.com"></div>
       <button class="a-btn" type="submit">Opslaan</button>
     </form>
   </div>
