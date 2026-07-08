@@ -729,6 +729,99 @@ canvasEl.addEventListener('dblclick', function(e){
 });
 
 /* ============================================================
+   Rich-text toolbar — per-selection bold/italic/underline/color/
+   font-size/link, for [data-edit-html] fields (i.e. text blocks).
+   ============================================================ */
+var rtToolbar = document.createElement('div');
+rtToolbar.className = 'pbe-rt-toolbar';
+rtToolbar.innerHTML =
+  '<button type="button" data-rt="bold" title="Vet"><b>V</b></button>'
+  + '<button type="button" data-rt="italic" title="Cursief"><i>C</i></button>'
+  + '<button type="button" data-rt="underline" title="Onderstreept"><u>O</u></button>'
+  + '<input type="color" data-rt="color" title="Tekstkleur" value="#222222">'
+  + '<input type="number" data-rt="fontsize" title="Lettergrootte (px)" min="8" max="96" placeholder="px" style="width:52px">'
+  + '<button type="button" data-rt="link" title="Link toevoegen">&#128279;</button>';
+document.body.appendChild(rtToolbar);
+
+var rtActiveField = null;
+function rtHide(){ rtToolbar.classList.remove('is-open'); rtActiveField = null; }
+function rtShow(field, range){
+  rtActiveField = field;
+  var rect = range.getBoundingClientRect();
+  rtToolbar.classList.add('is-open');
+  var top = rect.top + window.scrollY - rtToolbar.offsetHeight - 8;
+  var left = rect.left + window.scrollX + (rect.width/2) - (rtToolbar.offsetWidth/2);
+  rtToolbar.style.top = Math.max(8, top)+'px';
+  rtToolbar.style.left = Math.max(8, left)+'px';
+}
+var rtSavedRange = null;
+document.addEventListener('selectionchange', function(){
+  if(document.activeElement && rtToolbar.contains(document.activeElement)) return; // interacting with the toolbar itself
+  var sel = window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.rangeCount){ rtHide(); return; }
+  var range = sel.getRangeAt(0);
+  var field = range.commonAncestorContainer;
+  field = field.nodeType===1 ? field : field.parentElement;
+  field = field ? field.closest('[data-edit-html][contenteditable="true"]') : null;
+  if(!field){ rtHide(); return; }
+  rtSavedRange = range.cloneRange();
+  rtShow(field, range);
+});
+// Clicking a toolbar <input> (color/fontsize) blurs the contenteditable field
+// and can clear its selection, so the range is restored from rtSavedRange
+// right before styling instead of trusting the live window selection.
+function rtApplyStyle(styleDecl){
+  if(!rtSavedRange) return;
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(rtSavedRange);
+  var range = sel.getRangeAt(0);
+  var span = document.createElement('span');
+  span.style.cssText = styleDecl;
+  try{
+    range.surroundContents(span);
+  }catch(e){
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  var newRange = document.createRange();
+  newRange.selectNodeContents(span);
+  sel.addRange(newRange);
+  rtSavedRange = newRange.cloneRange();
+}
+rtToolbar.addEventListener('mousedown', function(e){
+  if(e.target.closest('button[data-rt]')) e.preventDefault(); // keep focus/selection in the field for exec-command buttons
+});
+rtToolbar.addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-rt]');
+  if(!btn || !rtActiveField) return;
+  var action = btn.getAttribute('data-rt');
+  if(action==='bold') document.execCommand('bold');
+  else if(action==='italic') document.execCommand('italic');
+  else if(action==='underline') document.execCommand('underline');
+  else if(action==='link'){
+    var url = prompt('Link naar welke URL?', 'https://');
+    if(url) document.execCommand('createLink', false, url);
+  }
+  // Don't call updateBlockDom() here: it replaces the block's DOM wholesale,
+  // which would destroy this still-focused contenteditable field (and its
+  // live selection) mid-session, breaking any further formatting clicks.
+  syncEditableField(rtActiveField);
+});
+rtToolbar.querySelector('[data-rt="color"]').addEventListener('input', function(e){
+  if(!rtActiveField) return;
+  rtApplyStyle('color:'+e.target.value);
+  syncEditableField(rtActiveField);
+});
+rtToolbar.querySelector('[data-rt="fontsize"]').addEventListener('change', function(e){
+  if(!rtActiveField || !e.target.value) return;
+  rtApplyStyle('font-size:'+e.target.value+'px');
+  syncEditableField(rtActiveField);
+});
+
+/* ============================================================
    Resize handles (row cell width + image height/aspect ratio)
    ============================================================ */
 function attachResizeHandles(){

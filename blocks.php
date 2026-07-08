@@ -59,8 +59,9 @@ function pb_encode_blocks($blocks){
 function pb_clean_text_html($html){
     $html = (string)$html;
     $html = strip_tags($html, PB_ALLOWED_TEXT_TAGS);
-    // <a> keeps a vetted href/target/rel; every other allowed tag loses ALL
-    // attributes (blocks onclick/onmouseover/style="javascript:..." etc.).
+    // <a> keeps a vetted href/target/rel; <span> keeps a rebuilt, validated
+    // color/font-size style; every other allowed tag loses ALL attributes
+    // (blocks onclick/onmouseover/style="javascript:..." etc.).
     $html = preg_replace_callback('/<a\b[^>]*>/i', function($m){
         $href = '';
         if(preg_match('/href\s*=\s*"([^"]*)"/i', $m[0], $h)) $href = $h[1];
@@ -70,7 +71,21 @@ function pb_clean_text_html($html){
         }
         return '<a>';
     }, $html);
-    $html = preg_replace('#<(/?(?:p|br|b|strong|i|em|u|span|ul|ol|li))\b[^>]*>#i', '<$1>', $html);
+    $html = preg_replace_callback('/<span\b([^>]*)>/i', function($m){
+        $style = '';
+        if(preg_match('/style\s*=\s*"([^"]*)"/i', $m[1], $s)) $style = $s[1];
+        $decl = [];
+        // Browsers normalize style.color to rgb()/rgba() when serialized back
+        // out of the DOM (setting it as a hex string doesn't stick), so both
+        // forms need accepting here — the rgb()/rgba() body is restricted to
+        // digits/commas/dots/percent/spaces, nothing that could break out.
+        if(preg_match('/color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([0-9.,%\s]+\))\s*(?:;|$)/', $style, $c)) $decl[] = 'color:'.$c[1];
+        if(preg_match('/font-size\s*:\s*(\d{1,3})px\s*(?:;|$)/', $style, $fs)){
+            $decl[] = 'font-size:'.max(8, min(96, (int)$fs[1])).'px';
+        }
+        return $decl ? '<span style="'.e(implode(';', $decl)).'">' : '<span>';
+    }, $html);
+    $html = preg_replace('#<(/?(?:p|br|b|strong|i|em|u|ul|ol|li))\b[^>]*>#i', '<$1>', $html);
     return $html;
 }
 
