@@ -18,6 +18,7 @@ $topViewed = db()->query("
 ")->fetchAll();
 $typeUrls = ['page'=>'page.php?slug=', 'animal'=>'animal.php?slug=', 'album'=>'album.php?slug=', 'post'=>'post.php?slug='];
 $typeLabels = ['page'=>"Pagina", 'animal'=>'Dier', 'album'=>'Album', 'post'=>'Blogpost'];
+$unreadMessages = (int)db()->query('SELECT COUNT(*) c FROM messages WHERE is_read=0')->fetch()['c'];
 
 admin_header('Dashboard', 'index');
 ?>
@@ -26,6 +27,7 @@ admin_header('Dashboard', 'index');
   <div class="a-stat"><div class="num"><?=$live?></div><div class="label">Live</div></div>
   <div class="a-stat"><div class="num"><?=$draft?></div><div class="label">Concepten</div></div>
   <div class="a-stat"><div class="num"><?=$contentTotal?></div><div class="label">Alle content</div></div>
+  <a class="a-stat" href="messages.php" style="text-decoration:none;color:inherit"><div class="num"><?=$unreadMessages?></div><div class="label">Nieuwe berichten</div></a>
 </div>
 
 <div class="a-card">

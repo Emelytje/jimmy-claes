@@ -18,6 +18,7 @@ function admin_header($title, $active=''){
         'categories'=>['content.php?type=category','Categorieën'],
         'albums'=>['content.php?type=album','Albums'],
         'posts'=>['content.php?type=post','Blog'],
+        'messages'=>['messages.php','Berichten'],
         'settings'=>['settings.php','Site-instellingen'],
     ];
     foreach($links as $key=>$l){ echo '<a href="'.e($l[0]).'" class="'.($active===$key?'is-active':'').'">'.e($l[1]).'</a>'; }

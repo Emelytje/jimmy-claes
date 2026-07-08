@@ -18,7 +18,8 @@ function asset_v($absPath){ $v = @filemtime($absPath); return $v ?: time(); }
 // optioneel een uitgesloten id + zijn afstammelingen (om te voorkomen dat een
 // categorie zichzelf of een eigen kind als bovenliggende categorie kiest).
 function pbe_category_options($selectedId, $excludeId=null){
-    $rows = db()->query('SELECT id, title, parent_id FROM categories ORDER BY sort_order, title')->fetchAll();
+    try{ $rows = db()->query('SELECT id, title, parent_id FROM categories ORDER BY sort_order, title')->fetchAll(); }
+    catch(Exception $e){ return ''; }
     $byParent = [];
     foreach($rows as $r){ $byParent[(int)$r['parent_id']][] = $r; }
     $excludeIds = [];
@@ -44,7 +45,8 @@ function pbe_category_options($selectedId, $excludeId=null){
 // Geeft alle categorieën terug als platte lijst in boomvolgorde, elk met een
 // toegevoegde 'depth' sleutel — handig om ingesprongen te tonen in een tabel.
 function pbe_category_tree_flat(){
-    $rows = db()->query('SELECT * FROM categories ORDER BY sort_order, title')->fetchAll();
+    try{ $rows = db()->query('SELECT * FROM categories ORDER BY sort_order, title')->fetchAll(); }
+    catch(Exception $e){ return []; }
     $byParent = [];
     foreach($rows as $r){ $byParent[(int)$r['parent_id']][] = $r; }
     $out = [];
