@@ -140,8 +140,6 @@ table.a-table{ width:100%; border-collapse:collapse; }
 .pbe-gallery-size-btn.is-active{ color:#fff!important; background:var(--a-primary); }
 .pbe-upload-btn{ width:100%; padding:10px; border:1.5px dashed var(--a-line); border-radius:8px; background:var(--a-bg); font-size:.82rem; cursor:pointer; color:var(--a-ink); }
 .pbe-upload-btn:hover{ border-color:var(--a-primary); }
-.pbe-drive-btn{ border-style:solid; border-color:#4285f4; color:#4285f4; background:#fff; }
-.pbe-drive-btn:hover{ background:#eaf1fe; }
 .pbe-cols-list{ display:flex; flex-direction:column; gap:8px; }
 .pbe-check-inline{ display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; color:var(--a-ink); }
 .pbe-check-inline input{ width:auto; }
