@@ -159,11 +159,15 @@ function seed_walk($node, $parentId, &$stats){
 
 $done = false;
 $published = 0;
+$publishedAnimals = 0;
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_verify();
     $action = $_POST['action'] ?? 'import';
     if($action === 'publish_categories'){
         $published = db()->exec('UPDATE categories SET published=1 WHERE published=0');
+    } elseif($action === 'publish_all'){
+        $published = db()->exec('UPDATE categories SET published=1 WHERE published=0');
+        $publishedAnimals = db()->exec('UPDATE animals SET published=1 WHERE published=0');
     } else {
         seed_walk($tree, null, $stats);
         $done = true;
@@ -173,12 +177,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 admin_header('Taxonomie importeren', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
-<?php if($published): ?>
-  <div class="notice"><?=$published?> categorieën gepubliceerd. De navigatie op de site toont de boom nu.</div>
+<?php if($published || $publishedAnimals): ?>
+  <div class="notice"><?=$published?> categorieën<?php if($publishedAnimals): ?> en <?=$publishedAnimals?> dieren<?php endif; ?> gepubliceerd. Alles staat nu live op de site.</div>
 <?php endif; ?>
 <?php if($done): ?>
   <div class="notice">Klaar. <?=$stats['categories']?> nieuwe categorieën aangemaakt (<?=$stats['categories_skipped']?> bestonden al), <?=$stats['animals']?> nieuwe dieren aangemaakt als concept (<?=$stats['animals_skipped']?> bestonden al).</div>
-  <p>De soorten blijven concept (geen foto's) tot je ze zelf publiceert. De categorieën zelf kan je hieronder in één keer publiceren zodat de boom al zichtbaar/navigeerbaar is in het menu, ook terwijl je nog foto's aan het toevoegen bent.</p>
+  <p>Standaard blijven nieuwe soorten concept (nog geen foto). Klik hieronder op "Alles publiceren" om de hele boom — categorieën én soorten — meteen live te zetten, ook zonder dat er al foto's op staan.</p>
 <?php else: ?>
   <h2 style="margin-top:0">Taxonomie importeren (deel 1: amfibieën + reptielen &gt; slangen)</h2>
   <p>Dit maakt in één keer de volledige categorieboom aan zoals in de PDF, plus elke soort als een nieuw concept-dier (categorie toegekend, nog geen foto — dat doe je zelf na dit importeren). Bestaande categorieën/dieren met dezelfde naam worden overgeslagen, dus dit is veilig om nogmaals te draaien.</p>
@@ -189,15 +193,20 @@ admin_header('Taxonomie importeren', '');
   </form>
 <?php endif; ?>
 </div></div>
-<?php if($done || $published): ?>
+<?php if($done || $published || $publishedAnimals): ?>
 <div class="a-card"><div class="a-card-pad">
   <form method="post" style="display:inline">
     <?=csrf_field()?>
-    <input type="hidden" name="action" value="publish_categories">
-    <button class="a-btn a-btn-ghost" type="submit">Alle categorieën publiceren</button>
+    <input type="hidden" name="action" value="publish_all">
+    <button class="a-btn" type="submit">Alles publiceren (categorieën + dieren)</button>
   </form>
-  <a class="a-btn" href="content.php?type=category">Naar Categorieën</a>
-  <a class="a-btn" href="content.php?type=animal">Naar Dieren</a>
+  <form method="post" style="display:inline">
+    <?=csrf_field()?>
+    <input type="hidden" name="action" value="publish_categories">
+    <button class="a-btn a-btn-ghost" type="submit">Enkel categorieën publiceren</button>
+  </form>
+  <a class="a-btn a-btn-ghost" href="content.php?type=category">Naar Categorieën</a>
+  <a class="a-btn a-btn-ghost" href="content.php?type=animal">Naar Dieren</a>
 </div></div>
 <?php endif; ?>
 <?php admin_footer(); ?>

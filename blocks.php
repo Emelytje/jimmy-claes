@@ -367,6 +367,42 @@ function pb_render_contact($d){
         .'</form>';
 }
 
+// Kruimelpad-keten van hoofdcategorie tot en met de gegeven categorie zelf,
+// voor het tonen van de volledige taxonomie-plaats van een diepe pagina
+// (bv. Gewervelde dieren > Amfibieën > Kikkers > Boomkikkers).
+function pb_category_ancestors($categoryId){
+    $chain = [];
+    $st = db()->prepare('SELECT id, title, slug, parent_id FROM categories WHERE id=?');
+    $cur = (int)$categoryId;
+    $guard = 0;
+    while($cur && $guard++ < 25){
+        $st->execute([$cur]);
+        $row = $st->fetch();
+        if(!$row) break;
+        array_unshift($chain, $row);
+        $cur = $row['parent_id'] ? (int)$row['parent_id'] : 0;
+    }
+    return $chain;
+}
+
+// Rendert de kruimelpad-keten als HTML. $currentTitle is optioneel: geef dit
+// mee voor een dier-pagina (het dier zelf staat niet in de categorieketen).
+function pb_render_breadcrumb($chain, $currentTitle=null){
+    if(!$chain && $currentTitle===null) return '';
+    $html = '<nav class="pb-breadcrumb" aria-label="Kruimelpad"><a href="index.php">Home</a>';
+    foreach($chain as $i => $row){
+        $isLast = ($i === count($chain)-1) && $currentTitle===null;
+        $html .= '<span class="pb-breadcrumb-sep">/</span>';
+        $html .= $isLast
+            ? '<span aria-current="page">'.e($row['title']).'</span>'
+            : '<a href="category.php?slug='.e($row['slug']).'">'.e($row['title']).'</a>';
+    }
+    if($currentTitle !== null){
+        $html .= '<span class="pb-breadcrumb-sep">/</span><span aria-current="page">'.e($currentTitle).'</span>';
+    }
+    return $html.'</nav>';
+}
+
 // Alle categorie-id's onder (en incl.) een gegeven categorie, voor het
 // "willekeurige foto uit categorie"-fallback: zo'n foto mag ook uit een
 // diepere sub-categorie komen, niet enkel uit de categorie zelf.

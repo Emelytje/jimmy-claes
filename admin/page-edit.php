@@ -87,8 +87,10 @@ $initial = [
     <div class="pbe-field">
       <label>Coverfoto (gebruikt in overzichten)</label>
       <?php if(!empty($page['cover_image'])): ?><img src="../<?=e($page['cover_image'])?>" style="width:100%;border-radius:8px;margin-bottom:8px"><?php endif; ?>
-      <button type="button" class="pbe-upload-btn" id="pbeCoverUploadBtn"><?=!empty($page['cover_image'])?'Andere foto kiezen':'Foto uploaden'?></button>
-      <input type="file" accept="image/*" style="display:none" id="pbeCoverFile">
+      <div class="pbe-dropzone" id="pbeCoverDropzone">
+        <button type="button" class="pbe-upload-btn" id="pbeCoverUploadBtn"><?=!empty($page['cover_image'])?'Andere foto kiezen (of sleep hier)':'Foto uploaden (of sleep hier)'?></button>
+        <input type="file" accept="image/*" style="display:none" id="pbeCoverFile">
+      </div>
     </div>
     <div class="pbe-field">
       <label>Korte omschrijving</label>

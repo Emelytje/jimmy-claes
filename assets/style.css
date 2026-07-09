@@ -79,6 +79,13 @@ body.nav-open .nav-toggle span::after{ transform:translateY(-6px) rotate(-45deg)
 footer{ text-align:center; padding:48px 24px 64px; color:var(--ink-soft); font-size:.9rem; border-top:1px solid var(--line); margin-top:40px; }
 footer .secret{ color:inherit; }
 
+/* ---------- breadcrumb (category/animal taxonomy path) ---------- */
+.pb-breadcrumb{ max-width:1100px; margin:18px auto 0; padding:0 24px; font-size:.85rem; color:var(--ink-soft); display:flex; flex-wrap:wrap; align-items:center; }
+.pb-breadcrumb a{ color:var(--ink-soft); text-decoration:underline; text-underline-offset:2px; }
+.pb-breadcrumb a:hover{ color:var(--primary); }
+.pb-breadcrumb-sep{ margin:0 8px; opacity:.5; }
+.pb-breadcrumb [aria-current="page"]{ color:var(--ink); font-weight:600; }
+
 /* ---------- hero (index/animal/album) ---------- */
 .hero{ background:var(--accent); text-align:center; padding:100px 24px; }
 .hero > div{ max-width:720px; margin:0 auto; }

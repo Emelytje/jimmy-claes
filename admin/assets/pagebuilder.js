@@ -1115,8 +1115,7 @@ function contentFieldsHtml(block){
         var sizeBtn = d.layout!=='masonry' ? '<button type="button" class="pbe-gallery-size-btn'+(img.size==='large'?' is-active':'')+'" data-gallery-size="'+i+'" title="Grote tegel (2x zo groot in het raster)">&#9974;</button>' : '';
         return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+sizeBtn+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
-      html += '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen</button>';
-      html += '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">';
+      html += galleryUploadControlsHtml();
       html += '<div class="pbe-row" style="margin-top:14px"><div class="pbe-field"><label>Kolommen</label><select data-bind="data.columns">'+[2,3,4].map(function(c){return '<option value="'+c+'" '+(d.columns==c?'selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
         + '<div class="pbe-field"><label>Layout</label><div class="pbe-seg" data-seg="data.layout"><button type="button" data-val="grid" class="'+(d.layout!=='masonry'?'is-active':'')+'">Grid</button><button type="button" data-val="masonry" class="'+(d.layout==='masonry'?'is-active':'')+'">Pinterest</button></div></div></div>';
       break;
@@ -1171,8 +1170,7 @@ function contentFieldsHtml(block){
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
         return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'"><button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
-      html += '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen</button>';
-      html += '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">';
+      html += galleryUploadControlsHtml();
       html += '<div class="pbe-field" style="margin-top:14px"><label>Wisseltijd (seconden)</label><input type="number" min="2" max="15" data-bind="data.interval" value="'+(d.interval!=null?d.interval:5)+'"></div>';
       break;
     case 'photocount':
@@ -1192,11 +1190,75 @@ function imageFieldHtml(src, fieldKey, label){
   fieldKey = fieldKey || 'src';
   var html = '<div class="pbe-field"><label>'+esc(label||'Foto')+'</label>';
   if(src) html += '<img src="'+esc(imgSrc(src))+'" style="width:100%;border-radius:8px;margin-bottom:8px">';
-  html += '<button type="button" class="pbe-upload-btn" data-image-field="'+fieldKey+'">'+(src?'Andere foto kiezen':'Foto uploaden')+'</button>';
+  html += '<div class="pbe-dropzone" data-image-dropzone="'+fieldKey+'">';
+  html += '<button type="button" class="pbe-upload-btn" data-image-field="'+fieldKey+'">'+(src?'Andere foto kiezen (of sleep hier)':'Foto uploaden (of sleep hier)')+'</button>';
   html += '<input type="file" accept="image/*" style="display:none" data-image-file="'+fieldKey+'">';
+  html += '</div>';
   if(src) html += '<button type="button" class="pbe-clear-btn" data-clear-image="'+fieldKey+'" style="margin-top:8px">Foto verwijderen</button>';
   html += '</div>';
   return html;
+}
+function galleryUploadControlsHtml(){
+  return '<div class="pbe-dropzone" id="pbeGalleryDropzone">'
+    + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen (of sleep hier)</button>'
+    + '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">'
+    + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAddFolder" style="margin-top:6px">Hele map uploaden</button>'
+    + '<input type="file" id="pbeGalleryFolder" webkitdirectory directory multiple style="display:none">'
+    + '</div>';
+}
+// Haalt alle afbeeldingsbestanden uit een drag-and-drop (losse foto's of een
+// hele gesleepte map, recursief) — valt terug op de platte bestandenlijst in
+// browsers zonder ondersteuning voor de directory-entry API.
+function pbeFilesFromDrop(dataTransfer){
+  return new Promise(function(resolve){
+    var items = dataTransfer.items;
+    var isImage = function(f){ return f && f.type && f.type.indexOf('image/') === 0; };
+    if(!items || !items.length || !items[0].webkitGetAsEntry){
+      resolve(Array.prototype.filter.call(dataTransfer.files || [], isImage));
+      return;
+    }
+    var entries = [];
+    for(var i=0; i<items.length; i++){
+      var entry = items[i].webkitGetAsEntry && items[i].webkitGetAsEntry();
+      if(entry) entries.push(entry);
+    }
+    if(!entries.length){ resolve(Array.prototype.filter.call(dataTransfer.files || [], isImage)); return; }
+    var files = [], pending = 0, dispatched = false;
+    function check(){ if(dispatched && pending === 0) resolve(files); }
+    function walk(entry){
+      pending++;
+      if(entry.isFile){
+        entry.file(function(f){ if(isImage(f)) files.push(f); pending--; check(); }, function(){ pending--; check(); });
+      } else if(entry.isDirectory){
+        var reader = entry.createReader();
+        (function readAll(){
+          reader.readEntries(function(children){
+            if(children.length){ children.forEach(walk); readAll(); }
+            else { pending--; check(); }
+          }, function(){ pending--; check(); });
+        })();
+      } else { pending--; check(); }
+    }
+    entries.forEach(walk);
+    dispatched = true;
+    check();
+  });
+}
+function bindDropzone(el, onFiles){
+  if(!el) return;
+  ['dragenter','dragover'].forEach(function(evt){
+    el.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); el.classList.add('is-dragover'); });
+  });
+  ['dragleave','dragend'].forEach(function(evt){
+    el.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); el.classList.remove('is-dragover'); });
+  });
+  el.addEventListener('drop', function(e){
+    e.preventDefault(); e.stopPropagation();
+    el.classList.remove('is-dragover');
+    pbeFilesFromDrop(e.dataTransfer).then(function(files){
+      if(files.length) onFiles(files);
+    });
+  });
 }
 
 // generic bind: text/number/select/color/textarea inputs with data-bind
@@ -1296,16 +1358,21 @@ function bindImageUploadButtons(block){
   settingsEl.querySelectorAll('[data-image-field]').forEach(function(btn){
     var key = btn.getAttribute('data-image-field');
     var file = settingsEl.querySelector('[data-image-file="'+key+'"]');
-    btn.addEventListener('click', function(){ file.click(); });
-    file.addEventListener('change', function(){
-      if(!file.files[0]) return;
+    var zone = settingsEl.querySelector('[data-image-dropzone="'+key+'"]');
+    function handleOne(f){
       btn.textContent = 'Bezig met uploaden...';
-      uploadImage(file.files[0]).then(function(path){
+      uploadImage(f).then(function(path){
         block.data[key] = path;
         renderSettingsPanel();
         updateBlockDom(block.id);
       }).catch(function(err){ alert(err); btn.textContent = 'Opnieuw proberen'; });
+    }
+    btn.addEventListener('click', function(){ file.click(); });
+    file.addEventListener('change', function(){
+      if(!file.files[0]) return;
+      handleOne(file.files[0]);
     });
+    bindDropzone(zone, function(files){ handleOne(files[0]); });
   });
   settingsEl.querySelectorAll('[data-clear-image]').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -1318,18 +1385,29 @@ function bindImageUploadButtons(block){
 function bindGalleryButtons(block){
   var addBtn = document.getElementById('pbeGalleryAdd');
   var file = document.getElementById('pbeGalleryFile');
+  var folderBtn = document.getElementById('pbeGalleryAddFolder');
+  var folderFile = document.getElementById('pbeGalleryFolder');
+  var zone = document.getElementById('pbeGalleryDropzone');
   if(!addBtn || !file) return;
-  addBtn.addEventListener('click', function(){ file.click(); });
-  file.addEventListener('change', function(){
-    var files = Array.prototype.slice.call(file.files);
+  function handleMany(files){
     if(!files.length) return;
     addBtn.textContent = 'Bezig met uploaden...';
     Promise.all(files.map(uploadImage)).then(function(paths){
       paths.forEach(function(p){ block.data.images.push({src:p, alt:'', caption:''}); });
       renderSettingsPanel();
       updateBlockDom(block.id);
-    }).catch(function(err){ alert(err); }).finally(function(){ addBtn.textContent = "+ Foto's toevoegen"; });
-  });
+    }).catch(function(err){ alert(err); }).finally(function(){ addBtn.textContent = "+ Foto's toevoegen (of sleep hier)"; });
+  }
+  addBtn.addEventListener('click', function(){ file.click(); });
+  file.addEventListener('change', function(){ handleMany(Array.prototype.slice.call(file.files)); });
+  if(folderBtn && folderFile){
+    folderBtn.addEventListener('click', function(){ folderFile.click(); });
+    folderFile.addEventListener('change', function(){
+      var imgs = Array.prototype.filter.call(folderFile.files, function(f){ return f.type.indexOf('image/')===0; });
+      handleMany(imgs);
+    });
+  }
+  bindDropzone(zone, handleMany);
 }
 
 function uploadImage(file){
@@ -1406,17 +1484,22 @@ if(contentType === 'page'){
 } else {
   var coverBtn = document.getElementById('pbeCoverUploadBtn');
   var coverFile = document.getElementById('pbeCoverFile');
+  var coverZone = document.getElementById('pbeCoverDropzone');
   if(coverBtn && coverFile){
+    function handleCover(f){
+      coverBtn.textContent = 'Bezig met uploaden...';
+      uploadImage(f).then(function(path){
+        coverImage = path;
+        coverBtn.textContent = 'Andere foto kiezen (of sleep hier)';
+        markDirty();
+      }).catch(function(err){ alert(err); coverBtn.textContent = 'Foto uploaden (of sleep hier)'; });
+    }
     coverBtn.addEventListener('click', function(){ coverFile.click(); });
     coverFile.addEventListener('change', function(){
       if(!coverFile.files[0]) return;
-      coverBtn.textContent = 'Bezig met uploaden...';
-      uploadImage(coverFile.files[0]).then(function(path){
-        coverImage = path;
-        coverBtn.textContent = 'Andere foto kiezen';
-        markDirty();
-      }).catch(function(err){ alert(err); coverBtn.textContent = 'Foto uploaden'; });
+      handleCover(coverFile.files[0]);
     });
+    bindDropzone(coverZone, function(files){ handleCover(files[0]); });
   }
 }
 watchedSettingsFields.forEach(function(el){ el.addEventListener('input', markDirty); el.addEventListener('change', markDirty); });

@@ -10,6 +10,8 @@ if($blocks){
     exit;
 }
 header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description']); ?>
+<?php $breadcrumbChain = !empty($a['category_id']) ? pb_category_ancestors((int)$a['category_id']) : []; ?>
+<?=pb_render_breadcrumb($breadcrumbChain, $a['title'])?>
 <section class="hero"><div><h1><?=e($a['title'])?></h1><p><?=nl2br(e($a['description']))?></p></div></section>
 <main class="wrap"><div class="gallery <?=e($a['layout'])?>">
 <?php $st=db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC'); $st->execute([$a['id']]); foreach($st as $p): ?>
