@@ -140,6 +140,8 @@ table.a-table{ width:100%; border-collapse:collapse; }
 .pbe-gallery-size-btn.is-active{ color:#fff!important; background:var(--a-primary); }
 .pbe-upload-btn{ width:100%; padding:10px; border:1.5px dashed var(--a-line); border-radius:8px; background:var(--a-bg); font-size:.82rem; cursor:pointer; color:var(--a-ink); }
 .pbe-upload-btn:hover{ border-color:var(--a-primary); }
+.pbe-dropzone{ position:relative; border-radius:8px; }
+.pbe-dropzone.is-dragover::after{ content:'Laat los om te uploaden'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; background:rgba(255,255,255,.92); border:2px dashed var(--a-primary); border-radius:8px; font-size:.82rem; font-weight:600; color:var(--a-primary); pointer-events:none; }
 .pbe-cols-list{ display:flex; flex-direction:column; gap:8px; }
 .pbe-check-inline{ display:flex; align-items:center; gap:8px; font-size:.85rem; font-weight:600; color:var(--a-ink); }
 .pbe-check-inline input{ width:auto; }

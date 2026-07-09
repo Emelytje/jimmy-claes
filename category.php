@@ -16,6 +16,7 @@ if($blocks){
     exit;
 }
 header_html($c['meta_title'] ?: $c['title'], $c['meta_description'] ?: $c['description']); ?>
+<?=pb_render_breadcrumb(pb_category_ancestors($c['id']))?>
 <section class="hero"><div><h1><?=e($c['title'])?></h1><?php if($c['description']): ?><p><?=nl2br(e($c['description']))?></p><?php endif; ?></div></section>
 <main class="wrap"><?=pb_render_subcategories([], $ctx)?></main>
 <?php footer_html(); ?>
