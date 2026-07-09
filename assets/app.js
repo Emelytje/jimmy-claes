@@ -25,6 +25,19 @@
     }
   });
 
+  // Deep category trees can nest dropdowns several levels; each level flies
+  // out to the right by default and can otherwise run off the edge of the
+  // screen. On hover, flip a menu to open leftward instead if it would
+  // overflow the viewport.
+  document.querySelectorAll('.nav-dropdown').forEach(function(dd){
+    var menu = dd.querySelector(':scope > .nav-dropdown-menu');
+    if(!menu) return;
+    dd.addEventListener('mouseenter', function(){
+      menu.classList.remove('flyout-left');
+      if(menu.getBoundingClientRect().right > window.innerWidth) menu.classList.add('flyout-left');
+    });
+  });
+
   var animated = document.querySelectorAll('[data-animate]');
   if(animated.length){
     if('IntersectionObserver' in window){

@@ -166,7 +166,7 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     } else {
         echo '<a href="animals.php">Dieren</a>';
     }
-    try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
+    try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 AND is_homepage=0 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
     echo '<a href="contact.php">Contact</a>';
     echo '</nav></header>';
 }

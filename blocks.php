@@ -367,16 +367,73 @@ function pb_render_contact($d){
         .'</form>';
 }
 
+// Alle categorie-id's onder (en incl.) een gegeven categorie, voor het
+// "willekeurige foto uit categorie"-fallback: zo'n foto mag ook uit een
+// diepere sub-categorie komen, niet enkel uit de categorie zelf.
+function pb_category_descendant_ids($categoryId){
+    $ids = [(int)$categoryId];
+    $queue = [(int)$categoryId];
+    $st = db()->prepare('SELECT id FROM categories WHERE parent_id=?');
+    while($queue){
+        $cur = array_shift($queue);
+        $st->execute([$cur]);
+        foreach($st->fetchAll() as $r){ $ids[] = (int)$r['id']; $queue[] = (int)$r['id']; }
+    }
+    return $ids;
+}
+
+// Willekeurige foto uit een categorie (of een van zijn sub-categorieën/dieren)
+// als er zelf geen omslagfoto is ingesteld — zodat een kaartje nooit leeg
+// hoeft te blijven zolang er ergens in de tak al een foto staat.
+function pb_category_random_photo($categoryId){
+    $ids = pb_category_descendant_ids($categoryId);
+    if(!$ids) return '';
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    try{
+        $st = db()->prepare(
+            "SELECT img FROM (
+                SELECT cover_image img FROM animals WHERE category_id IN ($ph) AND cover_image IS NOT NULL AND cover_image<>''
+                UNION ALL
+                SELECT p.image_path img FROM photos p JOIN animals a ON a.id=p.animal_id WHERE a.category_id IN ($ph)
+                UNION ALL
+                SELECT cover_image img FROM categories WHERE id IN ($ph) AND cover_image IS NOT NULL AND cover_image<>''
+            ) t ORDER BY RAND() LIMIT 1");
+        $st->execute(array_merge($ids, $ids, $ids));
+        $r = $st->fetch();
+        return $r ? $r['img'] : '';
+    }catch(Exception $e){ return ''; }
+}
+
+// Willekeurige foto uit de eigen fotogalerij van één dier (soort-niveau),
+// als fallback wanneer er geen omslagfoto is ingesteld maar er wel al losse
+// foto's zijn geupload.
+function pb_animal_random_photo($animalId){
+    try{
+        $st = db()->prepare('SELECT image_path FROM photos WHERE animal_id=? ORDER BY RAND() LIMIT 1');
+        $st->execute([(int)$animalId]);
+        $r = $st->fetch();
+        return $r ? $r['image_path'] : '';
+    }catch(Exception $e){ return ''; }
+}
+
 function pb_render_subcategories($d, $ctx=[]){
     $catId = (int)($ctx['category_id'] ?? 0);
     if(!$catId) return '';
     $rows = [];
-    $st = db()->prepare('SELECT title, slug, description, cover_image FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
+    $st = db()->prepare('SELECT id, title, slug, description, cover_image FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
     $st->execute([$catId]);
-    foreach($st as $r){ $r['url'] = 'category.php?slug='.$r['slug']; $rows[] = $r; }
-    $st = db()->prepare('SELECT title, slug, description, cover_image FROM animals WHERE category_id=? AND published=1 ORDER BY sort_order, title');
+    foreach($st as $r){
+        $r['url'] = 'category.php?slug='.$r['slug'];
+        if(empty($r['cover_image'])) $r['cover_image'] = pb_category_random_photo((int)$r['id']);
+        $rows[] = $r;
+    }
+    $st = db()->prepare('SELECT id, title, slug, description, cover_image FROM animals WHERE category_id=? AND published=1 ORDER BY sort_order, title');
     $st->execute([$catId]);
-    foreach($st as $r){ $r['url'] = 'animal.php?slug='.$r['slug']; $rows[] = $r; }
+    foreach($st as $r){
+        $r['url'] = 'animal.php?slug='.$r['slug'];
+        if(empty($r['cover_image'])) $r['cover_image'] = pb_animal_random_photo((int)$r['id']);
+        $rows[] = $r;
+    }
     if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog niets in deze categorie.</p>';
     $html = '<div class="grid">';
     foreach($rows as $r){
@@ -389,12 +446,13 @@ function pb_render_subcategories($d, $ctx=[]){
 }
 
 function pb_render_categories_grid($d){
-    $rows = db()->query('SELECT title, slug, description, cover_image FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
+    $rows = db()->query('SELECT id, title, slug, description, cover_image FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
     if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog geen categorieën om te tonen.</p>';
     $html = '<div class="grid pb-cat-grid">';
     foreach($rows as $r){
         $url = 'category.php?slug='.$r['slug'];
-        $img = !empty($r['cover_image']) ? '<img src="'.e($r['cover_image']).'" alt="" loading="lazy">' : '<div class="pb-cat-grid-noimg"></div>';
+        $photo = $r['cover_image'] ?: pb_category_random_photo((int)$r['id']);
+        $img = $photo ? '<img src="'.e($photo).'" alt="" loading="lazy">' : '<div class="pb-cat-grid-noimg"></div>';
         $html .= '<article class="card pb-cat-grid-card"><a href="'.e($url).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3>'
             .(!empty($r['description']) ? '<p>'.e($r['description']).'</p>' : '')
             .'<a class="btn" href="'.e($url).'">Ontdek</a></div></article>';
