@@ -78,7 +78,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $existing->execute([SEED_MARKER_TITLE]);
     $row = $existing->fetch();
     if($row){
-        db()->prepare('UPDATE pages SET blocks=?, published=1 WHERE id=?')->execute([$blocksJson, $row['id']]);
+        db()->prepare('UPDATE pages SET blocks=?, published=1, show_in_nav=0 WHERE id=?')->execute([$blocksJson, $row['id']]);
     } else {
         db()->exec('UPDATE pages SET is_homepage=0');
         $slug = 'home';

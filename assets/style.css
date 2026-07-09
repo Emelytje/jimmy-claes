@@ -66,6 +66,7 @@ p{ margin:0 0 1em; }
 .nav-dropdown-menu .nav-dropdown>.nav-dropdown-toggle{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .nav-dropdown-menu .nav-dropdown>.nav-dropdown-toggle::after{ content:'\203A'; opacity:.5; }
 .nav-dropdown-menu .nav-dropdown-menu{ top:-9px; left:100%; margin-left:4px; }
+.nav-dropdown-menu .nav-dropdown-menu.flyout-left{ left:auto; right:100%; margin-left:0; margin-right:4px; }
 .nav-toggle{ display:none; position:fixed; top:20px; right:20px; z-index:60; width:44px; height:44px; border:1px solid var(--line); background:var(--paper); border-radius:50%; cursor:pointer; }
 .nav-toggle span,.nav-toggle span::before,.nav-toggle span::after{ content:''; display:block; width:18px; height:2px; background:var(--ink); margin:0 auto; position:relative; transition:transform .25s var(--ease),opacity .25s var(--ease); }
 .nav-toggle span::before{ position:absolute; top:-6px; }
