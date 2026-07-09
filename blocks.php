@@ -167,6 +167,7 @@ function render_block($block, $depth=0, $ctx=[]){
         case 'row':        $inner = pb_render_row($data, $depth, $ctx); break;
         case 'recent':     $inner = pb_render_recent($data); break;
         case 'subcategories': $inner = pb_render_subcategories($data, $ctx); break;
+        case 'categories_grid': $inner = pb_render_categories_grid($data); break;
         case 'photocount': $inner = pb_render_photocount($data); break;
         case 'slideshow':  $inner = pb_render_slideshow($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
@@ -383,6 +384,20 @@ function pb_render_subcategories($d, $ctx=[]){
         $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3>'
             .(!empty($r['description']) ? '<p>'.e($r['description']).'</p>' : '')
             .'<a class="btn" href="'.e($r['url']).'">Bekijk</a></div></article>';
+    }
+    return $html.'</div>';
+}
+
+function pb_render_categories_grid($d){
+    $rows = db()->query('SELECT title, slug, description, cover_image FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
+    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog geen categorieën om te tonen.</p>';
+    $html = '<div class="grid pb-cat-grid">';
+    foreach($rows as $r){
+        $url = 'category.php?slug='.$r['slug'];
+        $img = !empty($r['cover_image']) ? '<img src="'.e($r['cover_image']).'" alt="" loading="lazy">' : '<div class="pb-cat-grid-noimg"></div>';
+        $html .= '<article class="card pb-cat-grid-card"><a href="'.e($url).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3>'
+            .(!empty($r['description']) ? '<p>'.e($r['description']).'</p>' : '')
+            .'<a class="btn" href="'.e($url).'">Ontdek</a></div></article>';
     }
     return $html.'</div>';
 }

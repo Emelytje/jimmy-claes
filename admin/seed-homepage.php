@@ -27,13 +27,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
     set_setting('primary_color', SEED_PRIMARY);
     set_setting('accent_color', SEED_ACCENT);
+    set_setting('site_title', 'Jimbo Animal Species of the World');
 
     $blocks = [
         [
             'id' => seed_uid(), 'type' => 'hero',
             'settings' => seed_default_settings(['align'=>'center','paddingY'=>'','paddingX'=>'','animation'=>'fade-in']),
             'data' => [
-                'title' => setting('site_title','Dieren door de lens'),
+                'title' => setting('site_title','Jimbo Animal Species of the World'),
                 'subtitle' => 'Een fotografische duik in de dierenwereld — van diepzee tot jungle.',
                 'buttonText' => 'Bekijk alle dieren',
                 'buttonHref' => 'animals.php',
@@ -44,6 +45,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             'id' => seed_uid(), 'type' => 'slideshow',
             'settings' => seed_default_settings(),
             'data' => ['images'=>[], 'interval'=>5],
+        ],
+        [
+            'id' => seed_uid(), 'type' => 'title',
+            'settings' => seed_default_settings(['align'=>'center']),
+            'data' => ['text'=>'Ontdek per categorie', 'level'=>'h2'],
+        ],
+        [
+            'id' => seed_uid(), 'type' => 'categories_grid',
+            'settings' => seed_default_settings(),
+            'data' => [],
         ],
         [
             'id' => seed_uid(), 'type' => 'photocount',
@@ -84,7 +95,7 @@ admin_header('Homepage instellen', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. Kleurthema ingesteld op zee-blauw, en de homepage is aangemaakt/bijgewerkt met: een hero-sectie, een lege fotoslideshow (klaar om foto's in te zetten), een fototeller, en een "recent toegevoegd"-overzicht.</div>
+  <div class="notice">Klaar. Sitenaam ingesteld op "Jimbo Animal Species of the World", kleurthema op zee-blauw, en de homepage is aangemaakt/bijgewerkt met: een hero-sectie, een lege fotoslideshow (klaar om foto's in te zetten), een fototeller, en een "recent toegevoegd"-overzicht.</div>
   <p><a class="a-btn" href="pages.php">Naar Pagina's</a> — open "Home" om foto's toe te voegen aan de slideshow en verder aan te passen. Alles blijft net als elke andere pagina volledig bewerkbaar.</p>
 <?php else: ?>
   <h2 style="margin-top:0">Homepage + zee-thema instellen</h2>

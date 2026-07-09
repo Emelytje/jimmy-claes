@@ -67,7 +67,7 @@ function set_setting($key,$value){ $st=db()->prepare('INSERT INTO settings(name,
 function notify_contact_message($name, $email, $message){
     $to = setting('contact_email', '');
     if($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return;
-    $site = setting('site_title', 'Dieren door de lens');
+    $site = setting('site_title', 'Jimbo Animal Species of the World');
     $subject = 'Nieuw contactbericht via '.$site;
     $body = "Naam: $name\nE-mail: ".($email ?: '(niet opgegeven)')."\n\nBericht:\n$message";
     $headers = "Content-Type: text/plain; charset=UTF-8\r\n";
@@ -136,7 +136,7 @@ function upload_image($file){
 
 // ---- SEO / meta ----
 function meta_tags($title='', $description='', $canonical=''){
-    $site=setting('site_title','Dieren door de lens');
+    $site=setting('site_title','Jimbo Animal Species of the World');
     $desc=$description ?: setting('meta_description','Dierenfotografie: verhalen en beelden per dier.');
     $full_title = $title ? $title.' - '.$site : $site;
     echo '<meta name="description" content="'.e($desc).'">';
@@ -159,10 +159,10 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     if($head_extra) echo $head_extra;
     echo '</head><body>';
     echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
-    echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Dieren door de lens')).'</a><nav><a href="index.php">Home</a>';
+    echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Jimbo Animal Species of the World')).'</a><nav><a href="index.php">Home</a>';
     try{ $catNav = nav_render_categories(); }catch(Exception $e){ $catNav = ''; }
     if($catNav !== ''){
-        echo '<div class="nav-dropdown"><a href="animals.php" class="nav-dropdown-toggle">Dieren</a><div class="nav-dropdown-menu">'.$catNav.'</div></div>';
+        echo $catNav;
     } else {
         echo '<a href="animals.php">Dieren</a>';
     }
@@ -170,4 +170,4 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     echo '<a href="contact.php">Contact</a>';
     echo '</nav></header>';
 }
-function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Dieren door de lens')).' &middot; Website door <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }
+function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; Website door <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }

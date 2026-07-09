@@ -186,9 +186,23 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-hero{ position:relative; text-align:center; padding:120px 24px; background-position:center; background-size:cover; overflow:hidden; }
 .pb-hero-overlay{ position:absolute; inset:0; background:#1c140d; }
 .pb-hero-inner{ position:relative; z-index:2; max-width:720px; }
+.pb-hero-inner h1{ font-size:clamp(2.4rem,5vw,3.6rem); letter-spacing:-.01em; }
 .pb-hero-has-bg h1,.pb-hero-has-bg .pb-hero-subtitle{ color:var(--pb-text-color,#fff); }
 .pb-hero-subtitle{ font-size:1.2rem; color:var(--pb-text-color,var(--ink-soft)); margin-bottom:28px; }
 .pb-hero:not(.pb-hero-has-bg){ background:var(--accent); }
+.pb-hero::after{
+  content:''; position:absolute; left:0; right:0; bottom:-1px; height:70px; z-index:1; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,40 C300,100 900,0 1200,60 L1200,120 L0,120 Z' fill='%23faf6f0'/%3E%3C/svg%3E");
+  background-size:100% 100%;
+}
+
+/* ---------- category browse grid (homepage etc.) ---------- */
+.pb-cat-grid{ gap:28px; }
+.pb-cat-grid-card{ border-radius:var(--radius-lg); }
+.pb-cat-grid-card img,.pb-cat-grid-noimg{ aspect-ratio:16/10; background:linear-gradient(135deg,var(--accent),var(--paper)); }
+.pb-cat-grid-card .pad{ text-align:center; padding:28px 24px 32px; }
+.pb-cat-grid-card h3{ font-size:1.35rem; }
+.pb-cat-grid-card .btn{ margin-top:6px; }
 
 .pb-contact-form{ max-width:560px; margin:0 auto; text-align:left; }
 .pb-contact-form label{ margin-bottom:16px; }
