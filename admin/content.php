@@ -3,8 +3,6 @@ require __DIR__.'/inc.php';
 
 const CONTENT_TYPES = [
     'animal'   => ['table'=>'animals',    'label'=>'Dieren',      'singular'=>'dier',       'view'=>'../animal.php?slug=',   'nav'=>'animals'],
-    'album'    => ['table'=>'albums',     'label'=>'Albums',      'singular'=>'album',      'view'=>'../album.php?slug=',    'nav'=>'albums'],
-    'post'     => ['table'=>'posts',      'label'=>'Blog',        'singular'=>'blogpost',   'view'=>'../post.php?slug=',     'nav'=>'posts'],
     'category' => ['table'=>'categories', 'label'=>'Categorieën', 'singular'=>'categorie',  'view'=>'../category.php?slug=', 'nav'=>'categories'],
 ];
 
