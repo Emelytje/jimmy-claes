@@ -4,20 +4,18 @@ require_admin();
 
 function admin_header($title, $active=''){
     echo '<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-    echo '<title>'.e($title).' - Beheer - Dieren door de lens</title>';
+    echo '<title>'.e($title).' - Beheer - '.e(setting('site_title','Jimbo Animal Species of the World')).'</title>';
     echo '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap">';
     echo '<link rel="stylesheet" href="../assets/style.css?v='.asset_v(__DIR__.'/../assets/style.css').'"><link rel="stylesheet" href="assets/admin.css?v='.asset_v(__DIR__.'/assets/admin.css').'">';
     echo '</head><body class="admin">';
     echo '<div class="admin-shell">';
-    echo '<aside class="admin-side"><a class="admin-brand" href="index.php">Dieren door de lens</a><nav>';
+    echo '<aside class="admin-side"><a class="admin-brand" href="index.php">'.e(setting('site_title','Jimbo Animal Species of the World')).'</a><nav>';
     $links = [
         'index'=>['index.php','Dashboard'],
         'pages'=>['pages.php','Pagina\'s'],
         'animals'=>['content.php?type=animal','Dieren'],
         'categories'=>['content.php?type=category','Categorieën'],
-        'albums'=>['content.php?type=album','Albums'],
-        'posts'=>['content.php?type=post','Blog'],
         'messages'=>['messages.php','Berichten'],
         'settings'=>['settings.php','Site-instellingen'],
     ];

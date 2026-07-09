@@ -252,6 +252,15 @@ var BLOCKS = {
       return wrap('subcategories', id, s, html);
     }
   },
+  categories_grid: {
+    label:'Categorieën-overzicht', icon:'&#128506;', group:'Layout',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
+    data:function(){ return {}; },
+    render:function(d, s, id){
+      var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch alle hoofdcategorieën (bv. Gewervelde dieren) als kaartjes, ideaal voor de homepage.</div>';
+      return wrap('categories_grid', id, s, html);
+    }
+  },
   photocount: {
     label:"Fototeller", icon:'&#128202;', group:'Layout',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
@@ -1171,6 +1180,9 @@ function contentFieldsHtml(block){
       break;
     case 'subcategories':
       html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle sub-categorieën en dieren binnen déze categorie, met coverfoto — enkel zinvol op een categoriepagina.</p>';
+      break;
+    case 'categories_grid':
+      html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle hoofdcategorieën (bv. Gewervelde dieren, Ongewervelde dieren) als grote kaartjes — geef die categorieën een coverfoto voor het beste resultaat.</p>';
       break;
   }
   html += '</div>';
