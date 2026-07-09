@@ -49,7 +49,38 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location: content.php?type='.$type); exit;
 }
 
-$items = $type === 'category' ? pbe_category_tree_flat() : db()->query("SELECT * FROM $table ORDER BY created_at DESC")->fetchAll();
+$q = trim($_GET['q'] ?? '');
+$klasse = (int)($_GET['klasse'] ?? 0);
+
+if($type === 'category'){
+    $items = pbe_category_tree_flat();
+    if($q !== ''){
+        $items = array_values(array_filter($items, function($p) use ($q){ return stripos($p['title'], $q) !== false; }));
+    }
+} else {
+    $sql = "SELECT * FROM $table WHERE 1=1";
+    $params = [];
+    if($q !== ''){ $sql .= " AND title LIKE ?"; $params[] = '%'.$q.'%'; }
+    if($klasse){
+        $ids = pb_category_descendant_ids($klasse);
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $sql .= " AND category_id IN ($ph)";
+        $params = array_merge($params, $ids);
+    }
+    $sql .= " ORDER BY created_at DESC";
+    $st = db()->prepare($sql);
+    $st->execute($params);
+    $items = $st->fetchAll();
+}
+
+// Hoofdcategorieën ("klassen") voor de filter — enkel zinvol bij dieren,
+// zodat je bv. enkel amfibieën of enkel zoogdieren kan tonen.
+$klassen = [];
+if($type === 'animal'){
+    try{ $klassen = db()->query('SELECT id, title FROM categories WHERE parent_id IS NULL ORDER BY sort_order, title')->fetchAll(); }
+    catch(Exception $e){ $klassen = []; }
+}
+
 admin_header($info['label'], $info['nav']);
 ?>
 <div class="a-card">
@@ -73,6 +104,31 @@ admin_header($info['label'], $info['nav']);
 </div>
 
 <div class="a-card">
+  <div class="a-card-pad">
+    <form method="get" class="a-inline-form">
+      <input type="hidden" name="type" value="<?=e($type)?>">
+      <div class="a-field"><label>Zoeken op naam</label><input type="text" name="q" placeholder="Bv. hoornkikker" value="<?=e($q)?>"></div>
+      <?php if($type === 'animal' && $klassen): ?>
+      <div class="a-field">
+        <label>Klasse</label>
+        <select name="klasse">
+          <option value="">Alle klassen</option>
+          <?php foreach($klassen as $k): ?>
+          <option value="<?=(int)$k['id']?>" <?=$klasse===(int)$k['id']?'selected':''?>><?=e($k['title'])?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <?php endif; ?>
+      <button class="a-btn" type="submit">Filteren</button>
+      <?php if($q !== '' || $klasse): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>">Wis filter</a><?php endif; ?>
+    </form>
+  </div>
+</div>
+
+<div class="a-card">
+<?php if($q !== '' || $klasse): ?>
+  <div class="a-card-pad" style="padding-bottom:0;color:var(--ink-soft)"><?=count($items)?> resultaat/resultaten gevonden.</div>
+<?php endif; ?>
 <?php if($items): ?>
   <table class="a-table">
     <tr><th>Titel</th><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
