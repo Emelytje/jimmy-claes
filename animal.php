@@ -10,11 +10,22 @@ if($blocks){
     exit;
 }
 header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description']); ?>
-<?php $breadcrumbChain = !empty($a['category_id']) ? pb_category_ancestors((int)$a['category_id']) : []; ?>
+<?php
+$breadcrumbChain = !empty($a['category_id']) ? pb_category_ancestors((int)$a['category_id']) : [];
+$st = db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC');
+$st->execute([$a['id']]);
+$photos = $st->fetchAll();
+?>
 <?=pb_render_breadcrumb($breadcrumbChain, $a['title'])?>
-<section class="hero"><div><h1><?=e($a['title'])?></h1><p><?=nl2br(e($a['description']))?></p></div></section>
-<main class="wrap"><div class="gallery <?=e($a['layout'])?>">
-<?php $st=db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC'); $st->execute([$a['id']]); foreach($st as $p): ?>
+<section class="hero"><div><h1><?=e($a['title'])?></h1><?php if($a['description']): ?><p><?=nl2br(e($a['description']))?></p><?php endif; ?></div></section>
+<main class="wrap">
+<?php if($photos): ?>
+<div class="gallery <?=e($a['layout'])?>">
+<?php foreach($photos as $p): ?>
 <figure class="photo"><img src="<?=e($p['image_path'])?>" alt="<?=e($p['title'])?>"><figcaption class="caption"><strong><?=e($p['title'])?></strong><br><?=nl2br(e($p['caption']))?></figcaption></figure>
 <?php endforeach; ?>
-</div></main><?php footer_html(); ?>
+</div>
+<?php else: ?>
+<div class="pb-empty-photos"><p>Nog geen foto's van <?=e($a['title'])?> — binnenkort meer!</p></div>
+<?php endif; ?>
+</main><?php footer_html(); ?>

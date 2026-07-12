@@ -1,10 +1,11 @@
 <?php
 /**
- * One-time bulk import for the vertebrates taxonomy (part 1: amfibieën +
- * reptielen > slangen, per the PDF hierarchy). Visit this page once while
- * logged in as admin; it creates the category tree and each species as a
- * draft "Dier" ready for photos. Safe to re-run — existing slugs are
- * skipped, nothing is duplicated or overwritten.
+ * One-time bulk import for the full vertebrates taxonomy (Amfibieën,
+ * Reptielen, Vissen, Vogels, Zoogdieren), per the PDF hierarchy. Visit this
+ * page once while logged in as admin; it creates the category tree and each
+ * species as a draft "Dier" ready for photos. Safe to re-run — existing
+ * categories/animals (matched on title + parent) are skipped, nothing is
+ * duplicated or overwritten.
  */
 require __DIR__.'/inc.php';
 
@@ -92,13 +93,296 @@ $tree = [
                     'Acrantophis madagascariensis','Acrantophis dumerlili',
                 ],
             ],
-            'Schildpadden' => [],
-            'Krokodilachtigen' => [],
-            'Hagedissen' => [],
+            'Schildpadden' => [
+                'Modder- en muskusschildpadden' => ['Staurotypus salvinii'],
+                'Bijtschildpadden' => ['Macrochelys temminckii'],
+                'Scheenplaatschildpadden' => ['Podocnemis erythrocephala','Podocnemis expansa'],
+                'Oude wereld moerasschildpadden' => ['Cuora mouhotii'],
+                'Moerasschildpadden' => ['Emys orbicularis','Trachemys scripta elegans','Terrapene carolina bauri','Trachemys scripta scripta'],
+                'Landschildpadden' => ['Aldabrachelys gigantea','Astrochelys radiata','Chersina angulata','Gopherus polyphemus','Pyxis arachnoides'],
+            ],
+            'Krokodilachtigen' => [
+                'Alligators, kaaimannen en gavialen' => ['Alligator mississippiensis','Alligator sinesis','Caiman crocodilus crocodilus','Caiman crocodilus','Caiman latrostris','Caiman yacare'],
+                'Krokodillen' => [
+                    'Crocodylus acutus','Crocodylus intermedius','Crocodylus mindorensis','Crocodylus niloticus','Mecistops cataphractus',
+                    'Osteolaemus tertaspis','Crocodylus moreletii','Crocodylus rhombifer','Crocodylus haili','Crocodylus johnstoni',
+                    'Crocodylus niloticus chamses','Crocodylus niloticus cowei','Crocodylus novaeguineae','Crocodylus palustris',
+                    'Crocodylus porosus','Crocodylus siamensis','Crocodylus suchus',
+                ],
+            ],
+            'Hagedissen' => [
+                'Varanen' => ['Varanus komodoensis','Varanus acanthurus','Varanus glauerti','Varanus varius','Varanus melinus','Varanus prasinus'],
+                'Stekelleguanen en padhagedissen' => ['Phrynosoma asio','Phrynosoma cornutum','Sceloporus malachiticus','Sceloporus taeniocnemis'],
+                'Nieuw-Zeelandse gekko\'s' => ['Naultinus grayii'],
+                'Korsthagedissen' => ['Heloderma horridum exasperatum','Heloderma suspectum'],
+                'Hazelwormen' => ['Abronia graminae'],
+                'Gordelstaarthagedissen' => ['Namazonurus lawrenci','Ouroborus cataphractus','Smaug depressus'],
+                'Dwerggekko\'s en wondergekko\'s' => ['Pristurus carteri'],
+                'Basilisken' => ['Basiliscus plumifrons','Corytophanes cristatus'],
+                'Anolissen' => ['Anolis equestris equestris','Anolis smallwoodi'],
+                'Teju\'s' => ['Crocodilurus amazonicus','Dracaena guianensis'],
+                'Leguanen' => ['Iguana iguana','Ctenosaura quinquecarinata'],
+                'Kameleons' => [
+                    'Kinyongia vosseleri','Brookesia stumpffi','Calumma parsonii parsonii','Furcifer oustaleti','Furcifer pardalis',
+                    'Kinyongia fischeri','Kinyongia matschiei','Rhampholeon acuminatus','Rieppeleon kerstenii','Trioceros deremensis',
+                    'Trioceros jacksonii xantholophus',
+                ],
+                'Echte gekko\'s' => ['Phelsuma grandis','Ptenopus carpi','Lygodactylus williamsi'],
+                'Chinese krokodilstaarthagedissen' => ['Shinisaurus crocodilurus crocodilurus'],
+                'Agamen' => ['Physignathus cocincinus','Chlamysdosaurus kingii','Pogona vitticeps'],
+            ],
         ],
-        'Vissen' => [],
-        'Vogels' => [],
-        'Zoogdieren' => [],
+        'Vissen' => [
+            'Straalvinnigen' => [
+                'Longvissen' => [],
+                'Kwastsnoeken' => [],
+                'Cichliden' => [],
+                'Beentongvissen' => [],
+                'Arowana\'s' => [],
+                'Trekkervissen' => ['Balistoides conspicillum','Odonus niger'],
+                'Mesvissen' => ['Chitala ornata','Xenomystus nigri'],
+                'Kogelvisachtigen' => [
+                    'Maanvissen' => ['Oceanario de lisboa'],
+                    'Zoetwatergobies' => ['Periophthalmus barbarus'],
+                ],
+                'Schorpioenvisachtigen' => [
+                    'Schorpioenvissen' => ['Rhinopias frondosa'],
+                    'Steenvissen' => ['Synanceia verrucosa'],
+                    'Papagaaivissen' => ['Scarus quoyi'],
+                ],
+                'Palingachtigen' => [
+                    'Murenen' => ['Echidna nebulosa','Gymnothorax funebris','Gymnothorax zebra','Rhinomuraena quasita'],
+                    'Mesalen' => ['Electrophorus electicus'],
+                    'Meervallen' => ['Silurus glanis'],
+                    'Lipvissen' => ['Cheilinus undulatus','Cirrhilabrus aquamarinus','Coris gaimerd','Labrus bergylta','Bodianus rufus'],
+                    'Kardinaalbaarzen' => ['Pterapogon kauderni'],
+                ],
+                'Baarsachtigen' => [
+                    'Zeebarbelen' => ['Parupeneus multifasciatus'],
+                    'Wimpelvis' => ['Zanclus cornotus'],
+                    'Zilverbladvissen' => ['Monodactylus argenteus'],
+                    'Zaag- en zeebaarzen' => ['Cromileptes altivelis','Epinephelus lanceolatus','Cephalopholis argus','Epinephelus marginatus','Paralabrax clathratus'],
+                    'Snappers' => ['Lutjanus sebae','Lutjanus kasmira'],
+                    'Rifwachters' => ['Calloplesiops altivelis'],
+                    'Koraalvlinders' => [
+                        'Chaetodon falcula','Chaetodon sedentarius','Chelmon muelleri','Chelmon rostratus','Coradion melanopus',
+                        'Hemitaurichthys polylepis','Prognathodes aculeatus','Chaetodon capistratus','Chaetodon semilarvatus',
+                        'Chaetodon zanzibarensis','Forcipiger flavissimus',
+                    ],
+                    'Keizersvissen' => ['Holacanthus ciliaris','Pomacanthus imperator','Pomacanthus paru','Centropyge bicolor'],
+                    'Grombaarzen' => ['Plectorhinchus albovittatus','Plectorhinchus vittatus'],
+                    'Doktervissen' => ['Acanthurus dussumieri','Acanthurus triostegus','Acanthurus xanthopterus','Zebrasoma flavescens','Acanthurus sohal'],
+                ],
+            ],
+            'Kraakbeenvissen' => [
+                'Haaien' => [
+                    'Hamerhaaien' => ['Sphyrna tiburo','Sphyrna lewine','Sphyrna mokarran'],
+                    'Bamboehaaien' => ['Chiloscyllium arabicum','Chiloscyllium punctatum','Hemiscyllium ocellatum','Chiloscyllium griseum','Chiloscyllium plagiosum','Hemiscyllium trispeculare'],
+                    'Blinde haaien' => ['Brachaelurus waddi'],
+                    'Doornhaaiachtigen' => ['Oxynotus centrina'],
+                    'Gladde haaien' => ['Mustelus asterias','Triakis scyllium','Triakis semifasciata','Galeorhinus galeus','Mustelus californicus','Mustelus mustelus'],
+                    'Kathaaien' => ['Atelomycterus marmoratus','Cephaloscyllium ventriosum','Scyliorhinus stellaris','Atelomycterus baliensis','Poroderma africanum','Scyliorhinus canicula'],
+                    'Makreelhaaien' => ['Carcharias taurus'],
+                    'Requiemhaaien' => [
+                        'Carcharhinus acronotus','Carcharhinus albimargunatus','Carcharhinus amblyrhynchos','Carcharhinus humani',
+                        'Carcharhinus leucas','Carcharhinus melanopterus','Carcharhinus perezii','Carcharhinus plumbeus',
+                        'Negaprion acutidens','Triaenodon obesus','Carcharhinus falciformis','Carcharhinus limbatus','Negaprion brevirostris',
+                    ],
+                    'Tijgerhaaien' => ['Galeocerdo cuvier'],
+                    'Varkenshaaien' => ['Heterodontus francisci','Heterodontus portusjacksoni','Heterodontus galeatus','Heterodontus japonicus','Heterodontus zebra'],
+                    'Verpleegsterhaaien' => ['Ginglymostoma cirratum','Nebrius ferrugineus','Pseudoginglymostoma'],
+                    'Walvishaaien' => ['Rhincodon typus'],
+                    'Wobbegons' => ['Orectolobus maculatus','Orectolobus reticulatus','Orectolobus wardi','Eucrossorhinus dasypogon','Orectolobus hutchinson','Orectolobus japonicus','Orectolobus ornatus'],
+                    'Zebrahaaien' => ['Stegostoma tigrinum'],
+                    'Zee-engelen' => ['Squantina japonica'],
+                ],
+                'Roggen' => [
+                    'Vioolroggen' => ['Trygonorrhina dumerilii'],
+                    'Adelaarsroggen' => [],
+                    'Amerikaanse doornroggen' => [],
+                    'Echte roggen' => [],
+                    'Pijlstaartroggen' => [],
+                    'Sidderroggen' => [],
+                    'Zaagvissen' => [],
+                    'Zoetwaterroggen' => [],
+                ],
+                'Draakvissen' => ['Hydrolagus coliei'],
+            ],
+        ],
+        'Vogels' => [
+            'Fazantachtigen' => [
+                'Bospatrijzen' => ['Arborophila gingica'],
+                'Patrijzen, kwartels en frankolijnen' => ['Synoicus chinensis','Margaroperdix madagascariensis'],
+                'Pauwen' => ['Alfopavo congensis'],
+                'Tragopanen en glansfazanten' => ['Tragopan caboti'],
+            ],
+            'Neushoornvogels' => [
+                'Hoornraven' => ['Bucorvus abyssinicus'],
+                'Echte neushoornvogels' => ['Bycanistes bucinator','Ceratogymna atrata','Buceros bicornis','Rhyticeros cassidix','Tockus deckeni'],
+                'Hoppen' => ['Upupa epops'],
+                'Boomhoppen' => [],
+            ],
+            'Papegaaiachtigen' => [
+                'Afrikaanse papagaaien' => ['Poicephalus senegalus senegalus','Psittacus erithacus erithacus'],
+                'Amazonepapegaaien' => ['Amazona oratrix magna'],
+                'Ara\'s' => ['Anodorhynchus hyacinthinus','Ara ararauna','Ara chloropterus','Ara hybride','Ara militaris mexicana','Primolius maracana','Ara severus','Primolius coulino'],
+                'Dwergpapegaaien' => ['Agapornis nigrigenis','Agapornis roseicollis'],
+                'Kaketoes' => ['Cacatua alba','Cacatua citrinocristata','Nymphicus hollandicus'],
+                'Lori\'s' => ['Glossoptilus goldlei','Hypocharmosyna placentis','Vini australis','Lorius hypoinochrous devittatus','Melopsittacus undulatus'],
+                'Muspapegaaien' => ['Pionites melanocephalus'],
+                'Nieuw-Zeelandse papegaaien' => ['Nestor notabilis'],
+                'Oceanische papegaaien' => ['Lathamus discolor','Neopsephotes bourkii'],
+                'Parkieten' => ['Aratinga nenday','Aratinga solstitialis','Pyrrhura griseipectus','Psittacara acuticaudatus','Guarouba guarouba'],
+                'Eilandpapegaaien' => ['Coracopsis nigra nigra'],
+                'Koningsparkieten en halsbandparkiet' => ['Lathamus discolor','Psittacula eupatria'],
+            ],
+            'Pelikaanachtigen' => [
+                'Hamerkop' => ['Scopus umbretta umbrutta'],
+                'Ibissen' => ['Eudocimus ruber','Geronticus calvus','Geronticus eremita','Bostrychia hagedash'],
+                'Pelikanen' => ['Pelecanus conspicillatus','Pelecanus crispus','Pelecanus erythorhynchos','Pelecanus thagus','Pelecanus occidentalis carolinensis'],
+                'Lepelaars' => ['Platalea leucorodia leucorodia'],
+                'Schoenbekooievaar' => ['Balaeniceps rex'],
+                'Reigers' => [],
+            ],
+            'Spechtvogels' => [
+                'Afrikaanse baardvogels' => ['Lybius dubius'],
+                'Toekans' => ['Ramphastos tucanus tucanus','Pteroglossus castanotis'],
+            ],
+            'Zangvogels' => [
+                'Brilvogels' => ['Zosterops eurycricotus'],
+                'Gaailijsters' => ['Leiothrix lutea'],
+                'Honingeters' => ['Entomyzon cyanotis'],
+                'Lijsters' => ['Geokichla dohertyi'],
+                'Kraaien' => ['Cyanocorax chrysops'],
+            ],
+            'Eendvogels' => [
+                'Echte eenden' => ['Aix galecirulata','Anas platyrhynchos platyrhynchos','Mergus squamatus'],
+                'Fluiteenden' => ['Dendrocygna bicolor','Dendrocygna viduata'],
+                'Halfganzen' => ['Sarkidiornis melanotos'],
+                'Zwanen en ganzen' => ['Branta leucopsis'],
+            ],
+            'Hoendervogels' => [
+                'Tandkwartels' => ['Callipepla californica','Cyrtonyx montezumae'],
+                'Sjakohoenders en hokko\'s' => ['Crax blumenbachii','Crax rubra rubra'],
+            ],
+            'Kraanvogelachtigen' => [
+                'Kraanvogels' => ['Balearica pavonina pavonina'],
+                'Trompetvogels' => ['Psophia crepitans crepitans'],
+            ],
+            'Roofvogels' => [
+                'Gieren van de nieuwe wereld' => ['Cathartes aura','Vultur gryphus'],
+                'Gieren van de oude wereld' => ['Gypaetus barbatus barbatus','Gyps fulvus fulvus','Gyps rueppellii','Necrosyrtes monachus','Neophron percnopterus percnopterus','Aegypius monachus'],
+                'Harpijarenden' => ['Harpia harpyja'],
+                'Secretarisvogel' => ['Sagittarius serpentarius'],
+                'Slangenarenden' => ['Terathopius ecaudatus'],
+                'Uilen' => ['Athene cunicularia','Bubo bubo bubo','Bubo scandiacus','Ketupa ketupu ketupu','Megascops asio','Pulsatrix perspicillata'],
+                'Valken en caracara\'s' => ['Caracara plancus','Falco naumanni','Falco tinnuculus tinnuculus','Phalcoboenus australis'],
+                'Zeearenden en wouwen' => ['Haliaeetus albicilla albicilla','Haliaeetus leucocephalus','Haliaeetus pelagicus'],
+                'Buizerds' => [],
+                'Echte arenden' => [],
+                'Visarenden' => [],
+            ],
+            'Scharrelaarvogels' => [
+                'IJsvogels' => ['Dacelo novaeguineae'],
+                'Scharrelaars' => ['Coracias cyanogaster'],
+                'Bijeneters' => [],
+                'Grondscharrelaars' => [],
+                'Motmots' => [],
+            ],
+            'Steltloperachtigen' => [
+                'Krokodilwachter' => ['Pluvianus aegyptius'],
+                'Vechtkwartels' => ['Turnix suscitator'],
+            ],
+            'Duiven' => [
+                'Duiven en tortels' => ['Columba guinea','Spilopelia senegalensis','Streptopelia turtur turtur'],
+                'Amerikaanse grondduiven' => ['Claravis pretiosa'],
+                'Australische duiven' => ['Gallicolumba rufigula rufigula','Geopella cuneata','Phaps elegans','Chalcophaps indica','Leucosarcia melanoleuco'],
+                'Aziatische duiven' => ['Otidiphaps aruensis'],
+                'Fruitduiven en muskaatduiven' => ['Ducula mullerii mullerii'],
+            ],
+            'Flamingo\'s' => ['Phoenicopterus ruber ruber'],
+            'Pinguïns' => ['Aptenodytes patagonicus','Pygoscelis papua papua','Eudyptes chrysolophus','Spheniscus demersus'],
+            'Kiwi\'s' => ['Apteryx mantelli'],
+            'Kolibries' => ['Amazilia amazilia'],
+            'Ooievaars' => ['Ciconia abdimii','Leptoptilos crumenifer','Mycteria ibis'],
+            'Struisvogels' => ['Struthio camelus'],
+            'Tinamoes' => ['Crypturellus tataupa','Eudromia elegans'],
+            'Zonneral en kagoe' => ['Eurypyga helias helias'],
+            'Kasuarissen en emoes' => [],
+        ],
+        'Zoogdieren' => [
+            'Evenhoevigen' => [
+                'Bokken' => ['Budorcas taxicolor taxicolor','Capra falconeri heptneri','Hemitragus jemlahicus'],
+                'Holhoornigen' => ['Tragelaphus eurycerus isaaci'],
+                'Kamelen en lama\'s' => ['Camelus dromedarius','Camelus ferus bactrianus','Lama pacos'],
+                'Duikers' => ['Cephalophus natalensis','Cephalophus silvicultor'],
+                'Dwergherten' => ['Tragulus nigricans'],
+                'Echte antilopen' => ['Madoqua kirkii'],
+                'Echte herten' => ['Dama dama','Muntiacus reevesi'],
+                'Giraffen' => ['Okapia johnstoni'],
+                'Nijlpaarden' => ['Hippopotamus amphibius'],
+                'Paardantilopen' => ['Hippotragus niger niger'],
+                'Runderen' => ['Bubalus depressicornis','Bison bison bison','Bos javanicus javannicus','Syncerus caffer caffer'],
+                'Schijnherten' => ['Rangifer tarandus'],
+                'Varkens' => ['Babyrousa'],
+            ],
+            'Walvisachtigen' => [
+                'Dolfijnen' => ['Orcinus orca','Tursiops truncatus truncatus'],
+                'Gronddolfijnen' => ['Delphinapterus leucas'],
+            ],
+            'Primaten' => [
+                'Brul- en slingerapen' => ['Ateles fusciceps rufiventris','Lagothrix lagotricha'],
+                'Gibbons' => ['Nomascus leucogenys'],
+                'Hondsapen' => ['Cercopithecus hamlyni','Colobus guerza','Macara mulatta','Macara nigra','Mandrillus sphinx','Papio hamadryas','Semnopithecus entellus','Trachypithecus auratus'],
+                'Kapucijnapen' => ['Saimiri boliviensis boliviensis','Sapajus apella'],
+                'Klauwaapjes' => ['Callimico goeldii','Callithrix geoffroyi','Callithrix jacchus','Cebuella pygmaea','Leontopithecus chrysomelas','Mico argentatus','Saguinus imperator subgrisescens','Saguinus oedipus'],
+                'Lori\'s' => ['Loris lydekkerianus nordicus'],
+                'Maki\'s' => ['Eulemur flavifrons','Eulemur macaco','Lemur catta','Varecia rubra','Eulemur coronatus'],
+                'Mensapen' => ['Gorilla beringei graueri','Gorilla gorilla gorilla','Pan paniscus','Pan troglodytes','Pongo pygmaeus'],
+                'Sifaka\'s' => ['Propithecus coronatus'],
+                'Titi\'s en saki\'s' => ['Callicebus cupreus','Chiropotes sagulatus','Pithecia pithecia'],
+            ],
+            'Roofdieren' => [
+                'Oorrobben' => ['Zalophus californiacus'],
+                'Beren' => ['Ailuropoda melanoleuca','Melursus ursinus ursinus','Tremarctos ornatus','Ursus americanus'],
+                'Civetkatten' => ['Genetta genetta'],
+                'Grote katten' => ['Panthera leo','Panthera leo krugeri','Panthera pardus orientalis','Panthera onca','Panthera tigris altaica','Panthera tigris sumatrae'],
+                'Hondachtigen' => ['Lycaon pictus','Urocyon cinereoargenteus','Vulpes zerda'],
+                'Kleine katten' => ['Lynx rufus','Puma concolor coryl'],
+                'Mangoesten' => ['Cynictis penicillata','Suricata suricatta'],
+                'Marterachtigen' => ['Enhydra lutris kenyoni','Lontra canadensis','Pteronura brasiliensis'],
+                'Stinkdieren' => ['Mephitis mephitis'],
+                'Wasbeerachtigen' => ['Nasau nasau','Procyon lotor'],
+                'Rode panda\'s' => ['Ailurus fulgens'],
+                'Zeehonden' => ['Phoca vitulina vitulina'],
+            ],
+            'Gordeldieren' => ['Chaetophractus villosus'],
+            'Klimbuideldieren' => [
+                'Kangoeroes' => ['Dendrolagus goodfellowi buergersi'],
+            ],
+            'Knaagdieren' => [
+                'Caviaachtigen' => ['Cavia porcellus domesticus','Dolichotis patagonum'],
+                'Eekhoornachtigen' => ['Cynomys ludovicianus'],
+                'Goendi\'s' => ['Ctenodactylus gundi'],
+                'Ratten en muizen' => ['Phloeomys pallidus','Lemniscomys barbarus','Mus musculus','Rattus norvegicus'],
+                'Stekelvarkens van de nieuwe wereld' => ['Erethizon dorsatum'],
+                'Beverratten en hutia\'s' => ['Myocastor coypus'],
+            ],
+            'Onevenhoevigen' => [
+                'Neushoorns' => ['Ceratotherium simum simum','Rhinoceros unicornis'],
+                'Paardachtigen' => ['Equus quagga boehmi','Equus zebra hartmannae'],
+                'Tapirs' => ['Tapirus indicus'],
+            ],
+            'Tandarmen' => [
+                'Miereneters' => ['Tamandua tetradactyla'],
+                'Luiaards' => ['Choloepus didactylus'],
+            ],
+            'Wombats' => [],
+            'Aardvarkens' => ['Orycteropus afer'],
+            'Koala\'s' => ['Phascolarctos cinereus'],
+            'Olifanten' => ['Elephas maximus'],
+            'Springspitsmuizen' => ['Rhynchocyon petersi adersi'],
+        ],
     ],
 ];
 
@@ -184,8 +468,8 @@ admin_header('Taxonomie importeren', '');
   <div class="notice">Klaar. <?=$stats['categories']?> nieuwe categorieën aangemaakt (<?=$stats['categories_skipped']?> bestonden al), <?=$stats['animals']?> nieuwe dieren aangemaakt als concept (<?=$stats['animals_skipped']?> bestonden al).</div>
   <p>Standaard blijven nieuwe soorten concept (nog geen foto). Klik hieronder op "Alles publiceren" om de hele boom — categorieën én soorten — meteen live te zetten, ook zonder dat er al foto's op staan.</p>
 <?php else: ?>
-  <h2 style="margin-top:0">Taxonomie importeren (deel 1: amfibieën + reptielen &gt; slangen)</h2>
-  <p>Dit maakt in één keer de volledige categorieboom aan zoals in de PDF, plus elke soort als een nieuw concept-dier (categorie toegekend, nog geen foto — dat doe je zelf na dit importeren). Bestaande categorieën/dieren met dezelfde naam worden overgeslagen, dus dit is veilig om nogmaals te draaien.</p>
+  <h2 style="margin-top:0">Taxonomie importeren (Amfibieën, Reptielen, Vissen, Vogels, Zoogdieren)</h2>
+  <p>Dit maakt in één keer de volledige categorieboom aan zoals in de PDF, plus elke soort als een nieuw concept-dier (categorie toegekend, nog geen foto — dat doe je zelf na dit importeren). Bestaande categorieën/dieren met dezelfde naam worden overgeslagen, dus dit is veilig om nogmaals te draaien — al eerder geïmporteerde soorten (amfibieën, slangen) blijven ongemoeid, enkel de nieuwe takken worden toegevoegd.</p>
   <form method="post">
     <?=csrf_field()?>
     <input type="hidden" name="action" value="import">
