@@ -49,21 +49,21 @@ admin_header("Pagina's", 'pages');
     <tr><th>Titel</th><th>Slug</th><th>Status</th><th>In menu</th><th>Bijgewerkt</th><th></th></tr>
     <?php foreach($pages as $p): ?>
     <tr>
-      <td><strong><?=e($p['title'])?></strong></td>
-      <td><code>/page.php?slug=<?=e($p['slug'])?></code></td>
-      <td>
+      <td data-label="Titel"><strong><?=e($p['title'])?></strong></td>
+      <td data-label="Slug"><code>/page.php?slug=<?=e($p['slug'])?></code></td>
+      <td data-label="Status">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?'Live':'Concept'?></button>
         </form>
       </td>
-      <td>
+      <td data-label="In menu">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_nav"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-pill <?=$p['show_in_nav']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['show_in_nav']?'Ja':'Nee'?></button>
         </form>
       </td>
-      <td><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
+      <td data-label="Bijgewerkt"><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
       <td class="row-actions">
         <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="../page.php?slug=<?=e($p['slug'])?>" target="_blank">Bekijk</a><?php endif; ?>
         <a class="a-btn a-btn-sm" href="page-edit.php?id=<?=$p['id']?>">Bewerken</a>

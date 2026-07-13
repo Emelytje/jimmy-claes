@@ -134,16 +134,16 @@ admin_header($info['label'], $info['nav']);
     <tr><th>Titel</th><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
-      <td><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
-      <td><code><?=e($info['view'].$p['slug'])?></code></td>
-      <td>
+      <td data-label="Titel"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
+      <td data-label="Link"><code><?=e($info['view'].$p['slug'])?></code></td>
+      <td data-label="Status">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?'Live':'Concept'?></button>
         </form>
       </td>
-      <td><?=(int)($p['views']??0)?></td>
-      <td><?=e(date('d-m-Y H:i',strtotime($p['created_at'])))?></td>
+      <td data-label="Bezoeken"><?=(int)($p['views']??0)?></td>
+      <td data-label="Aangemaakt"><?=e(date('d-m-Y H:i',strtotime($p['created_at'])))?></td>
       <td class="row-actions">
         <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="<?=e($info['view'].$p['slug'])?>" target="_blank">Bekijk</a><?php endif; ?>
         <a class="a-btn a-btn-sm" href="page-edit.php?type=<?=e($type)?>&id=<?=$p['id']?>">Bewerken</a>
