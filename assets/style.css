@@ -174,6 +174,19 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-gallery-item.pb-gallery-item-lg{ grid-column:span 2; grid-row:span 2; }
 .pb-gallery-item.pb-gallery-item-lg img{ height:100%; object-fit:cover; }
 
+/* ---------- dieren-/categoriefoto's: vaste, redelijke weergavegrootte ---------- */
+.pb-animal-photos .pb-figure,
+.pb-animal-photos .pb-gallery-item,
+.pb-animal-photos .photo{ max-width:520px; margin-left:auto; margin-right:auto; }
+.pb-animal-photos .pb-figure img,
+.pb-animal-photos .pb-gallery-item img,
+.pb-animal-photos .photo img{ width:520px; max-width:100%; height:345px; object-fit:cover; }
+.pb-animal-photos .gallery,.pb-animal-photos .pb-gallery{ justify-items:center; }
+/* "masonry"-lay-out gebruikt CSS-kolommen (columns), niet grid/flex, dus
+   justify-items heeft daar geen effect — hier expliciet centreren. */
+.pb-animal-photos .gallery.masonry{ display:flex!important; flex-wrap:wrap; justify-content:center; columns:unset; }
+.pb-animal-photos .gallery.masonry .photo{ break-inside:avoid; }
+
 .pb-video-wrap{ position:relative; padding-top:56.25%; border-radius:var(--radius-md); overflow:hidden; box-shadow:var(--shadow-sm); }
 .pb-video-wrap iframe,.pb-video-wrap video{ position:absolute; inset:0; width:100%; height:100%; border:0; }
 
@@ -307,6 +320,12 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
   .pb-gallery{ grid-template-columns:repeat(2,1fr); }
   .pb-gallery-masonry{ columns:2; }
   .pb-gallery-item.pb-gallery-item-lg{ grid-row:span 1; }
+  .pb-animal-photos .pb-figure,
+  .pb-animal-photos .pb-gallery-item,
+  .pb-animal-photos .photo{ max-width:320px; }
+  .pb-animal-photos .pb-figure img,
+  .pb-animal-photos .pb-gallery-item img,
+  .pb-animal-photos .photo img{ width:320px; height:212px; }
 }
 @media(max-width:480px){
   .pb-gallery{ grid-template-columns:1fr; }

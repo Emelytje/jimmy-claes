@@ -1,24 +1,26 @@
 <?php require 'functions.php'; $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM animals WHERE slug=? AND published=1'); $st->execute([$slug]); $a=$st->fetch(); if(!$a){ http_response_code(404); die('Pagina niet gevonden'); }
 track_view('animals', $a['id']);
 $blocks = pb_decode_blocks($a['blocks'] ?? null);
+$classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category_id']) : '';
 if($blocks){
     $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
     $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
     header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description'], '', $headExtra);
-    echo '<main class="pb-page">'.render_blocks($blocks).'</main>';
+    echo '<section class="hero"'.($classColor ? ' style="background:'.e($classColor).'"' : '').'><div><h1>'.e($a['title']).'</h1></div></section>';
+    echo pb_render_back_button();
+    echo '<main class="pb-page pb-animal-photos">'.render_blocks($blocks).'</main>';
     footer_html();
     exit;
 }
 header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description']); ?>
 <?php
-$classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category_id']) : '';
 $st = db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC');
 $st->execute([$a['id']]);
 $photos = $st->fetchAll();
 ?>
-<?=pb_render_back_button()?>
 <section class="hero"<?=$classColor ? ' style="background:'.e($classColor).'"' : ''?>><div><h1><?=e($a['title'])?></h1><?php if($a['description']): ?><p><?=nl2br(e($a['description']))?></p><?php endif; ?></div></section>
-<main class="wrap">
+<?=pb_render_back_button()?>
+<main class="wrap pb-animal-photos">
 <?php if($photos): ?>
 <div class="gallery <?=e($a['layout'])?>">
 <?php foreach($photos as $p): ?>
