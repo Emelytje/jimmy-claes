@@ -19,12 +19,24 @@ const FIX_TOP_LEVEL_TITLES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zo
 
 $tree = require __DIR__.'/taxonomy-tree-data.php';
 
-// Bouwt een titel => bovenliggende titel-kaart uit de kloppende boom (enkel
-// voor niet-top-niveau categorieën — top-niveau titels staan er niet in).
+// Verwijdert restjes van de "—"-inspringing uit de admin-lijst als die per
+// ongeluk in een echte titel zijn beland (bv. iemand die "— Vogels" als
+// titel intikte, denkend dat dat de manier was om in te springen).
+function fix_clean_title($title){
+    return preg_replace('/^[\s\x{2014}\x{2013}-]+/u', '', $title);
+}
+
+// Bouwt een titel => lijst van mogelijke bovenliggende titels uit de
+// kloppende boom (enkel voor niet-top-niveau categorieën). Een titel kan
+// hier meerdere kandidaat-ouders hebben als diezelfde naam bewust op
+// meerdere plekken in de boom voorkomt (bv. "Lori's" bij zowel
+// Papegaaiachtigen als Primaten) — zulke titels worden niet automatisch
+// verplaatst, om te voorkomen dat twee verschillende categorieën per
+// ongeluk worden samengevoegd.
 function fix_build_parent_map($node, $parentTitle, &$map){
     foreach($node as $name => $value){
-        if($parentTitle !== null) $map[$name] = $parentTitle;
-        $isSpeciesList = is_array($value) && array_keys($value) === range(0, count($value) - 1);
+        if($parentTitle !== null) $map[$name][] = $parentTitle;
+        $isSpeciesList = is_array($value) && (count($value) === 0 || array_keys($value) === range(0, count($value) - 1));
         if(!$isSpeciesList){
             fix_build_parent_map($value, $name, $map);
         }
@@ -34,10 +46,14 @@ $parentMap = [];
 foreach($tree as $topTitle => $children){
     fix_build_parent_map($children, $topTitle, $parentMap);
 }
+foreach($parentMap as $title => $parents){
+    $parentMap[$title] = array_values(array_unique($parents));
+}
 
 $done = false;
 $totalMerged = 0;
 $totalReparented = 0;
+$totalAmbiguous = 0;
 $wrapperRemoved = false;
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
@@ -59,18 +75,32 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
     // 2. Elke categorie die op het hoofdniveau staat maar volgens de boom
     // ergens genest hoort te zijn, verplaatsen we naar haar juiste ouder
-    // (die zelf ook ergens op het hoofdniveau moet bestaan, anders wordt
-    // ze hier gewoon overgeslagen — kan in een volgende ronde alsnog).
+    // (die zelf ook ergens moet bestaan, anders wordt ze overgeslagen — kan
+    // in een volgende ronde alsnog, zodra haar eigen ouder eerst hersteld
+    // is). Titels worden ook opgeschoond als er een "—"-restje in beland
+    // is (bv. iemand die zelf "— Vogels" intikte).
     $rows = db()->query('SELECT id, title FROM categories WHERE parent_id IS NULL')->fetchAll();
     foreach($rows as $row){
-        $title = $row['title'];
-        if(!isset($parentMap[$title])) continue; // hoort terecht op hoofdniveau, of onbekende titel
-        $expectedParentTitle = $parentMap[$title];
+        $cleanTitle = fix_clean_title($row['title']);
+        if(!isset($parentMap[$cleanTitle])) continue; // hoort terecht op hoofdniveau, of onbekende titel
+        $candidates = $parentMap[$cleanTitle];
+        if(count($candidates) > 1){
+            // Dezelfde naam bestaat bewust op meerdere plekken in de boom
+            // (bv. "Lori's") — niet gokken welke hier bedoeld is, anders
+            // riskeren we twee verschillende categorieën samen te smelten.
+            $totalAmbiguous++;
+            continue;
+        }
         $pst = db()->prepare('SELECT id FROM categories WHERE title=? ORDER BY (parent_id IS NULL) ASC, id ASC LIMIT 1');
-        $pst->execute([$expectedParentTitle]);
+        $pst->execute([$candidates[0]]);
         $parentRow = $pst->fetch();
         if(!$parentRow) continue; // ouder bestaat nog niet, overslaan
-        db()->prepare('UPDATE categories SET parent_id=? WHERE id=?')->execute([(int)$parentRow['id'], (int)$row['id']]);
+        $params = [(int)$parentRow['id']];
+        $sql = 'UPDATE categories SET parent_id=?';
+        if($cleanTitle !== $row['title']){ $sql .= ', title=?'; $params[] = $cleanTitle; }
+        $sql .= ' WHERE id=?';
+        $params[] = (int)$row['id'];
+        db()->prepare($sql)->execute($params);
         $totalReparented++;
     }
 
@@ -98,7 +128,7 @@ admin_header('Taxonomieboom herstellen', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. <?=$totalReparented?> categorie(ën) terug op hun juiste plek gezet, <?=$totalMerged?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, en de overbodige "Gewervelde dieren"/"Gwervelden"-koepel verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën netjes genest eronder.</div>
+  <div class="notice">Klaar. <?=$totalReparented?> categorie(ën) terug op hun juiste plek gezet, <?=$totalMerged?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, en de overbodige "Gewervelde dieren"/"Gwervelden"-koepel verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën netjes genest eronder.<?php if($totalAmbiguous): ?> <?=$totalAmbiguous?> categorie(ën) had(den) een naam die op meerdere plekken in de boom voorkomt (bv. "Lori's") en is/zijn expres niet automatisch verplaatst — controleer die zelf even bij Categorieën en stel de juiste "Bovenliggende categorie" in.<?php endif; ?></div>
   <p><a class="a-btn" href="content.php?type=category">Naar Categorieën</a> — controleer de boom. <a class="a-btn a-btn-ghost" href="../index.php" target="_blank">Bekijk de site</a></p>
 <?php else: ?>
   <h2 style="margin-top:0">Taxonomieboom herstellen</h2>
