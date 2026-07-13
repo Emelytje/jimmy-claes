@@ -130,7 +130,7 @@ admin_header($info['label'], $info['nav']);
   <div class="a-card-pad" style="padding-bottom:0;color:var(--ink-soft)"><?=count($items)?> resultaat/resultaten gevonden.</div>
 <?php endif; ?>
 <?php if($items): ?>
-  <table class="a-table">
+  <div class="a-table-wrap"><table class="a-table">
     <tr><th>Titel</th><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
@@ -154,7 +154,7 @@ admin_header($info['label'], $info['nav']);
       </td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
 <?php else: ?>
   <div class="a-empty"><h3>Nog geen <?=e(strtolower($info['label']))?></h3><p>Maak hierboven de eerste aan.</p></div>
 <?php endif; ?>

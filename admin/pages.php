@@ -45,7 +45,7 @@ admin_header("Pagina's", 'pages');
 
 <div class="a-card">
 <?php if($pages): ?>
-  <table class="a-table">
+  <div class="a-table-wrap"><table class="a-table">
     <tr><th>Titel</th><th>Slug</th><th>Status</th><th>In menu</th><th>Bijgewerkt</th><th></th></tr>
     <?php foreach($pages as $p): ?>
     <tr>
@@ -74,7 +74,7 @@ admin_header("Pagina's", 'pages');
       </td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
 <?php else: ?>
   <div class="a-empty"><h3>Nog geen pagina's</h3><p>Maak hierboven je eerste pagina aan.</p></div>
 <?php endif; ?>

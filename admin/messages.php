@@ -19,7 +19,7 @@ admin_header('Berichten', 'messages');
 <p style="font-size:.85rem;color:#8a7c6c;margin-top:-10px">Berichten via het contactformulier komen hier altijd terecht, ook als de e-mailmelding (indien ingesteld bij Site-instellingen) niet aankomt.</p>
 <div class="a-card">
 <?php if($items): ?>
-  <table class="a-table">
+  <div class="a-table-wrap"><table class="a-table">
     <tr><th>Naam</th><th>E-mail</th><th>Bericht</th><th>Datum</th><th>Status</th><th></th></tr>
     <?php foreach($items as $m): ?>
     <tr>
@@ -41,7 +41,7 @@ admin_header('Berichten', 'messages');
       </td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
 <?php else: ?>
   <div class="a-empty"><h3>Nog geen berichten</h3><p>Berichten via het contactformulier verschijnen hier.</p></div>
 <?php endif; ?>

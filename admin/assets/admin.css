@@ -46,6 +46,7 @@ body.pbe-body{ margin:0; height:100vh; overflow:hidden; }
 .a-stat .num{ font-family:var(--font-heading); font-size:2rem; color:var(--a-primary); }
 .a-stat .label{ font-size:.85rem; color:#6b5f54; }
 
+.a-table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 table.a-table{ width:100%; border-collapse:collapse; }
 .a-table th{ text-align:left; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:#8a7c6c; padding:12px 16px; border-bottom:1px solid var(--a-line); }
 .a-table td{ padding:14px 16px; border-bottom:1px solid var(--a-line); font-size:.93rem; vertical-align:middle; }

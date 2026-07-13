@@ -35,7 +35,7 @@ admin_header('Dashboard', 'index');
     <h2 style="margin:0 0 4px">Meest bekeken</h2>
     <p style="margin:0 0 16px;color:#8a7c6c;font-size:.9rem">Over alle pagina's, dieren, albums en blogposts.</p>
     <?php if($topViewed && $topViewed[0]['views'] > 0): ?>
-    <table class="a-table">
+    <div class="a-table-wrap"><table class="a-table">
       <tr><th>Titel</th><th>Type</th><th>Bezoeken</th><th></th></tr>
       <?php foreach($topViewed as $t): if($t['views']<1) continue; ?>
       <tr>
@@ -45,7 +45,7 @@ admin_header('Dashboard', 'index');
         <td class="row-actions"><a class="a-btn a-btn-sm a-btn-ghost" href="../<?=$typeUrls[$t['type']].e($t['slug'])?>" target="_blank">Bekijk</a></td>
       </tr>
       <?php endforeach; ?>
-    </table>
+    </table></div>
     <?php else: ?>
     <p style="color:#8a7c6c;font-size:.9rem;margin:0">Nog geen bezoeken geregistreerd.</p>
     <?php endif; ?>
@@ -61,7 +61,7 @@ admin_header('Dashboard', 'index');
     <a class="a-btn" href="pages.php">Alle pagina's &rarr;</a>
   </div>
   <?php if($recent): ?>
-  <table class="a-table">
+  <div class="a-table-wrap"><table class="a-table">
     <tr><th>Titel</th><th>Status</th><th>Bijgewerkt</th><th></th></tr>
     <?php foreach($recent as $p): ?>
     <tr>
@@ -71,7 +71,7 @@ admin_header('Dashboard', 'index');
       <td class="row-actions"><a class="a-btn a-btn-sm a-btn-ghost" href="page-edit.php?id=<?=$p['id']?>">Bewerken</a></td>
     </tr>
     <?php endforeach; ?>
-  </table>
+  </table></div>
   <?php else: ?>
   <div class="a-empty">
     <h3>Nog geen pagina's</h3>
