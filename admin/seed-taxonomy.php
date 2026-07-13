@@ -12,7 +12,6 @@ require __DIR__.'/inc.php';
 // name => [] (leaf category, optionally with species as a plain list)
 //      or name => [subcategory tree...] (associative = more categories)
 $tree = [
-    'Gewervelde dieren' => [
         'Amfibieën' => [
             'Kikkers' => [
                 'Aziatische hoornkikkers' => [],
@@ -383,7 +382,6 @@ $tree = [
             'Olifanten' => ['Elephas maximus'],
             'Springspitsmuizen' => ['Rhynchocyon petersi adersi'],
         ],
-    ],
 ];
 
 function seed_unique_slug($table, $baseSlug){
