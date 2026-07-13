@@ -97,19 +97,22 @@ function csrf_verify(){
     }
 }
 
+// Enige dierenklassen die rechtstreeks in de navbalk mogen staan. Alles
+// wat verder los op het hoofdniveau van de categorieën-tabel rondslingert
+// (rommel van eerdere handmatige aanpassingen, dubbels, weeskindjes) wordt
+// zo altijd genegeerd in de navigatie — geen boomherstel meer nodig om een
+// nette navbalk te krijgen.
+const NAV_TOP_LEVEL_CLASSES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren'];
+
 // Bouwt recursief de dieren-categorieboom op voor de navigatie. Een
 // categorie met eigen sub-categorieën wordt een geneste dropdown; een
 // categorie zonder kinderen wordt gewoon een link (geen lege pijl-naar-niets).
 function nav_render_categories($parentId=null){
     if($parentId === null){
-        $rows = db()->query('SELECT id, title, slug FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
-        // Eén enkele hoofdcategorie (bv. "Gewervelde dieren") is een kunstmatige
-        // koepel die niets toevoegt in de navbalk — sla die over en toon meteen
-        // haar kinderen, zodat bezoekers niet nodeloos een extra klik-niveau
-        // krijgen. De categorie zelf blijft gewoon bestaan/bezoekbaar.
-        if(count($rows) === 1){
-            return nav_render_categories((int)$rows[0]['id']);
-        }
+        $ph = implode(',', array_fill(0, count(NAV_TOP_LEVEL_CLASSES), '?'));
+        $st = db()->prepare("SELECT id, title, slug FROM categories WHERE parent_id IS NULL AND published=1 AND title IN ($ph) ORDER BY FIELD(title, $ph)");
+        $st->execute(array_merge(NAV_TOP_LEVEL_CLASSES, NAV_TOP_LEVEL_CLASSES));
+        $rows = $st->fetchAll();
     } else {
         $st = db()->prepare('SELECT id, title, slug FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
         $st->execute([$parentId]);
