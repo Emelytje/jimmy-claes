@@ -1,75 +1,51 @@
 <?php
 /**
- * One-time herstel-script voor de dieren-categorieboom. Zet Amfibieën,
- * Reptielen, Vissen, Vogels en Zoogdieren elk als eigen, aparte
- * hoofdcategorie (rechtstreeks in de navigatie, niet onder een
- * "Gewervelde dieren"-koepel), voegt duplicaten van diezelfde titels samen
- * (kinderen + dieren verhuizen mee, niets gaat verloren) en verwijdert de
- * overbodige "Gewervelde dieren"/"Gwervelden"-koepel zelf (haar eigen
- * kinderen, als die er nog onverwacht zijn, verhuizen dan naar het
- * hoofdniveau in plaats van verloren te gaan). Veilig om opnieuw te draaien.
+ * One-time herstel-script voor de dieren-categorieboom. Vergelijkt de
+ * volledige boom in de database met de kloppende structuur (dezelfde die
+ * seed-taxonomy.php gebruikt om te importeren) en herstelt elke categorie
+ * die per ongeluk op het hoofdniveau is komen te staan in plaats van
+ * genest op de juiste plek — bv. na het per ongeluk verwijderen van een
+ * bovenliggende categorie, waarbij kinderen naar boven verhuizen. Amfibieën,
+ * Reptielen, Vissen, Vogels en Zoogdieren blijven zelf wél op het
+ * hoofdniveau (dat is gewenst, rechtstreeks in de navigatie). Voegt ook
+ * duplicaten van dezelfde titel/ouder-combinatie samen (kinderen + dieren
+ * verhuizen mee, niets gaat verloren) en verwijdert een overbodige
+ * "Gewervelde dieren"/"Gwervelden"-koepel. Veilig om opnieuw te draaien.
  */
 require __DIR__.'/inc.php';
 
 const FIX_WRAPPER_TITLES = ['Gewervelde dieren', 'Gwervelden'];
-const FIX_CLASS_TITLES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren'];
+const FIX_TOP_LEVEL_TITLES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren'];
 
-// Voegt alle categorieën met een van de gegeven titels samen tot één
-// categorie (kinderen + dieren verhuizen mee naar de overblijvende), zet
-// die op $forceParentId (of laat ongemoeid als null), en geeft het aantal
-// samengevoegde duplicaten + het id van de overgebleven categorie terug.
-function fix_merge_by_title($titles, $forceParentId = null){
-    $ph = implode(',', array_fill(0, count($titles), '?'));
-    $st = db()->prepare("SELECT id, title, parent_id FROM categories WHERE title IN ($ph)");
-    $st->execute($titles);
-    $rows = $st->fetchAll();
-    if(!$rows){
-        return ['id' => null, 'merged' => 0];
+$tree = require __DIR__.'/taxonomy-tree-data.php';
+
+// Bouwt een titel => bovenliggende titel-kaart uit de kloppende boom (enkel
+// voor niet-top-niveau categorieën — top-niveau titels staan er niet in).
+function fix_build_parent_map($node, $parentTitle, &$map){
+    foreach($node as $name => $value){
+        if($parentTitle !== null) $map[$name] = $parentTitle;
+        $isSpeciesList = is_array($value) && array_keys($value) === range(0, count($value) - 1);
+        if(!$isSpeciesList){
+            fix_build_parent_map($value, $name, $map);
+        }
     }
-    $preferredTitle = $titles[0];
-    usort($rows, function($a, $b) use ($forceParentId, $preferredTitle){
-        $aTitle = $a['title'] === $preferredTitle; $bTitle = $b['title'] === $preferredTitle;
-        if($aTitle !== $bTitle) return $aTitle ? -1 : 1;
-        $aMatch = $forceParentId !== null && (int)$a['parent_id'] === $forceParentId;
-        $bMatch = $forceParentId !== null && (int)$b['parent_id'] === $forceParentId;
-        if($aMatch !== $bMatch) return $aMatch ? -1 : 1;
-        return $a['id'] <=> $b['id'];
-    });
-    $canonicalId = (int)$rows[0]['id'];
-    $merged = 0;
-    for($i = 1; $i < count($rows); $i++){
-        $dupId = (int)$rows[$i]['id'];
-        if($dupId === $canonicalId) continue;
-        db()->prepare('UPDATE categories SET parent_id=? WHERE parent_id=?')->execute([$canonicalId, $dupId]);
-        db()->prepare('UPDATE animals SET category_id=? WHERE category_id=?')->execute([$canonicalId, $dupId]);
-        db()->prepare('DELETE FROM categories WHERE id=?')->execute([$dupId]);
-        $merged++;
-    }
-    $setParent = $forceParentId !== null ? ', parent_id=?' : '';
-    $params = [$preferredTitle];
-    if($forceParentId !== null) $params[] = $forceParentId;
-    $params[] = $canonicalId;
-    db()->prepare("UPDATE categories SET title=?, published=1$setParent WHERE id=?")->execute($params);
-    return ['id' => $canonicalId, 'merged' => $merged];
+}
+$parentMap = [];
+foreach($tree as $topTitle => $children){
+    fix_build_parent_map($children, $topTitle, $parentMap);
 }
 
 $done = false;
 $totalMerged = 0;
+$totalReparented = 0;
 $wrapperRemoved = false;
+
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     csrf_verify();
 
-    // Elke klasse (Amfibieën/Reptielen/...) wordt zelf een hoofdcategorie
-    // (parent_id NULL), duplicaten van dezelfde titel samengevoegd.
-    foreach(FIX_CLASS_TITLES as $title){
-        $r = fix_merge_by_title([$title], null);
-        $totalMerged += $r['merged'];
-    }
-
-    // De koepel zelf ("Gewervelde dieren"/"Gwervelden") is niet meer
-    // gewenst als categorie — eventuele onverwachte overige kinderen
-    // verhuizen naar het hoofdniveau (net als bij een gewone verwijdering
-    // via het admin-paneel), daarna wordt de koepel weggegooid.
+    // 1. Verwijder de overbodige koepel-categorie(ën) — haar kinderen
+    // verhuizen eerst naar het hoofdniveau (worden daarna in stap 2 op hun
+    // juiste plek gezet, samen met alle andere verdwaalde categorieën).
     $ph = implode(',', array_fill(0, count(FIX_WRAPPER_TITLES), '?'));
     $st = db()->prepare("SELECT id FROM categories WHERE parent_id IS NULL AND title IN ($ph)");
     $st->execute(FIX_WRAPPER_TITLES);
@@ -81,6 +57,40 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
         $wrapperRemoved = true;
     }
 
+    // 2. Elke categorie die op het hoofdniveau staat maar volgens de boom
+    // ergens genest hoort te zijn, verplaatsen we naar haar juiste ouder
+    // (die zelf ook ergens op het hoofdniveau moet bestaan, anders wordt
+    // ze hier gewoon overgeslagen — kan in een volgende ronde alsnog).
+    $rows = db()->query('SELECT id, title FROM categories WHERE parent_id IS NULL')->fetchAll();
+    foreach($rows as $row){
+        $title = $row['title'];
+        if(!isset($parentMap[$title])) continue; // hoort terecht op hoofdniveau, of onbekende titel
+        $expectedParentTitle = $parentMap[$title];
+        $pst = db()->prepare('SELECT id FROM categories WHERE title=? ORDER BY (parent_id IS NULL) ASC, id ASC LIMIT 1');
+        $pst->execute([$expectedParentTitle]);
+        $parentRow = $pst->fetch();
+        if(!$parentRow) continue; // ouder bestaat nog niet, overslaan
+        db()->prepare('UPDATE categories SET parent_id=? WHERE id=?')->execute([(int)$parentRow['id'], (int)$row['id']]);
+        $totalReparented++;
+    }
+
+    // 3. Dubbele categorieën (zelfde titel + zelfde ouder) samenvoegen —
+    // kinderen en dieren verhuizen naar de oudste, de rest wordt verwijderd.
+    $dupSt = db()->query('SELECT title, parent_id, COUNT(*) c, GROUP_CONCAT(id ORDER BY id) ids FROM categories GROUP BY title, parent_id HAVING c > 1');
+    foreach($dupSt->fetchAll() as $dupRow){
+        $ids = array_map('intval', explode(',', $dupRow['ids']));
+        $canonicalId = array_shift($ids);
+        foreach($ids as $dupId){
+            db()->prepare('UPDATE categories SET parent_id=? WHERE parent_id=?')->execute([$canonicalId, $dupId]);
+            db()->prepare('UPDATE animals SET category_id=? WHERE category_id=?')->execute([$canonicalId, $dupId]);
+            db()->prepare('DELETE FROM categories WHERE id=?')->execute([$dupId]);
+            $totalMerged++;
+        }
+    }
+
+    // 4. Alles publiceren zodat de herstelde structuur meteen zichtbaar is.
+    db()->exec('UPDATE categories SET published=1 WHERE published=0');
+
     $done = true;
 }
 
@@ -88,11 +98,11 @@ admin_header('Taxonomieboom herstellen', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. <?=$totalMerged?> dubbele categorie(ën) samengevoegd (kinderen en dieren zijn meeverhuisd, niets is verloren gegaan)<?php if($wrapperRemoved): ?>, en de overbodige "Gewervelde dieren"/"Gwervelden"-koepel is verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan nu elk apart rechtstreeks in de navigatie.</div>
+  <div class="notice">Klaar. <?=$totalReparented?> categorie(ën) terug op hun juiste plek gezet, <?=$totalMerged?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, en de overbodige "Gewervelde dieren"/"Gwervelden"-koepel verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën netjes genest eronder.</div>
   <p><a class="a-btn" href="content.php?type=category">Naar Categorieën</a> — controleer de boom. <a class="a-btn a-btn-ghost" href="../index.php" target="_blank">Bekijk de site</a></p>
 <?php else: ?>
   <h2 style="margin-top:0">Taxonomieboom herstellen</h2>
-  <p>Zet Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren elk als eigen, aparte hoofdcategorie rechtstreeks in de navigatie (niet onder een gemeenschappelijke "Gewervelde dieren"-koepel), voegt eventuele duplicaten van diezelfde titels samen (niets gaat verloren, kinderen en dieren verhuizen automatisch mee) en verwijdert de overbodige koepelcategorie zelf. Veilig om meermaals te draaien.</p>
+  <p>Vergelijkt je huidige categorieën met de kloppende structuur en zet elke categorie die per ongeluk los op het hoofdniveau is komen te staan (bv. na het verwijderen van een bovenliggende categorie) weer op haar juiste, geneste plek — onder de juiste sub- en sub-subcategorie. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren blijven zelf gewoon op het hoofdniveau staan, rechtstreeks in de navigatie. Voegt ook dubbele categorieën samen (niets gaat verloren) en verwijdert een overbodige "Gewervelde dieren"-koepel als die nog bestaat. Veilig om meermaals te draaien.</p>
   <form method="post">
     <?=csrf_field()?>
     <button class="a-btn" type="submit">Herstellen</button>
