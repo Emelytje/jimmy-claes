@@ -11,13 +11,13 @@ if($blocks){
 }
 header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description']); ?>
 <?php
-$breadcrumbChain = !empty($a['category_id']) ? pb_category_ancestors((int)$a['category_id']) : [];
+$classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category_id']) : '';
 $st = db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC');
 $st->execute([$a['id']]);
 $photos = $st->fetchAll();
 ?>
-<?=pb_render_breadcrumb($breadcrumbChain, $a['title'])?>
-<section class="hero"><div><h1><?=e($a['title'])?></h1><?php if($a['description']): ?><p><?=nl2br(e($a['description']))?></p><?php endif; ?></div></section>
+<?=pb_render_back_button()?>
+<section class="hero"<?=$classColor ? ' style="background:'.e($classColor).'"' : ''?>><div><h1><?=e($a['title'])?></h1><?php if($a['description']): ?><p><?=nl2br(e($a['description']))?></p><?php endif; ?></div></section>
 <main class="wrap">
 <?php if($photos): ?>
 <div class="gallery <?=e($a['layout'])?>">
