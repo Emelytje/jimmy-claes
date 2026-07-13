@@ -192,7 +192,13 @@ table.a-table{ width:100%; border-collapse:collapse; }
   .admin-content{ padding:20px; }
   .a-card-pad{ padding:18px; }
   .a-inline-form{ flex-direction:column; align-items:stretch; }
-  .a-table{ display:block; overflow-x:auto; white-space:nowrap; }
+  .a-table{ display:block; border:none; }
+  .a-table tr:first-child{ display:none; }
+  .a-table tr{ display:block; margin-bottom:14px; border:1px solid var(--a-line); border-radius:10px; padding:6px 14px; background:#fff; }
+  .a-table td{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:9px 0; border-bottom:1px solid var(--a-line); text-align:right; white-space:normal; }
+  .a-table td:last-child{ border-bottom:none; }
+  .a-table td[data-label]::before{ content:attr(data-label); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; color:#8a7c6c; text-align:left; flex:0 0 auto; }
+  .a-table td.row-actions{ flex-wrap:wrap; justify-content:flex-end; padding-top:12px; }
 }
 
 /* ---------- page settings modal ---------- */

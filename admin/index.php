@@ -39,9 +39,9 @@ admin_header('Dashboard', 'index');
       <tr><th>Titel</th><th>Type</th><th>Bezoeken</th><th></th></tr>
       <?php foreach($topViewed as $t): if($t['views']<1) continue; ?>
       <tr>
-        <td><strong><?=e($t['title'])?></strong></td>
-        <td><?=e($typeLabels[$t['type']])?></td>
-        <td><?=(int)$t['views']?></td>
+        <td data-label="Titel"><strong><?=e($t['title'])?></strong></td>
+        <td data-label="Type"><?=e($typeLabels[$t['type']])?></td>
+        <td data-label="Bezoeken"><?=(int)$t['views']?></td>
         <td class="row-actions"><a class="a-btn a-btn-sm a-btn-ghost" href="../<?=$typeUrls[$t['type']].e($t['slug'])?>" target="_blank">Bekijk</a></td>
       </tr>
       <?php endforeach; ?>
@@ -65,9 +65,9 @@ admin_header('Dashboard', 'index');
     <tr><th>Titel</th><th>Status</th><th>Bijgewerkt</th><th></th></tr>
     <?php foreach($recent as $p): ?>
     <tr>
-      <td><strong><?=e($p['title'])?></strong></td>
-      <td><span class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>"><?=$p['published']?'Live':'Concept'?></span></td>
-      <td><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
+      <td data-label="Titel"><strong><?=e($p['title'])?></strong></td>
+      <td data-label="Status"><span class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>"><?=$p['published']?'Live':'Concept'?></span></td>
+      <td data-label="Bijgewerkt"><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
       <td class="row-actions"><a class="a-btn a-btn-sm a-btn-ghost" href="page-edit.php?id=<?=$p['id']?>">Bewerken</a></td>
     </tr>
     <?php endforeach; ?>
