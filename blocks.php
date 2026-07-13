@@ -385,22 +385,32 @@ function pb_category_ancestors($categoryId){
     return $chain;
 }
 
-// Rendert de kruimelpad-keten als HTML. $currentTitle is optioneel: geef dit
-// mee voor een dier-pagina (het dier zelf staat niet in de categorieketen).
-function pb_render_breadcrumb($chain, $currentTitle=null){
-    if(!$chain && $currentTitle===null) return '';
-    $html = '<nav class="pb-breadcrumb" aria-label="Kruimelpad"><a href="index.php">Home</a>';
-    foreach($chain as $i => $row){
-        $isLast = ($i === count($chain)-1) && $currentTitle===null;
-        $html .= '<span class="pb-breadcrumb-sep">/</span>';
-        $html .= $isLast
-            ? '<span aria-current="page">'.e($row['title']).'</span>'
-            : '<a href="category.php?slug='.e($row['slug']).'">'.e($row['title']).'</a>';
+// Zachte, per-diersoortklasse themakleur voor de banner van categorie- en
+// dierenpagina's — zoekt in de kruimelpad-keten naar een bekende klasse
+// (Vissen/Vogels/Reptielen/Zoogdieren/Amfibieën) en geeft die kleur terug,
+// of '' als de pagina buiten die klassen valt (bv. de wortel "Gewervelde
+// dieren" zelf), zodat dan gewoon de standaard-accentkleur blijft gelden.
+function pb_class_theme_color($categoryId){
+    if(!$categoryId) return '';
+    static $themes = [
+        'vissen'     => '#dceef6',
+        'vogels'     => '#faf1d6',
+        'reptielen'  => '#e0efe1',
+        'zoogdieren' => '#f5dfdc',
+        'amfibieën'  => '#ecdfc9',
+    ];
+    $chain = pb_category_ancestors($categoryId);
+    foreach($chain as $row){
+        $key = mb_strtolower(trim($row['title']));
+        if(isset($themes[$key])) return $themes[$key];
     }
-    if($currentTitle !== null){
-        $html .= '<span class="pb-breadcrumb-sep">/</span><span aria-current="page">'.e($currentTitle).'</span>';
-    }
-    return $html.'</nav>';
+    return '';
+}
+
+// Simpele "vorige pagina"-knop (browser-terug) boven categorie- en
+// dierenpagina's, in plaats van een volledig kruimelpad.
+function pb_render_back_button(){
+    return '<button type="button" class="pb-back-link" onclick="history.back()">&larr; Vorige pagina</button>';
 }
 
 // Alle categorie-id's onder (en incl.) een gegeven categorie, voor het
