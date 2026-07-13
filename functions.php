@@ -1,4 +1,21 @@
 <?php
+// Gratis hosting (bv. InfinityFree) heeft de gedeelde systeem-tmp-map voor
+// sessies soms niet betrouwbaar beschikbaar, waardoor ingelogde admins
+// random weer uitgelogd raken. Gebruik in plaats daarvan een eigen,
+// gegarandeerd schrijfbare map binnen het project.
+$__sessionDir = __DIR__.'/.sessions';
+if(!is_dir($__sessionDir)) @mkdir($__sessionDir, 0700);
+if(is_dir($__sessionDir) && is_writable($__sessionDir)){
+    session_save_path($__sessionDir);
+    if(!file_exists($__sessionDir.'/.htaccess')) @file_put_contents($__sessionDir.'/.htaccess', "Require all denied\n");
+}
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 if (file_exists(__DIR__.'/config.php')) require_once __DIR__.'/config.php';
 require_once __DIR__.'/blocks.php';
