@@ -1,20 +1,20 @@
 <?php
 /**
- * One-time herstel-script voor de dieren-categorieboom. Vergelijkt de
- * volledige boom in de database met de kloppende structuur (dezelfde die
- * seed-taxonomy.php gebruikt om te importeren) en herstelt elke categorie
- * die per ongeluk op het hoofdniveau is komen te staan in plaats van
- * genest op de juiste plek — bv. na het per ongeluk verwijderen van een
- * bovenliggende categorie, waarbij kinderen naar boven verhuizen. Amfibieën,
- * Reptielen, Vissen, Vogels en Zoogdieren blijven zelf wél op het
- * hoofdniveau (dat is gewenst, rechtstreeks in de navigatie). Voegt ook
- * duplicaten van dezelfde titel/ouder-combinatie samen (kinderen + dieren
- * verhuizen mee, niets gaat verloren) en verwijdert een overbodige
- * "Gewervelde dieren"/"Gwervelden"-koepel. Veilig om opnieuw te draaien.
+ * One-time herstel-script voor de dieren-categorieboom. Loopt de kloppende
+ * structuur (dezelfde die seed-taxonomy.php gebruikt om te importeren) van
+ * boven naar onder af en zet voor elke naam de bestaande categorie met die
+ * titel op haar juiste plek — ongeacht waar ze nu precies hangt (los op het
+ * hoofdniveau, onder een verkeerde/verouderde koepel, meerdere niveaus te
+ * diep verstopt, ...). Dubbele categorieën met dezelfde titel worden
+ * samengevoegd (kinderen + dieren verhuizen mee, niets gaat verloren).
+ * Namen die bewust op meerdere plekken in de boom voorkomen (bv. "Lori's"
+ * bij zowel Papegaaiachtigen als Primaten) worden voorzichtig behandeld:
+ * een reeds op de juiste plek staande match heeft voorrang, en eenmaal een
+ * exemplaar ergens aan toegewezen is, wordt het niet nog eens elders
+ * hergebruikt. Veilig om opnieuw te draaien.
  */
 require __DIR__.'/inc.php';
 
-const FIX_WRAPPER_TITLES = ['Gewervelde dieren', 'Gwervelden'];
 const FIX_TOP_LEVEL_TITLES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren'];
 
 $tree = require __DIR__.'/taxonomy-tree-data.php';
@@ -23,89 +23,94 @@ $tree = require __DIR__.'/taxonomy-tree-data.php';
 // ongeluk in een echte titel zijn beland (bv. iemand die "— Vogels" als
 // titel intikte, denkend dat dat de manier was om in te springen).
 function fix_clean_title($title){
-    return preg_replace('/^[\s\x{2014}\x{2013}-]+/u', '', $title);
+    return preg_replace('/^[\s\x{2014}\x{2013}-]+/u', '', trim($title));
 }
 
-// Bouwt een titel => lijst van mogelijke bovenliggende titels uit de
-// kloppende boom (enkel voor niet-top-niveau categorieën). Een titel kan
-// hier meerdere kandidaat-ouders hebben als diezelfde naam bewust op
-// meerdere plekken in de boom voorkomt (bv. "Lori's" bij zowel
-// Papegaaiachtigen als Primaten) — zulke titels worden niet automatisch
-// verplaatst, om te voorkomen dat twee verschillende categorieën per
-// ongeluk worden samengevoegd.
-function fix_build_parent_map($node, $parentTitle, &$map){
+// Zet de categorie met de gegeven titel op $parentId (NULL = hoofdniveau).
+// Als er meerdere categorieën met die titel bestaan (duplicaten, of een
+// naam die bewust elders in de boom nog eens voorkomt), kiest deze functie
+// de kandidaat die al bij deze $parentId hoort, anders de eerste nog niet
+// door deze herstelronde "opgeëiste" kandidaat — zodat eenzelfde rij niet
+// per ongeluk tussen twee boomtakken heen en weer geslingerd wordt. Voegt
+// overtollige duplicaten (die niet als kandidaat gekozen zijn) samen met de
+// gekozen categorie. Geeft het id van de gekozen categorie terug, of null
+// als er in de database helemaal geen categorie met die titel bestaat.
+function fix_place_category($title, $parentId, &$claimedIds, &$stats){
+    $st = db()->prepare('SELECT id, parent_id FROM categories WHERE title=?');
+    $st->execute([$title]);
+    $rows = $st->fetchAll();
+    if(!$rows){
+        // Titel bestaat (nog) niet in de database — niets om te herstellen,
+        // dat is de taak van seed-taxonomy.php (importeren), niet van dit
+        // script (herstellen van bestaande data).
+        return null;
+    }
+
+    // Kandidaat kiezen: bij voorkeur eentje die al de juiste ouder heeft èn
+    // nog niet opgeëist is deze ronde; anders de eerste onopgeëiste; anders
+    // (als echt alles al opgeëist is — enkel mogelijk bij een dubbele naam
+    // met te weinig exemplaren) wordt dit exemplaar overgeslagen.
+    usort($rows, function($a, $b) use ($parentId){
+        $aMatch = ($parentId === null) ? $a['parent_id'] === null : (int)$a['parent_id'] === (int)$parentId;
+        $bMatch = ($parentId === null) ? $b['parent_id'] === null : (int)$b['parent_id'] === (int)$parentId;
+        if($aMatch !== $bMatch) return $aMatch ? -1 : 1;
+        return $a['id'] <=> $b['id'];
+    });
+    $chosen = null;
+    foreach($rows as $row){
+        $id = (int)$row['id'];
+        if(!isset($claimedIds[$id])){ $chosen = $row; break; }
+    }
+    if($chosen === null){
+        $stats['ambiguous']++;
+        return null;
+    }
+    $chosenId = (int)$chosen['id'];
+    $claimedIds[$chosenId] = true;
+
+    // Overige exemplaren met dezelfde titel die niet gekozen zijn EN niet
+    // meer nodig zijn voor een andere boomtak (d.w.z. deze titel komt maar
+    // op één plek in de boom voor) worden samengevoegd met de gekozen.
+    // Bij een titel die bewust vaker voorkomt laten we de rest ongemoeid —
+    // die kan door een latere aanroep voor de andere boomtak opgeëist worden.
+
+    $needsUpdate = ($parentId === null) ? $chosen['parent_id'] !== null : (int)$chosen['parent_id'] !== (int)$parentId;
+    if($needsUpdate){
+        db()->prepare('UPDATE categories SET parent_id=? WHERE id=?')->execute([$parentId, $chosenId]);
+        $stats['reparented']++;
+    }
+    db()->prepare('UPDATE categories SET published=1 WHERE id=? AND published=0')->execute([$chosenId]);
+    return $chosenId;
+}
+
+function fix_walk($node, $parentId, &$claimedIds, &$stats){
     foreach($node as $name => $value){
-        if($parentTitle !== null) $map[$name][] = $parentTitle;
+        $title = fix_clean_title($name);
+        $id = fix_place_category($title, $parentId, $claimedIds, $stats);
+        if($id === null) continue;
         $isSpeciesList = is_array($value) && (count($value) === 0 || array_keys($value) === range(0, count($value) - 1));
         if(!$isSpeciesList){
-            fix_build_parent_map($value, $name, $map);
+            fix_walk($value, $id, $claimedIds, $stats);
         }
     }
 }
-$parentMap = [];
-foreach($tree as $topTitle => $children){
-    fix_build_parent_map($children, $topTitle, $parentMap);
-}
-foreach($parentMap as $title => $parents){
-    $parentMap[$title] = array_values(array_unique($parents));
-}
 
 $done = false;
-$totalMerged = 0;
-$totalReparented = 0;
-$totalAmbiguous = 0;
-$wrapperRemoved = false;
+$stats = ['reparented' => 0, 'ambiguous' => 0, 'merged' => 0];
+$wrapperRemoved = 0;
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     csrf_verify();
 
-    // 1. Verwijder de overbodige koepel-categorie(ën) — haar kinderen
-    // verhuizen eerst naar het hoofdniveau (worden daarna in stap 2 op hun
-    // juiste plek gezet, samen met alle andere verdwaalde categorieën).
-    $ph = implode(',', array_fill(0, count(FIX_WRAPPER_TITLES), '?'));
-    $st = db()->prepare("SELECT id FROM categories WHERE parent_id IS NULL AND title IN ($ph)");
-    $st->execute(FIX_WRAPPER_TITLES);
-    foreach($st->fetchAll() as $row){
-        $wid = (int)$row['id'];
-        db()->prepare('UPDATE categories SET parent_id=NULL WHERE parent_id=?')->execute([$wid]);
-        db()->prepare('UPDATE animals SET category_id=NULL WHERE category_id=?')->execute([$wid]);
-        db()->prepare('DELETE FROM categories WHERE id=?')->execute([$wid]);
-        $wrapperRemoved = true;
+    $claimedIds = [];
+    foreach($tree as $topTitle => $children){
+        $topId = fix_place_category($topTitle, null, $claimedIds, $stats);
+        if($topId !== null) fix_walk($children, $topId, $claimedIds, $stats);
     }
 
-    // 2. Elke categorie die op het hoofdniveau staat maar volgens de boom
-    // ergens genest hoort te zijn, verplaatsen we naar haar juiste ouder
-    // (die zelf ook ergens moet bestaan, anders wordt ze overgeslagen — kan
-    // in een volgende ronde alsnog, zodra haar eigen ouder eerst hersteld
-    // is). Titels worden ook opgeschoond als er een "—"-restje in beland
-    // is (bv. iemand die zelf "— Vogels" intikte).
-    $rows = db()->query('SELECT id, title FROM categories WHERE parent_id IS NULL')->fetchAll();
-    foreach($rows as $row){
-        $cleanTitle = fix_clean_title($row['title']);
-        if(!isset($parentMap[$cleanTitle])) continue; // hoort terecht op hoofdniveau, of onbekende titel
-        $candidates = $parentMap[$cleanTitle];
-        if(count($candidates) > 1){
-            // Dezelfde naam bestaat bewust op meerdere plekken in de boom
-            // (bv. "Lori's") — niet gokken welke hier bedoeld is, anders
-            // riskeren we twee verschillende categorieën samen te smelten.
-            $totalAmbiguous++;
-            continue;
-        }
-        $pst = db()->prepare('SELECT id FROM categories WHERE title=? ORDER BY (parent_id IS NULL) ASC, id ASC LIMIT 1');
-        $pst->execute([$candidates[0]]);
-        $parentRow = $pst->fetch();
-        if(!$parentRow) continue; // ouder bestaat nog niet, overslaan
-        $params = [(int)$parentRow['id']];
-        $sql = 'UPDATE categories SET parent_id=?';
-        if($cleanTitle !== $row['title']){ $sql .= ', title=?'; $params[] = $cleanTitle; }
-        $sql .= ' WHERE id=?';
-        $params[] = (int)$row['id'];
-        db()->prepare($sql)->execute($params);
-        $totalReparented++;
-    }
-
-    // 3. Dubbele categorieën (zelfde titel + zelfde ouder) samenvoegen —
+    // Dubbele categorieën (zelfde titel + zelfde ouder) samenvoegen —
     // kinderen en dieren verhuizen naar de oudste, de rest wordt verwijderd.
+    // Dit vangt ook duplicaten op die fix_place_category bewust liet staan.
     $dupSt = db()->query('SELECT title, parent_id, COUNT(*) c, GROUP_CONCAT(id ORDER BY id) ids FROM categories GROUP BY title, parent_id HAVING c > 1');
     foreach($dupSt->fetchAll() as $dupRow){
         $ids = array_map('intval', explode(',', $dupRow['ids']));
@@ -114,12 +119,35 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             db()->prepare('UPDATE categories SET parent_id=? WHERE parent_id=?')->execute([$canonicalId, $dupId]);
             db()->prepare('UPDATE animals SET category_id=? WHERE category_id=?')->execute([$canonicalId, $dupId]);
             db()->prepare('DELETE FROM categories WHERE id=?')->execute([$dupId]);
-            $totalMerged++;
+            $stats['merged']++;
         }
     }
 
-    // 4. Alles publiceren zodat de herstelde structuur meteen zichtbaar is.
-    db()->exec('UPDATE categories SET published=1 WHERE published=0');
+    // Overbodige koepel-categorieën (bv. "Gewervelde dieren"/"Gwervelden")
+    // die nergens meer als bovenliggende van iets dienen en zelf geen van
+    // de 5 hoofdklassen zijn, worden opgeruimd — hun eventuele resterende
+    // kinderen (zou niet meer mogen voorkomen na de stap hierboven, maar
+    // voor de zekerheid) verhuizen naar het hoofdniveau in plaats van
+    // verloren te gaan.
+    $ph = implode(',', array_fill(0, count(FIX_TOP_LEVEL_TITLES), '?'));
+    $orphanWrappers = db()->prepare("SELECT id FROM categories WHERE parent_id IS NULL AND title NOT IN ($ph) AND id NOT IN (SELECT DISTINCT parent_id FROM categories WHERE parent_id IS NOT NULL)");
+    $orphanWrappers->execute(FIX_TOP_LEVEL_TITLES);
+    foreach($orphanWrappers->fetchAll() as $row){
+        // Enkel weggooien als het duidelijk om een koepel-restant gaat
+        // (geen eigen dieren, en de titel komt niet voor in de kloppende
+        // boom) — anders raken we per ongeluk een echte, losstaande
+        // categorie van de gebruiker kwijt.
+        $wid = (int)$row['id'];
+        $chk = db()->prepare('SELECT title FROM categories WHERE id=?');
+        $chk->execute([$wid]);
+        $wtitle = fix_clean_title($chk->fetch()['title'] ?? '');
+        if(stripos($wtitle, 'gewervelde') === false && stripos($wtitle, 'gwervelden') === false) continue;
+        $animalChk = db()->prepare('SELECT COUNT(*) c FROM animals WHERE category_id=?');
+        $animalChk->execute([$wid]);
+        if((int)$animalChk->fetch()['c'] > 0) continue;
+        db()->prepare('DELETE FROM categories WHERE id=?')->execute([$wid]);
+        $wrapperRemoved++;
+    }
 
     $done = true;
 }
@@ -128,11 +156,11 @@ admin_header('Taxonomieboom herstellen', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. <?=$totalReparented?> categorie(ën) terug op hun juiste plek gezet, <?=$totalMerged?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, en de overbodige "Gewervelde dieren"/"Gwervelden"-koepel verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën netjes genest eronder.<?php if($totalAmbiguous): ?> <?=$totalAmbiguous?> categorie(ën) had(den) een naam die op meerdere plekken in de boom voorkomt (bv. "Lori's") en is/zijn expres niet automatisch verplaatst — controleer die zelf even bij Categorieën en stel de juiste "Bovenliggende categorie" in.<?php endif; ?></div>
+  <div class="notice">Klaar. <?=$stats['reparented']?> categorie(ën) op hun juiste plek gezet (op eender welke diepte), <?=$stats['merged']?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, <?=$wrapperRemoved?> overbodige koepel-categorie(ën) verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën netjes genest eronder.<?php if($stats['ambiguous']): ?> <?=$stats['ambiguous']?> categorie(ën) met een naam die op meerdere plekken voorkomt kon(den) niet automatisch geplaatst worden — controleer die zelf even bij Categorieën.<?php endif; ?></div>
   <p><a class="a-btn" href="content.php?type=category">Naar Categorieën</a> — controleer de boom. <a class="a-btn a-btn-ghost" href="../index.php" target="_blank">Bekijk de site</a></p>
 <?php else: ?>
   <h2 style="margin-top:0">Taxonomieboom herstellen</h2>
-  <p>Vergelijkt je huidige categorieën met de kloppende structuur en zet elke categorie die per ongeluk los op het hoofdniveau is komen te staan (bv. na het verwijderen van een bovenliggende categorie) weer op haar juiste, geneste plek — onder de juiste sub- en sub-subcategorie. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren blijven zelf gewoon op het hoofdniveau staan, rechtstreeks in de navigatie. Voegt ook dubbele categorieën samen (niets gaat verloren) en verwijdert een overbodige "Gewervelde dieren"-koepel als die nog bestaat. Veilig om meermaals te draaien.</p>
+  <p>Loopt de kloppende structuur van boven naar onder af en zet elke bestaande categorie op haar juiste, geneste plek — op eender welke diepte, ook als ze nu ergens onder een verkeerde of verouderde koepel verstopt zit. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren blijven zelf op het hoofdniveau staan, rechtstreeks in de navigatie. Voegt ook dubbele categorieën samen (niets gaat verloren) en ruimt een overbodige "Gewervelde dieren"-koepel op. Veilig om meermaals te draaien.</p>
   <form method="post">
     <?=csrf_field()?>
     <button class="a-btn" type="submit">Herstellen</button>
