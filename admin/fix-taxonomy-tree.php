@@ -83,29 +83,77 @@ function fix_place_category($title, $parentId, &$claimedIds, &$stats){
     return $chosenId;
 }
 
-function fix_walk($node, $parentId, &$claimedIds, &$stats){
+// Zelfde principe als fix_place_category, maar voor een dier (soort) onder
+// een categorie: zoekt het dier op titel op, kiest bij voorkeur een
+// exemplaar dat al bij deze categorie hoort en nog niet opgeëist is, en
+// koppelt het aan de juiste category_id. Dit is de stap die eerder ontbrak:
+// eerdere herstelrondes zetten enkel categorieën recht, niet de dieren die
+// per ongeluk hun category_id kwijtraakten (bv. na het handmatig
+// verwijderen van hun categorie via het admin-paneel, wat category_id op
+// leeg zet in plaats van naar een vervanger te verwijzen).
+function fix_place_animal($title, $categoryId, &$claimedAnimalIds, &$stats){
+    $st = db()->prepare('SELECT id, category_id FROM animals WHERE title=?');
+    $st->execute([$title]);
+    $rows = $st->fetchAll();
+    if(!$rows) return;
+
+    usort($rows, function($a, $b) use ($categoryId){
+        $aMatch = (int)$a['category_id'] === (int)$categoryId;
+        $bMatch = (int)$b['category_id'] === (int)$categoryId;
+        if($aMatch !== $bMatch) return $aMatch ? -1 : 1;
+        return $a['id'] <=> $b['id'];
+    });
+    $chosen = null;
+    foreach($rows as $row){
+        $id = (int)$row['id'];
+        if(!isset($claimedAnimalIds[$id])){ $chosen = $row; break; }
+    }
+    if($chosen === null){
+        $stats['animalsAmbiguous']++;
+        return;
+    }
+    $chosenId = (int)$chosen['id'];
+    $claimedAnimalIds[$chosenId] = true;
+
+    if((int)$chosen['category_id'] !== (int)$categoryId){
+        db()->prepare('UPDATE animals SET category_id=? WHERE id=?')->execute([$categoryId, $chosenId]);
+        $stats['animalsReattached']++;
+    }
+    db()->prepare('UPDATE animals SET published=1 WHERE id=? AND published=0')->execute([$chosenId]);
+}
+
+function fix_walk($node, $parentId, &$claimedIds, &$claimedAnimalIds, &$stats){
     foreach($node as $name => $value){
         $title = fix_clean_title($name);
-        $id = fix_place_category($title, $parentId, $claimedIds, $stats);
-        if($id === null) continue;
         $isSpeciesList = is_array($value) && (count($value) === 0 || array_keys($value) === range(0, count($value) - 1));
-        if(!$isSpeciesList){
-            fix_walk($value, $id, $claimedIds, $stats);
+        if($isSpeciesList){
+            // $name hier is zelf al een categorie (bv. "Fluiteenden"), de
+            // soorten in $value moeten aan HAAR gekoppeld worden.
+            $id = fix_place_category($title, $parentId, $claimedIds, $stats);
+            if($id === null) continue;
+            foreach($value as $species){
+                fix_place_animal(fix_clean_title($species), $id, $claimedAnimalIds, $stats);
+            }
+        } else {
+            $id = fix_place_category($title, $parentId, $claimedIds, $stats);
+            if($id === null) continue;
+            fix_walk($value, $id, $claimedIds, $claimedAnimalIds, $stats);
         }
     }
 }
 
 $done = false;
-$stats = ['reparented' => 0, 'ambiguous' => 0, 'merged' => 0];
+$stats = ['reparented' => 0, 'ambiguous' => 0, 'merged' => 0, 'animalsReattached' => 0, 'animalsAmbiguous' => 0];
 $wrapperRemoved = 0;
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     csrf_verify();
 
     $claimedIds = [];
+    $claimedAnimalIds = [];
     foreach($tree as $topTitle => $children){
         $topId = fix_place_category($topTitle, null, $claimedIds, $stats);
-        if($topId !== null) fix_walk($children, $topId, $claimedIds, $stats);
+        if($topId !== null) fix_walk($children, $topId, $claimedIds, $claimedAnimalIds, $stats);
     }
 
     // Dubbele categorieën (zelfde titel + zelfde ouder) samenvoegen —
@@ -156,11 +204,11 @@ admin_header('Taxonomieboom herstellen', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. <?=$stats['reparented']?> categorie(ën) op hun juiste plek gezet (op eender welke diepte), <?=$stats['merged']?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, <?=$wrapperRemoved?> overbodige koepel-categorie(ën) verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën netjes genest eronder.<?php if($stats['ambiguous']): ?> <?=$stats['ambiguous']?> categorie(ën) met een naam die op meerdere plekken voorkomt kon(den) niet automatisch geplaatst worden — controleer die zelf even bij Categorieën.<?php endif; ?></div>
+  <div class="notice">Klaar. <?=$stats['reparented']?> categorie(ën) op hun juiste plek gezet (op eender welke diepte), <?=$stats['animalsReattached']?> di(e)r(en) terug aan hun juiste categorie gekoppeld, <?=$stats['merged']?> dubbele categorie(ën) samengevoegd (niets is verloren gegaan)<?php if($wrapperRemoved): ?>, <?=$wrapperRemoved?> overbodige koepel-categorie(ën) verwijderd<?php endif; ?>. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren staan elk apart rechtstreeks in de navigatie, met al hun sub- en sub-subcategorieën en soorten netjes genest eronder.<?php if($stats['ambiguous'] || $stats['animalsAmbiguous']): ?> <?=$stats['ambiguous']+$stats['animalsAmbiguous']?> categorie/dier(en) met een naam die op meerdere plekken voorkomt kon(den) niet automatisch geplaatst worden — controleer die zelf even bij Categorieën/Dieren.<?php endif; ?></div>
   <p><a class="a-btn" href="content.php?type=category">Naar Categorieën</a> — controleer de boom. <a class="a-btn a-btn-ghost" href="../index.php" target="_blank">Bekijk de site</a></p>
 <?php else: ?>
   <h2 style="margin-top:0">Taxonomieboom herstellen</h2>
-  <p>Loopt de kloppende structuur van boven naar onder af en zet elke bestaande categorie op haar juiste, geneste plek — op eender welke diepte, ook als ze nu ergens onder een verkeerde of verouderde koepel verstopt zit. Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren blijven zelf op het hoofdniveau staan, rechtstreeks in de navigatie. Voegt ook dubbele categorieën samen (niets gaat verloren) en ruimt een overbodige "Gewervelde dieren"-koepel op. Veilig om meermaals te draaien.</p>
+  <p>Loopt de kloppende structuur van boven naar onder af en zet elke bestaande categorie op haar juiste, geneste plek — op eender welke diepte, ook als ze nu ergens onder een verkeerde of verouderde koepel verstopt zit. Koppelt ook elke soort terug aan haar juiste categorie (dieren die die koppeling per ongeluk kwijtraakten, bv. na het handmatig verwijderen van hun categorie, staan anders als "leeg" te tonen). Amfibieën, Reptielen, Vissen, Vogels en Zoogdieren blijven zelf op het hoofdniveau staan, rechtstreeks in de navigatie. Voegt ook dubbele categorieën samen (niets gaat verloren) en ruimt een overbodige "Gewervelde dieren"-koepel op. Veilig om meermaals te draaien.</p>
   <form method="post">
     <?=csrf_field()?>
     <button class="a-btn" type="submit">Herstellen</button>
