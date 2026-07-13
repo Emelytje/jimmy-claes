@@ -103,6 +103,13 @@ function csrf_verify(){
 function nav_render_categories($parentId=null){
     if($parentId === null){
         $rows = db()->query('SELECT id, title, slug FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
+        // Eén enkele hoofdcategorie (bv. "Gewervelde dieren") is een kunstmatige
+        // koepel die niets toevoegt in de navbalk — sla die over en toon meteen
+        // haar kinderen, zodat bezoekers niet nodeloos een extra klik-niveau
+        // krijgen. De categorie zelf blijft gewoon bestaan/bezoekbaar.
+        if(count($rows) === 1){
+            return nav_render_categories((int)$rows[0]['id']);
+        }
     } else {
         $st = db()->prepare('SELECT id, title, slug FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
         $st->execute([$parentId]);

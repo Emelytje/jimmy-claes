@@ -410,7 +410,7 @@ function pb_class_theme_color($categoryId){
 // Simpele "vorige pagina"-knop (browser-terug) boven categorie- en
 // dierenpagina's, in plaats van een volledig kruimelpad.
 function pb_render_back_button(){
-    return '<button type="button" class="pb-back-link" onclick="history.back()">&larr; Vorige pagina</button>';
+    return '<div class="pb-back-bar"><button type="button" class="pb-back-link" onclick="history.back()">&larr; Vorige pagina</button></div>';
 }
 
 // Alle categorie-id's onder (en incl.) een gegeven categorie, voor het
