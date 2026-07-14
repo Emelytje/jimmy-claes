@@ -15,7 +15,7 @@
  */
 require __DIR__.'/inc.php';
 
-const FIX_TOP_LEVEL_TITLES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren'];
+const FIX_TOP_LEVEL_TITLES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren', 'Ongewervelde'];
 
 $tree = require __DIR__.'/taxonomy-tree-data.php';
 

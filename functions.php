@@ -119,7 +119,7 @@ function csrf_verify(){
 // (rommel van eerdere handmatige aanpassingen, dubbels, weeskindjes) wordt
 // zo altijd genegeerd in de navigatie — geen boomherstel meer nodig om een
 // nette navbalk te krijgen.
-const NAV_TOP_LEVEL_CLASSES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren'];
+const NAV_TOP_LEVEL_CLASSES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren', 'Ongewervelde'];
 
 // Bouwt recursief de dieren-categorieboom op voor de navigatie. Een
 // categorie met eigen sub-categorieën wordt een geneste dropdown; een
