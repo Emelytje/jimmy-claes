@@ -374,4 +374,10 @@ return [
             'Olifanten' => ['Elephas maximus'],
             'Springspitsmuizen' => ['Rhynchocyon petersi adersi'],
         ],
+        'Ongewervelde' => [
+            'Spinachtigen' => [
+                'Vogelspinnen' => ['Brachypelma smithi'],
+            ],
+            'Schijfkwallen' => ['Aurelia aurita'],
+        ],
 ];

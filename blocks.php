@@ -398,6 +398,8 @@ function pb_class_theme_color($categoryId){
         'reptielen'  => '#e0efe1',
         'zoogdieren' => '#f5dfdc',
         'amfibieën'  => '#ecdfc9',
+        'spinachtigen' => '#e2e2e0',
+        'schijfkwallen' => '#f7e3e6',
     ];
     $chain = pb_category_ancestors($categoryId);
     foreach($chain as $row){
