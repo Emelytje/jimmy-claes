@@ -398,6 +398,7 @@ function pb_class_theme_color($categoryId){
         'reptielen'  => '#e0efe1',
         'zoogdieren' => '#f5dfdc',
         'amfibieën'  => '#ecdfc9',
+        'ongewervelde' => '#f6f3ec',
         'spinachtigen' => '#e2e2e0',
         'schijfkwallen' => '#f7e3e6',
     ];
