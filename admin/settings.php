@@ -4,6 +4,7 @@ require __DIR__.'/inc.php';
 $fields = ['site_title','intro_title','intro_text','primary_color','accent_color','font','meta_description','contact_email'];
 $classColorMap = pb_class_color_map();
 $classColorLabels = [
+    'gewervelde'    => 'Gewervelde (ingangspagina)',
     'vissen'        => 'Vissen',
     'vogels'        => 'Vogels',
     'reptielen'     => 'Reptielen',
