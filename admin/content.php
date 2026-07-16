@@ -45,6 +45,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     } elseif($action==='toggle_published'){
         $id = (int)($_POST['id'] ?? 0);
         db()->prepare("UPDATE $table SET published = 1-published WHERE id=?")->execute([$id]);
+    } elseif($action==='update_title_en' && $type==='category'){
+        $id = (int)($_POST['id'] ?? 0);
+        $titleEn = trim($_POST['title_en'] ?? '');
+        if(!pb_has_column('categories','title_en')) db()->exec('ALTER TABLE categories ADD COLUMN title_en VARCHAR(160) DEFAULT NULL');
+        if($id) db()->prepare('UPDATE categories SET title_en=? WHERE id=?')->execute([$titleEn !== '' ? $titleEn : null, $id]);
     }
     header('Location: content.php?type='.$type); exit;
 }
@@ -71,6 +76,16 @@ if($type === 'category'){
     $st = db()->prepare($sql);
     $st->execute($params);
     $items = $st->fetchAll();
+
+    // Categorienaam per dier ophalen zodat gelijknamige soorten (bv.
+    // Lathamus discolor, bewust twee keer in de boom) in de lijst uit elkaar
+    // te houden zijn.
+    if($type === 'animal' && $items){
+        $catNames = [];
+        foreach(db()->query('SELECT id, title FROM categories') as $c){ $catNames[(int)$c['id']] = $c['title']; }
+        foreach($items as &$it){ $it['category_title'] = $it['category_id'] ? ($catNames[(int)$it['category_id']] ?? '') : ''; }
+        unset($it);
+    }
 }
 
 // Hoofdcategorieën ("klassen") voor de filter — enkel zinvol bij dieren,
@@ -81,7 +96,8 @@ if($type === 'animal'){
     catch(Exception $e){ $klassen = []; }
 }
 
-admin_header($info['label'], $info['nav']);
+$typeLabel = $type === 'animal' ? t('admin_animals') : t('admin_categories');
+admin_header($typeLabel, $info['nav']);
 ?>
 <div class="a-card">
   <div class="a-card-pad">
@@ -107,20 +123,20 @@ admin_header($info['label'], $info['nav']);
   <div class="a-card-pad">
     <form method="get" class="a-inline-form">
       <input type="hidden" name="type" value="<?=e($type)?>">
-      <div class="a-field"><label>Zoeken op naam</label><input type="text" name="q" placeholder="Bv. hoornkikker" value="<?=e($q)?>"></div>
+      <div class="a-field"><label><?=e(t('search_by_name'))?></label><input type="text" name="q" placeholder="Bv. hoornkikker" value="<?=e($q)?>"></div>
       <?php if($type === 'animal' && $klassen): ?>
       <div class="a-field">
-        <label>Klasse</label>
+        <label><?=e(t('class_label'))?></label>
         <select name="klasse">
-          <option value="">Alle klassen</option>
+          <option value=""><?=e(t('all_classes'))?></option>
           <?php foreach($klassen as $k): ?>
           <option value="<?=(int)$k['id']?>" <?=$klasse===(int)$k['id']?'selected':''?>><?=e($k['title'])?></option>
           <?php endforeach; ?>
         </select>
       </div>
       <?php endif; ?>
-      <button class="a-btn" type="submit">Filteren</button>
-      <?php if($q !== '' || $klasse): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>">Wis filter</a><?php endif; ?>
+      <button class="a-btn" type="submit"><?=e(t('filter'))?></button>
+      <?php if($q !== '' || $klasse): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>"><?=e(t('clear_filter'))?></a><?php endif; ?>
     </form>
   </div>
 </div>
@@ -131,32 +147,42 @@ admin_header($info['label'], $info['nav']);
 <?php endif; ?>
 <?php if($items): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th>Titel</th><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
+    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><?php endif; ?><?php if($type==='category'): ?><th>Engelse naam</th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
       <td data-label="Titel"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
+      <?php if($type==='animal'): ?><td data-label="Categorie"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">— geen —</span>'?></td><?php endif; ?>
+      <?php if($type==='category'): ?>
+      <td data-label="Engelse naam">
+        <form method="post" class="a-inline-form" style="gap:6px">
+          <?=csrf_field()?><input type="hidden" name="action" value="update_title_en"><input type="hidden" name="id" value="<?=$p['id']?>">
+          <input type="text" name="title_en" value="<?=e($p['title_en'] ?? '')?>" placeholder="bv. Fish" style="min-width:140px">
+          <button type="submit" class="a-btn a-btn-sm a-btn-ghost">✓</button>
+        </form>
+      </td>
+      <?php endif; ?>
       <td data-label="Link"><code><?=e($info['view'].$p['slug'])?></code></td>
       <td data-label="Status">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$p['id']?>">
-          <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?'Live':'Concept'?></button>
+          <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?t('live'):t('draft')?></button>
         </form>
       </td>
       <td data-label="Bezoeken"><?=(int)($p['views']??0)?></td>
       <td data-label="Aangemaakt"><?=e(date('d-m-Y H:i',strtotime($p['created_at'])))?></td>
       <td class="row-actions">
-        <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="<?=e($info['view'].$p['slug'])?>" target="_blank">Bekijk</a><?php endif; ?>
-        <a class="a-btn a-btn-sm" href="page-edit.php?type=<?=e($type)?>&id=<?=$p['id']?>">Bewerken</a>
+        <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="<?=e($info['view'].$p['slug'])?>" target="_blank"><?=e(t('view'))?></a><?php endif; ?>
+        <a class="a-btn a-btn-sm" href="page-edit.php?type=<?=e($type)?>&id=<?=$p['id']?>"><?=e(t('edit'))?></a>
         <form method="post" onsubmit="return confirm('<?=e(ucfirst($info['singular']))?> \'<?=e(addslashes($p['title']))?>\' definitief verwijderen?');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$p['id']?>">
-          <button type="submit" class="a-btn a-btn-sm a-btn-danger">Verwijder</button>
+          <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
       </td>
     </tr>
     <?php endforeach; ?>
   </table></div>
 <?php else: ?>
-  <div class="a-empty"><h3>Nog geen <?=e(strtolower($info['label']))?></h3><p>Maak hierboven de eerste aan.</p></div>
+  <div class="a-empty"><h3>Nog geen <?=e(strtolower($typeLabel))?></h3><p>Maak hierboven de eerste aan.</p></div>
 <?php endif; ?>
 </div>
 <?php admin_footer(); ?>

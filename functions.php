@@ -19,6 +19,7 @@ session_set_cookie_params([
 session_start();
 if (file_exists(__DIR__.'/config.php')) require_once __DIR__.'/config.php';
 require_once __DIR__.'/blocks.php';
+require_once __DIR__.'/i18n.php';
 
 function installed(){ return defined('DB_HOST') && file_exists(__DIR__.'/config.php'); }
 function db(){
@@ -158,7 +159,7 @@ function meta_tags($title='', $description='', $canonical=''){
 
 function header_html($title='', $description='', $canonical='', $head_extra=''){
     $font=setting('font','Georgia'); $primary=setting('primary_color','#7b5f46'); $accent=setting('accent_color','#eadfd2');
-    echo '<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    echo '<!doctype html><html lang="'.e(current_lang()).'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     $full_title = meta_tags($title, $description, $canonical);
     echo '<title>'.e($full_title).'</title>';
     echo '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
@@ -167,10 +168,11 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     if($head_extra) echo $head_extra;
     echo '</head><body>';
     echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
-    echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Jimbo Animal Species of the World')).'</a><nav><a href="index.php">Home</a>';
+    echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Jimbo Animal Species of the World')).'</a><nav><a href="index.php">'.t('nav_home').'</a>';
     echo nav_render_zoos();
     try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 AND is_homepage=0 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
-    echo '<a href="contact.php">Contact</a>';
+    echo '<a href="contact.php">'.t('nav_contact').'</a>';
+    echo lang_switch_html();
     echo '</nav></header>';
 }
-function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; Website door <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }
+function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; '.t('footer_by').' <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }

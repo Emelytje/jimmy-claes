@@ -54,7 +54,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $zoos = db()->query('SELECT * FROM zoos ORDER BY sort_order, id')->fetchAll();
-admin_header('Dierentuinen', 'zoos');
+admin_header(t('admin_zoos'), 'zoos');
 ?>
 <div class="a-card">
   <div class="a-card-pad">
@@ -83,13 +83,13 @@ admin_header('Dierentuinen', 'zoos');
           <input type="hidden" name="id" value="<?=$z['id']?>">
           <div class="a-field"><input type="text" name="title" value="<?=e($z['title'])?>" required></div>
           <div class="a-field"><input type="text" name="url" value="<?=e($z['url'])?>" required></div>
-          <button type="submit" class="a-btn a-btn-sm a-btn-ghost">Opslaan</button>
+          <button type="submit" class="a-btn a-btn-sm a-btn-ghost"><?=e(t('save'))?></button>
         </form>
       </td>
       <td data-label="Status">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$z['id']?>">
-          <button type="submit" class="a-pill <?=$z['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$z['published']?'Live':'Verborgen'?></button>
+          <button type="submit" class="a-pill <?=$z['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$z['published']?t('live'):t('hidden')?></button>
         </form>
       </td>
       <td class="row-actions">
@@ -103,7 +103,7 @@ admin_header('Dierentuinen', 'zoos');
         </form>
         <form method="post" onsubmit="return confirm('\'<?=e(addslashes($z['title']))?>\' verwijderen uit de navigatie?');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$z['id']?>">
-          <button type="submit" class="a-btn a-btn-sm a-btn-danger">Verwijder</button>
+          <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
       </td>
     </tr>

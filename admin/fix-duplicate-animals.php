@@ -14,14 +14,38 @@
  */
 require __DIR__.'/inc.php';
 
+// Sommige soortnamen komen bewust twee keer voor in de echte taxonomie (bv.
+// "Lathamus discolor" staat zowel bij Oceanische papegaaien als bij
+// Koningsparkieten en halsbandparkiet — twee verschillende, allebei juiste
+// rijen). Die mogen nooit samengevoegd worden, anders verdwijnt er een
+// legitieme tak. Tel elke soortnaam in de canonieke boom om zulke titels te
+// herkennen en over te slaan.
+function fda_collect_species_counts($node, &$counts){
+    foreach($node as $value){
+        $isSpeciesList = is_array($value) && (count($value) === 0 || array_keys($value) === range(0, count($value) - 1));
+        if($isSpeciesList){
+            foreach($value as $species){ $counts[trim($species)] = ($counts[trim($species)] ?? 0) + 1; }
+        } elseif(is_array($value)){
+            fda_collect_species_counts($value, $counts);
+        }
+    }
+}
+$speciesCounts = [];
+fda_collect_species_counts(require __DIR__.'/taxonomy-tree-data.php', $speciesCounts);
+$legitDuplicateTitles = array_keys(array_filter($speciesCounts, function($c){ return $c > 1; }));
+
 $done = false;
-$stats = ['merged' => 0, 'photosMoved' => 0];
+$stats = ['merged' => 0, 'photosMoved' => 0, 'skippedLegit' => 0];
 
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     csrf_verify();
 
     $dupSt = db()->query('SELECT title, COUNT(*) c, GROUP_CONCAT(id ORDER BY id) ids FROM animals GROUP BY title HAVING c > 1');
     foreach($dupSt->fetchAll() as $dupRow){
+        if(in_array($dupRow['title'], $legitDuplicateTitles, true)){
+            $stats['skippedLegit']++;
+            continue;
+        }
         $ids = array_map('intval', explode(',', $dupRow['ids']));
         $ph = implode(',', array_fill(0, count($ids), '?'));
         $rowSt = db()->prepare("SELECT * FROM animals WHERE id IN ($ph)");
@@ -70,7 +94,7 @@ admin_header('Dubbele dieren opruimen', '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. <?=$stats['merged']?> dubbele dier(en) samengevoegd, <?=$stats['photosMoved']?> foto('s) verhuisd naar het overblijvende exemplaar met de schone link (zonder "-2"). Niets is verloren gegaan.</div>
+  <div class="notice">Klaar. <?=$stats['merged']?> dubbele dier(en) samengevoegd, <?=$stats['photosMoved']?> foto('s) verhuisd naar het overblijvende exemplaar met de schone link (zonder "-2"). Niets is verloren gegaan.<?php if($stats['skippedLegit']): ?> <?=$stats['skippedLegit']?> soortnaam(en) die bewust dubbel in de boom voorkomen (bv. Lathamus discolor) zijn overgeslagen — die blijven allebei apart bestaan, dat is correct.<?php endif; ?></div>
   <p><a class="a-btn" href="content.php?type=animal">Naar Dieren</a> — controleer de lijst. <a class="a-btn a-btn-ghost" href="../index.php" target="_blank">Bekijk de site</a></p>
 <?php else: ?>
   <h2 style="margin-top:0">Dubbele dieren opruimen</h2>

@@ -346,11 +346,11 @@ function pb_render_recent($d){
     if(!in_array($source, ['mixed','animals','albums','posts','pages'], true)) $source = 'mixed';
     $count = max(1, min(12, (int)($d['count'] ?? 3)));
     $rows = pb_fetch_recent_items($source, $count);
-    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog geen content om te tonen.</p>';
+    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">'.e(t('no_content_yet')).'</p>';
     $html = '<div class="grid">';
     foreach($rows as $r){
         $img = !empty($r['cover_image']) ? '<img src="'.e($r['cover_image']).'" alt="" loading="lazy">' : '';
-        $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3><a class="btn" href="'.e($r['url']).'">Bekijk</a></div></article>';
+        $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3><a class="btn" href="'.e($r['url']).'">'.e(t('view')).'</a></div></article>';
     }
     return $html.'</div>';
 }
@@ -361,10 +361,10 @@ function pb_render_contact($d){
     return $title.'<form method="post" action="submit-message.php" class="pb-contact-form">'
         .csrf_field()
         .'<input type="hidden" name="redirect" value="'.$redirect.'">'
-        .'<label>Naam<input name="name" required></label>'
-        .'<label>E-mail (optioneel)<input type="email" name="email"></label>'
-        .'<label>Bericht<textarea name="message" rows="5" required></textarea></label>'
-        .'<button type="submit" class="pb-btn pb-btn-solid pb-btn-md">'.e($d['buttonText'] ?? 'Versturen').'</button>'
+        .'<label>'.e(t('form_name')).'<input name="name" required></label>'
+        .'<label>'.e(t('form_email_optional')).'<input type="email" name="email"></label>'
+        .'<label>'.e(t('form_message')).'<textarea name="message" rows="5" required></textarea></label>'
+        .'<button type="submit" class="pb-btn pb-btn-solid pb-btn-md">'.e($d['buttonText'] ?? t('form_send')).'</button>'
         .'</form>';
 }
 
@@ -431,7 +431,7 @@ function pb_class_theme_color($categoryId){
 // Simpele "vorige pagina"-knop (browser-terug) boven categorie- en
 // dierenpagina's, in plaats van een volledig kruimelpad.
 function pb_render_back_button(){
-    return '<div class="pb-back-bar"><button type="button" class="pb-back-link" onclick="history.back()">&larr; Vorige pagina</button></div>';
+    return '<div class="pb-back-bar"><button type="button" class="pb-back-link" onclick="history.back()">&larr; '.e(t('back_button')).'</button></div>';
 }
 
 // Alle categorie-id's onder (en incl.) een gegeven categorie, voor het
@@ -483,46 +483,68 @@ function pb_animal_random_photo($animalId){
     }catch(Exception $e){ return ''; }
 }
 
+// Sommige installaties hebben de title_en/description_en-kolommen (admin ->
+// Vertalingen toevoegen) nog niet — controleer één keer per request en
+// cache het resultaat, zodat de rest van de code die kolommen veilig kan
+// opvragen zonder een query-fout te riskeren.
+function pb_has_column($table, $column){
+    static $cache = [];
+    $key = $table.'.'.$column;
+    if(!array_key_exists($key, $cache)){
+        try{
+            $st = db()->prepare("SHOW COLUMNS FROM $table LIKE ?");
+            $st->execute([$column]);
+            $cache[$key] = (bool)$st->fetch();
+        }catch(Exception $e){ $cache[$key] = false; }
+    }
+    return $cache[$key];
+}
+
 function pb_render_subcategories($d, $ctx=[]){
     $catId = (int)($ctx['category_id'] ?? 0);
     if(!$catId) return '';
+    $catEnCols = pb_has_column('categories','title_en') ? ', title_en, description_en' : '';
+    $animalEnCols = pb_has_column('animals','title_en') ? ', title_en' : '';
     $rows = [];
-    $st = db()->prepare('SELECT id, title, slug, description, cover_image FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
+    $st = db()->prepare("SELECT id, title, slug, description, cover_image$catEnCols FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title");
     $st->execute([$catId]);
     foreach($st as $r){
         $r['url'] = 'category.php?slug='.$r['slug'];
         if(empty($r['cover_image'])) $r['cover_image'] = pb_category_random_photo((int)$r['id']);
         $rows[] = $r;
     }
-    $st = db()->prepare('SELECT id, title, slug, description, cover_image FROM animals WHERE category_id=? AND published=1 ORDER BY sort_order, title');
+    $st = db()->prepare("SELECT id, title, slug, description, cover_image$animalEnCols FROM animals WHERE category_id=? AND published=1 ORDER BY sort_order, title");
     $st->execute([$catId]);
     foreach($st as $r){
         $r['url'] = 'animal.php?slug='.$r['slug'];
         if(empty($r['cover_image'])) $r['cover_image'] = pb_animal_random_photo((int)$r['id']);
         $rows[] = $r;
     }
-    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog niets in deze categorie.</p>';
+    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">'.e(t('nothing_in_category')).'</p>';
     $html = '<div class="grid">';
     foreach($rows as $r){
         $img = !empty($r['cover_image']) ? '<img src="'.e($r['cover_image']).'" alt="" loading="lazy">' : '';
-        $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3>'
-            .(!empty($r['description']) ? '<p>'.e($r['description']).'</p>' : '')
-            .'<a class="btn" href="'.e($r['url']).'">Bekijk</a></div></article>';
+        $desc = localized_field($r, 'description');
+        $html .= '<article class="card"><a href="'.e($r['url']).'">'.$img.'</a><div class="pad"><h3>'.e(localized_field($r,'title')).'</h3>'
+            .($desc !== '' ? '<p>'.e($desc).'</p>' : '')
+            .'<a class="btn" href="'.e($r['url']).'">'.e(t('view')).'</a></div></article>';
     }
     return $html.'</div>';
 }
 
 function pb_render_categories_grid($d){
-    $rows = db()->query('SELECT id, title, slug, description, cover_image FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title')->fetchAll();
-    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">Nog geen categorieën om te tonen.</p>';
+    $catEnCols = pb_has_column('categories','title_en') ? ', title_en, description_en' : '';
+    $rows = db()->query("SELECT id, title, slug, description, cover_image$catEnCols FROM categories WHERE parent_id IS NULL AND published=1 ORDER BY sort_order, title")->fetchAll();
+    if(!$rows) return '<p style="text-align:center;color:var(--ink-soft)">'.e(t('no_categories_yet')).'</p>';
     $html = '<div class="grid pb-cat-grid">';
     foreach($rows as $r){
         $url = 'category.php?slug='.$r['slug'];
         $photo = $r['cover_image'] ?: pb_category_random_photo((int)$r['id']);
         $img = $photo ? '<img src="'.e($photo).'" alt="" loading="lazy">' : '<div class="pb-cat-grid-noimg"></div>';
-        $html .= '<article class="card pb-cat-grid-card"><a href="'.e($url).'">'.$img.'</a><div class="pad"><h3>'.e($r['title']).'</h3>'
-            .(!empty($r['description']) ? '<p>'.e($r['description']).'</p>' : '')
-            .'<a class="btn" href="'.e($url).'">Ontdek</a></div></article>';
+        $desc = localized_field($r, 'description');
+        $html .= '<article class="card pb-cat-grid-card"><a href="'.e($url).'">'.$img.'</a><div class="pad"><h3>'.e(localized_field($r,'title')).'</h3>'
+            .($desc !== '' ? '<p>'.e($desc).'</p>' : '')
+            .'<a class="btn" href="'.e($url).'">'.e(t('discover')).'</a></div></article>';
     }
     return $html.'</div>';
 }
