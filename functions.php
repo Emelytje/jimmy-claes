@@ -114,36 +114,17 @@ function csrf_verify(){
     }
 }
 
-// Enige dierenklassen die rechtstreeks in de navbalk mogen staan. Alles
-// wat verder los op het hoofdniveau van de categorieën-tabel rondslingert
-// (rommel van eerdere handmatige aanpassingen, dubbels, weeskindjes) wordt
-// zo altijd genegeerd in de navigatie — geen boomherstel meer nodig om een
-// nette navbalk te krijgen.
-const NAV_TOP_LEVEL_CLASSES = ['Amfibieën', 'Reptielen', 'Vissen', 'Vogels', 'Zoogdieren', 'Ongewervelde'];
-
-// Bouwt recursief de dieren-categorieboom op voor de navigatie. Een
-// categorie met eigen sub-categorieën wordt een geneste dropdown; een
-// categorie zonder kinderen wordt gewoon een link (geen lege pijl-naar-niets).
-function nav_render_categories($parentId=null){
-    if($parentId === null){
-        $ph = implode(',', array_fill(0, count(NAV_TOP_LEVEL_CLASSES), '?'));
-        $st = db()->prepare("SELECT id, title, slug FROM categories WHERE parent_id IS NULL AND published=1 AND title IN ($ph) ORDER BY FIELD(title, $ph)");
-        $st->execute(array_merge(NAV_TOP_LEVEL_CLASSES, NAV_TOP_LEVEL_CLASSES));
-        $rows = $st->fetchAll();
-    } else {
-        $st = db()->prepare('SELECT id, title, slug FROM categories WHERE parent_id=? AND published=1 ORDER BY sort_order, title');
-        $st->execute([$parentId]);
-        $rows = $st->fetchAll();
-    }
+// De hoofdnav toont geen dierenklassen meer (die zitten nu achter de
+// Gewervelde/Ongewervelde-knoppen op de homepage) maar links naar externe
+// dierentuinen, beheerd via admin/zoos.php.
+function nav_render_zoos(){
     $html = '';
-    foreach($rows as $c){
-        $childHtml = nav_render_categories((int)$c['id']);
-        if($childHtml !== ''){
-            $html .= '<div class="nav-dropdown"><a href="category.php?slug='.e($c['slug']).'" class="nav-dropdown-toggle">'.e($c['title']).'</a><div class="nav-dropdown-menu">'.$childHtml.'</div></div>';
-        } else {
-            $html .= '<a href="category.php?slug='.e($c['slug']).'">'.e($c['title']).'</a>';
+    try{
+        $rows = db()->query('SELECT title, url FROM zoos WHERE published=1 ORDER BY sort_order, title')->fetchAll();
+        foreach($rows as $z){
+            $html .= '<a href="'.e($z['url']).'" target="_blank" rel="noopener">'.e($z['title']).'</a>';
         }
-    }
+    }catch(Exception $e){}
     return $html;
 }
 
@@ -187,12 +168,7 @@ function header_html($title='', $description='', $canonical='', $head_extra=''){
     echo '</head><body>';
     echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
     echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Jimbo Animal Species of the World')).'</a><nav><a href="index.php">Home</a>';
-    try{ $catNav = nav_render_categories(); }catch(Exception $e){ $catNav = ''; }
-    if($catNav !== ''){
-        echo $catNav;
-    } else {
-        echo '<a href="animals.php">Dieren</a>';
-    }
+    echo nav_render_zoos();
     try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 AND is_homepage=0 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
     echo '<a href="contact.php">Contact</a>';
     echo '</nav></header>';

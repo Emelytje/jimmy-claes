@@ -169,6 +169,7 @@ function render_block($block, $depth=0, $ctx=[]){
         case 'subcategories': $inner = pb_render_subcategories($data, $ctx); break;
         case 'categories_grid': $inner = pb_render_categories_grid($data); break;
         case 'photocount': $inner = pb_render_photocount($data); break;
+        case 'class_split': $inner = pb_render_class_split($data); break;
         case 'slideshow':  $inner = pb_render_slideshow($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
         case 'contact':    $inner = pb_render_contact($data); break;
@@ -390,21 +391,35 @@ function pb_category_ancestors($categoryId){
 // (Vissen/Vogels/Reptielen/Zoogdieren/Amfibieën) en geeft die kleur terug,
 // of '' als de pagina buiten die klassen valt (bv. de wortel "Gewervelde
 // dieren" zelf), zodat dan gewoon de standaard-accentkleur blijft gelden.
+// Eén plek voor de koppeling klassenaam -> instellingen-sleutel + standaard
+// pastelkleur, gedeeld door pb_class_theme_color() (voorkant) en
+// admin/settings.php (kleurenpicker), zodat ze nooit uit elkaar kunnen lopen.
+function pb_class_color_map(){
+    return [
+        'vissen'        => ['class_color_vissen',        '#a9cde0'],
+        'vogels'        => ['class_color_vogels',        '#e3cf8f'],
+        'reptielen'     => ['class_color_reptielen',      '#a9cfae'],
+        'zoogdieren'    => ['class_color_zoogdieren',     '#dcaaa3'],
+        'amfibieën'     => ['class_color_amfibieen',      '#cdb37e'],
+        'ongewervelde'  => ['class_color_ongewervelde',   '#f6f3ec'],
+        'spinachtigen'  => ['class_color_spinachtigen',   '#b7b7b3'],
+        'schijfkwallen' => ['class_color_schijfkwallen',  '#e0b7bd'],
+    ];
+}
+
 function pb_class_theme_color($categoryId){
     if(!$categoryId) return '';
-    static $themes = [
-        'vissen'     => '#dceef6',
-        'vogels'     => '#faf1d6',
-        'reptielen'  => '#e0efe1',
-        'zoogdieren' => '#f5dfdc',
-        'amfibieën'  => '#ecdfc9',
-        'spinachtigen' => '#e2e2e0',
-        'schijfkwallen' => '#f7e3e6',
-    ];
-    $chain = pb_category_ancestors($categoryId);
+    $themes = pb_class_color_map();
+    // Diepste match wint: pb_category_ancestors() geeft de keten van wortel
+    // tot blad, dus achterstevoren doorlopen zodat bv. "Spinachtigen" boven
+    // zijn eigen bovenliggende "Ongewervelde" gaat, niet omgekeerd.
+    $chain = array_reverse(pb_category_ancestors($categoryId));
     foreach($chain as $row){
         $key = mb_strtolower(trim($row['title']));
-        if(isset($themes[$key])) return $themes[$key];
+        if(isset($themes[$key])){
+            [$settingKey, $default] = $themes[$key];
+            return setting($settingKey, $default);
+        }
     }
     return '';
 }
@@ -506,6 +521,30 @@ function pb_render_categories_grid($d){
             .'<a class="btn" href="'.e($url).'">Ontdek</a></div></article>';
     }
     return $html.'</div>';
+}
+
+// Vaste ingangspagina op de homepage om tussen Gewervelde en Ongewervelde
+// dieren te kiezen en van daaruit verder te navigeren: twee foto's naast
+// elkaar, elk met een titel eronder — tikken op de foto zelf navigeert.
+// Geen instelbare linkbestemming (die twee overzichtspagina's bestaan al),
+// enkel de 2 foto's en de teksten zijn aanpasbaar in de editor.
+function pb_render_class_split($d){
+    $title = trim($d['title'] ?? '');
+    $gImg = trim($d['gewerveldeImage'] ?? '');
+    $oImg = trim($d['ongewerveldeImage'] ?? '');
+    $gLabel = trim($d['gewerveldeLabel'] ?? '') ?: 'Gewervelde dieren';
+    $oLabel = trim($d['ongewerveldeLabel'] ?? '') ?: 'Ongewervelde dieren';
+    $html = '<div class="pb-class-split">';
+    if($title !== '') $html .= '<h2>'.e($title).'</h2>';
+    $html .= '<div class="pb-class-split-cards">';
+    $html .= '<a class="pb-class-split-card" href="gewervelde.php">'
+        .($gImg !== '' ? '<img src="'.e($gImg).'" alt="" loading="lazy">' : '<div class="pb-class-split-noimg"></div>')
+        .'<span>'.e($gLabel).'</span></a>';
+    $html .= '<a class="pb-class-split-card" href="category.php?slug=ongewervelde">'
+        .($oImg !== '' ? '<img src="'.e($oImg).'" alt="" loading="lazy">' : '<div class="pb-class-split-noimg"></div>')
+        .'<span>'.e($oLabel).'</span></a>';
+    $html .= '</div></div>';
+    return $html;
 }
 
 function pb_count_total_photos(){

@@ -270,6 +270,21 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-photocount-num{ font-family:var(--font-heading); font-size:clamp(2.4rem,5vw,3.6rem); font-weight:600; color:var(--pb-text-color,var(--primary)); line-height:1; }
 .pb-photocount-label{ font-size:.95rem; color:var(--pb-text-color,var(--ink-soft)); }
 
+/* ---------- gewervelde/ongewervelde keuzeblok (homepage) ---------- */
+.pb-class-split{ display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center; padding:20px; }
+.pb-class-split h2{ margin:0; }
+.pb-class-split-cards{ display:flex; flex-wrap:wrap; gap:28px; justify-content:center; width:100%; max-width:880px; }
+.pb-class-split-card{ display:block; flex:1 1 280px; max-width:380px; color:var(--ink); transition:transform .3s var(--ease); }
+.pb-class-split-card:hover{ transform:translateY(-6px); }
+.pb-class-split-card img,.pb-class-split-noimg{ width:100%; height:260px; object-fit:cover; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); }
+.pb-class-split-noimg{ background:linear-gradient(135deg,var(--accent),var(--paper)); }
+.pb-class-split-card span{ display:block; margin-top:14px; font-family:var(--font-heading); font-size:1.3rem; font-weight:600; }
+@media(max-width:600px){
+  .pb-class-split-cards{ flex-direction:column; align-items:center; }
+  .pb-class-split-card{ width:100%; max-width:320px; }
+  .pb-class-split-card img,.pb-class-split-noimg{ height:200px; }
+}
+
 /* ---------- lightbox ---------- */
 .pb-lightbox{ position:fixed; inset:0; background:rgba(20,15,10,.92); display:flex; align-items:center; justify-content:center; padding:5vw; z-index:200; opacity:0; pointer-events:none; transition:opacity .25s var(--ease); }
 .pb-lightbox.is-open{ opacity:1; pointer-events:auto; }

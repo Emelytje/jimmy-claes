@@ -2,6 +2,17 @@
 require __DIR__.'/inc.php';
 
 $fields = ['site_title','intro_title','intro_text','primary_color','accent_color','font','meta_description','contact_email'];
+$classColorMap = pb_class_color_map();
+$classColorLabels = [
+    'vissen'        => 'Vissen',
+    'vogels'        => 'Vogels',
+    'reptielen'     => 'Reptielen',
+    'zoogdieren'    => 'Zoogdieren',
+    'amfibieën'     => 'Amfibieën',
+    'ongewervelde'  => 'Ongewervelde',
+    'spinachtigen'  => 'Spinachtigen',
+    'schijfkwallen' => 'Schijfkwallen',
+];
 $saved = false;
 $accountSaved = false;
 $accountError = '';
@@ -54,6 +65,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             }
             set_setting($f, $val);
         }
+        foreach($classColorMap as [$key, $default]){
+            $val = trim($_POST[$key] ?? '');
+            if(!preg_match('/^#[0-9a-fA-F]{6}$/', $val)) $val = $default;
+            set_setting($key, $val);
+        }
         $saved = true;
     }
 }
@@ -97,7 +113,18 @@ admin_header('Site-instellingen', 'settings');
         </select>
       </div>
 
-      <button class="a-btn" type="submit">Opslaan</button>
+      <h2 style="margin-top:28px">Bannerkleuren per dierklasse</h2>
+      <p style="color:#8a7c6c;font-size:.9rem;margin-top:-8px">De achtergrondkleur boven de titel op categorie- en dierenpagina's, per klasse (geldt ook voor alle sub-categorieën eronder).</p>
+      <div class="pbe-row" style="display:flex;flex-wrap:wrap;gap:20px">
+        <?php foreach($classColorMap as $key => [$settingKey, $default]): ?>
+        <div class="a-field" style="flex:1;min-width:160px">
+          <label><?=e($classColorLabels[$key] ?? $key)?></label>
+          <input type="color" name="<?=e($settingKey)?>" value="<?=e(setting($settingKey, $default))?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer">
+        </div>
+        <?php endforeach; ?>
+      </div>
+
+      <button class="a-btn" type="submit" style="margin-top:20px">Opslaan</button>
     </form>
   </div>
 </div>

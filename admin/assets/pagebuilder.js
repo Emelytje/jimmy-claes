@@ -270,6 +270,26 @@ var BLOCKS = {
       return wrap('photocount', id, s, html);
     }
   },
+  class_split: {
+    label:'Gewervelde / Ongewervelde', icon:'&#128062;', group:'Layout',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
+    data:function(){ return {gewerveldeImage:'', ongewerveldeImage:'', title:'Ontdek onze dierenwereld', gewerveldeLabel:'Gewervelde dieren', ongewerveldeLabel:'Ongewervelde dieren'}; },
+    render:function(d, s, id){
+      var gImg = d.gewerveldeImage ? imgSrc(d.gewerveldeImage) : '';
+      var oImg = d.ongewerveldeImage ? imgSrc(d.ongewerveldeImage) : '';
+      var html = '<div class="pb-class-split">';
+      if(d.title) html += '<h2 data-edit-field="title">'+esc(d.title)+'</h2>';
+      html += '<div class="pb-class-split-cards">';
+      html += '<a class="pb-class-split-card" href="#" onclick="return false">'
+        + (gImg ? '<img src="'+esc(gImg)+'">' : '<div class="pb-class-split-noimg"></div>')
+        + '<span data-edit-field="gewerveldeLabel">'+esc(d.gewerveldeLabel||'Gewervelde dieren')+'</span></a>';
+      html += '<a class="pb-class-split-card" href="#" onclick="return false">'
+        + (oImg ? '<img src="'+esc(oImg)+'">' : '<div class="pb-class-split-noimg"></div>')
+        + '<span data-edit-field="ongewerveldeLabel">'+esc(d.ongewerveldeLabel||'Ongewervelde dieren')+'</span></a>';
+      html += '</div></div>';
+      return wrap('class_split', id, s, html);
+    }
+  },
   contact: {
     label:'Contactformulier', icon:'&#9993;', group:'Formulier',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
@@ -1175,6 +1195,14 @@ function contentFieldsHtml(block){
       break;
     case 'photocount':
       html += '<div class="pbe-field"><label>Tekst naast het getal</label><input type="text" data-bind="data.label" value="'+esc(d.label||"foto's op deze website")+'"></div>';
+      break;
+    case 'class_split':
+      html += '<div class="pbe-field"><label>Titel (optioneel)</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';
+      html += imageFieldHtml(d.gewerveldeImage, 'gewerveldeImage', 'Foto — gewervelde dieren');
+      html += '<div class="pbe-field"><label>Tekst onder de foto — gewervelde dieren</label><input type="text" data-bind="data.gewerveldeLabel" value="'+esc(d.gewerveldeLabel||'')+'"></div>';
+      html += imageFieldHtml(d.ongewerveldeImage, 'ongewerveldeImage', 'Foto — ongewervelde dieren');
+      html += '<div class="pbe-field"><label>Tekst onder de foto — ongewervelde dieren</label><input type="text" data-bind="data.ongewerveldeLabel" value="'+esc(d.ongewerveldeLabel||'')+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">Tikken op een foto linkt automatisch naar het overzicht van gewervelde klassen, of naar de Ongewervelde-categorie.</p>';
       break;
     case 'subcategories':
       html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle sub-categorieën en dieren binnen déze categorie, met coverfoto — enkel zinvol op een categoriepagina.</p>';
