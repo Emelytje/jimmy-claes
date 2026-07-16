@@ -24,8 +24,9 @@ header_html('Gewervelde dieren', 'Alle diersoorten met een wervelkolom: amfibie√
 <?php foreach($rows as $r):
     $url = 'category.php?slug='.$r['slug'];
     $photo = $r['cover_image'] ?: pb_category_random_photo((int)$r['id']);
+    $rowColor = pb_class_theme_color((int)$r['id']);
 ?>
-<article class="card pb-cat-grid-card"><a href="<?=e($url)?>"><?php if($photo): ?><img src="<?=e($photo)?>" alt="" loading="lazy"><?php else: ?><div class="pb-cat-grid-noimg"></div><?php endif; ?></a><div class="pad"><h3><?=e($r['title'])?></h3><?php if($r['description']): ?><p><?=e($r['description'])?></p><?php endif; ?><a class="btn" href="<?=e($url)?>">Ontdek</a></div></article>
+<article class="card pb-cat-grid-card"><a href="<?=e($url)?>"><?php if($photo): ?><img src="<?=e($photo)?>" alt="" loading="lazy"><?php else: ?><div class="pb-cat-grid-noimg"<?=$rowColor ? ' style="background:'.e($rowColor).'"' : ''?>></div><?php endif; ?></a><div class="pad"><h3><?=e($r['title'])?></h3><?php if($r['description']): ?><p><?=e($r['description'])?></p><?php endif; ?><a class="btn" href="<?=e($url)?>">Ontdek</a></div></article>
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
