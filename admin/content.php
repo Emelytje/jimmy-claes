@@ -81,8 +81,9 @@ if($type === 'category'){
     // Lathamus discolor, bewust twee keer in de boom) in de lijst uit elkaar
     // te houden zijn.
     if($type === 'animal' && $items){
+        $catEnCol = pb_has_column('categories','title_en') ? ', title_en' : '';
         $catNames = [];
-        foreach(db()->query('SELECT id, title FROM categories') as $c){ $catNames[(int)$c['id']] = $c['title']; }
+        foreach(db()->query("SELECT id, title$catEnCol FROM categories") as $c){ $catNames[(int)$c['id']] = localized_field($c, 'title'); }
         foreach($items as &$it){ $it['category_title'] = $it['category_id'] ? ($catNames[(int)$it['category_id']] ?? '') : ''; }
         unset($it);
     }
@@ -104,17 +105,17 @@ admin_header($typeLabel, $info['nav']);
     <form method="post" class="a-inline-form">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">
-      <div class="a-field"><label>Titel van het nieuwe <?=e($info['singular'])?></label><input type="text" name="title" placeholder="Titel" required></div>
+      <div class="a-field"><label><?=e($type === 'animal' ? t('new_animal_title_label') : t('new_category_title_label'))?></label><input type="text" name="title" placeholder="<?=e(t('title_placeholder'))?>" required></div>
       <?php if($type === 'category'): ?>
       <div class="a-field">
-        <label>Bovenliggende categorie</label>
+        <label><?=e(t('parent_category'))?></label>
         <select name="parent_id">
-          <option value="">Geen (hoofdcategorie)</option>
+          <option value=""><?=e(t('none_top_level'))?></option>
           <?=pbe_category_options(null)?>
         </select>
       </div>
       <?php endif; ?>
-      <button class="a-btn" type="submit">+ Aanmaken</button>
+      <button class="a-btn" type="submit"><?=e(t('create_btn'))?></button>
     </form>
   </div>
 </div>
@@ -147,13 +148,13 @@ admin_header($typeLabel, $info['nav']);
 <?php endif; ?>
 <?php if($items): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><?php endif; ?><?php if($type==='category'): ?><th>Engelse naam</th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
+    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><?php endif; ?><?php if($type==='category'): ?><th><?=e(t('english_name'))?></th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
-      <td data-label="Titel"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
-      <?php if($type==='animal'): ?><td data-label="Categorie"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">— geen —</span>'?></td><?php endif; ?>
+      <td data-label="<?=e(t('title_label'))?>"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
+      <?php if($type==='animal'): ?><td data-label="<?=e(t('category_label'))?>"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">'.e(t('none_dash')).'</span>'?></td><?php endif; ?>
       <?php if($type==='category'): ?>
-      <td data-label="Engelse naam">
+      <td data-label="<?=e(t('english_name'))?>">
         <form method="post" class="a-inline-form" style="gap:6px">
           <?=csrf_field()?><input type="hidden" name="action" value="update_title_en"><input type="hidden" name="id" value="<?=$p['id']?>">
           <input type="text" name="title_en" value="<?=e($p['title_en'] ?? '')?>" placeholder="bv. Fish" style="min-width:140px">
@@ -161,19 +162,19 @@ admin_header($typeLabel, $info['nav']);
         </form>
       </td>
       <?php endif; ?>
-      <td data-label="Link"><code><?=e($info['view'].$p['slug'])?></code></td>
-      <td data-label="Status">
+      <td data-label="<?=e(t('link'))?>"><code><?=e($info['view'].$p['slug'])?></code></td>
+      <td data-label="<?=e(t('status'))?>">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?t('live'):t('draft')?></button>
         </form>
       </td>
-      <td data-label="Bezoeken"><?=(int)($p['views']??0)?></td>
-      <td data-label="Aangemaakt"><?=e(date('d-m-Y H:i',strtotime($p['created_at'])))?></td>
+      <td data-label="<?=e(t('visits'))?>"><?=(int)($p['views']??0)?></td>
+      <td data-label="<?=e(t('created'))?>"><?=e(date('d-m-Y H:i',strtotime($p['created_at'])))?></td>
       <td class="row-actions">
         <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="<?=e($info['view'].$p['slug'])?>" target="_blank"><?=e(t('view'))?></a><?php endif; ?>
         <a class="a-btn a-btn-sm" href="page-edit.php?type=<?=e($type)?>&id=<?=$p['id']?>"><?=e(t('edit'))?></a>
-        <form method="post" onsubmit="return confirm('<?=e(ucfirst($info['singular']))?> \'<?=e(addslashes($p['title']))?>\' definitief verwijderen?');" style="display:inline">
+        <form method="post" onsubmit="return confirm('<?=e(ucfirst($info['singular']))?> \'<?=e(addslashes($p['title']))?><?=e(t('confirm_delete_content_suffix'))?>');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
@@ -182,7 +183,7 @@ admin_header($typeLabel, $info['nav']);
     <?php endforeach; ?>
   </table></div>
 <?php else: ?>
-  <div class="a-empty"><h3>Nog geen <?=e(strtolower($typeLabel))?></h3><p>Maak hierboven de eerste aan.</p></div>
+  <div class="a-empty"><h3><?=e(t('no_items_yet_prefix'))?><?=e(mb_strtolower($typeLabel))?></h3><p><?=e(t('create_first_hint'))?></p></div>
 <?php endif; ?>
 </div>
 <?php admin_footer(); ?>

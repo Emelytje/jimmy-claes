@@ -58,14 +58,14 @@ admin_header(t('admin_zoos'), 'zoos');
 ?>
 <div class="a-card">
   <div class="a-card-pad">
-    <h2 style="margin-top:0">Dierentuinen in de hoofdnavigatie</h2>
-    <p style="color:#8a7c6c;font-size:.9rem">Deze links vervangen de dierenklassen bovenaan de site. De klassen (Amfibieën, Ongewervelde, enz.) zijn nu bereikbaar via de knoppen op de homepage.</p>
+    <h2 style="margin-top:0"><?=e(t('zoos_heading'))?></h2>
+    <p style="color:#8a7c6c;font-size:.9rem"><?=e(t('zoos_desc'))?></p>
     <form method="post" class="a-inline-form">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">
-      <div class="a-field"><label>Naam</label><input type="text" name="title" placeholder="Bijv. Zoo Antwerpen" required></div>
-      <div class="a-field"><label>Website (URL)</label><input type="text" name="url" placeholder="https://www.zooantwerpen.be" required></div>
-      <button class="a-btn" type="submit">+ Toevoegen</button>
+      <div class="a-field"><label><?=e(t('name_label'))?></label><input type="text" name="title" placeholder="Bijv. Zoo Antwerpen" required></div>
+      <div class="a-field"><label><?=e(t('website_url'))?></label><input type="text" name="url" placeholder="https://www.zooantwerpen.be" required></div>
+      <button class="a-btn" type="submit"><?=e(t('add_btn'))?></button>
     </form>
   </div>
 </div>
@@ -73,10 +73,10 @@ admin_header(t('admin_zoos'), 'zoos');
 <div class="a-card">
 <?php if($zoos): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th colspan="2">Naam / URL</th><th>Status</th><th></th></tr>
+    <tr><th colspan="2"><?=e(t('name_url'))?></th><th><?=e(t('status'))?></th><th></th></tr>
     <?php foreach($zoos as $i=>$z): ?>
     <tr>
-      <td data-label="Naam / URL" colspan="2">
+      <td data-label="<?=e(t('name_url'))?>" colspan="2">
         <form method="post" class="a-inline-form" style="gap:8px">
           <?=csrf_field()?>
           <input type="hidden" name="action" value="update">
@@ -86,7 +86,7 @@ admin_header(t('admin_zoos'), 'zoos');
           <button type="submit" class="a-btn a-btn-sm a-btn-ghost"><?=e(t('save'))?></button>
         </form>
       </td>
-      <td data-label="Status">
+      <td data-label="<?=e(t('status'))?>">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$z['id']?>">
           <button type="submit" class="a-pill <?=$z['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$z['published']?t('live'):t('hidden')?></button>
@@ -101,7 +101,7 @@ admin_header(t('admin_zoos'), 'zoos');
           <?=csrf_field()?><input type="hidden" name="action" value="move_down"><input type="hidden" name="id" value="<?=$z['id']?>">
           <button type="submit" class="a-btn a-btn-sm a-btn-ghost" <?=$i===count($zoos)-1?'disabled':''?>>&darr;</button>
         </form>
-        <form method="post" onsubmit="return confirm('\'<?=e(addslashes($z['title']))?>\' verwijderen uit de navigatie?');" style="display:inline">
+        <form method="post" onsubmit="return confirm('\'<?=e(addslashes($z['title']))?><?=e(t('confirm_delete_zoo'))?>');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$z['id']?>">
           <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
@@ -110,7 +110,7 @@ admin_header(t('admin_zoos'), 'zoos');
     <?php endforeach; ?>
   </table></div>
 <?php else: ?>
-  <div class="a-empty"><h3>Nog geen dierentuinen</h3><p>Voeg hierboven je eerste link toe, bijv. Zoo Antwerpen.</p></div>
+  <div class="a-empty"><h3><?=e(t('no_zoos_yet'))?></h3><p><?=e(t('add_first_zoo'))?></p></div>
 <?php endif; ?>
 </div>
 <?php admin_footer(); ?>

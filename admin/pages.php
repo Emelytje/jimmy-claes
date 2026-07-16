@@ -51,8 +51,8 @@ admin_header(t('admin_pages'), 'pages');
     <form method="post" class="a-inline-form">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">
-      <div class="a-field"><label>Titel van de nieuwe pagina</label><input type="text" name="title" placeholder="Bijv. Over ons" required></div>
-      <button class="a-btn" type="submit">+ Pagina aanmaken</button>
+      <div class="a-field"><label><?=e(t('new_page_title_label'))?></label><input type="text" name="title" placeholder="Bijv. Over ons" required></div>
+      <button class="a-btn" type="submit"><?=e(t('create_page_btn'))?></button>
     </form>
   </div>
 </div>
@@ -60,28 +60,28 @@ admin_header(t('admin_pages'), 'pages');
 <div class="a-card">
 <?php if($pages): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th>Titel</th><th>Slug</th><th>Status</th><th>In menu</th><th>Bijgewerkt</th><th></th></tr>
+    <tr><th><?=e(t('title_label'))?></th><th><?=e(t('slug_label'))?></th><th><?=e(t('status'))?></th><th><?=e(t('in_menu'))?></th><th><?=e(t('updated'))?></th><th></th></tr>
     <?php foreach($pages as $p): ?>
     <tr>
-      <td data-label="Titel"><strong><?=e($p['title'])?></strong></td>
-      <td data-label="Slug"><code>/page.php?slug=<?=e($p['slug'])?></code></td>
-      <td data-label="Status">
+      <td data-label="<?=e(t('title_label'))?>"><strong><?=e($p['title'])?></strong></td>
+      <td data-label="<?=e(t('slug_label'))?>"><code>/page.php?slug=<?=e($p['slug'])?></code></td>
+      <td data-label="<?=e(t('status'))?>">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?t('live'):t('draft')?></button>
         </form>
       </td>
-      <td data-label="In menu">
+      <td data-label="<?=e(t('in_menu'))?>">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_nav"><input type="hidden" name="id" value="<?=$p['id']?>">
-          <button type="submit" class="a-pill <?=$p['show_in_nav']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['show_in_nav']?'Ja':'Nee'?></button>
+          <button type="submit" class="a-pill <?=$p['show_in_nav']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['show_in_nav']?t('yes'):t('no')?></button>
         </form>
       </td>
-      <td data-label="Bijgewerkt"><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
+      <td data-label="<?=e(t('updated'))?>"><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
       <td class="row-actions">
         <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="../page.php?slug=<?=e($p['slug'])?>" target="_blank"><?=e(t('view'))?></a><?php endif; ?>
         <a class="a-btn a-btn-sm" href="page-edit.php?id=<?=$p['id']?>"><?=e(t('edit'))?></a>
-        <form method="post" onsubmit="return confirm('Pagina \'<?=e(addslashes($p['title']))?>\' definitief verwijderen?');" style="display:inline">
+        <form method="post" onsubmit="return confirm('<?=e(t('confirm_delete_page'))?><?=e(addslashes($p['title']))?><?=e(t('confirm_delete_content_suffix'))?>');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$p['id']?>">
           <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
@@ -90,7 +90,7 @@ admin_header(t('admin_pages'), 'pages');
     <?php endforeach; ?>
   </table></div>
 <?php else: ?>
-  <div class="a-empty"><h3>Nog geen pagina's</h3><p>Maak hierboven je eerste pagina aan.</p></div>
+  <div class="a-empty"><h3><?=e(t('no_pages_yet'))?></h3><p><?=e(t('no_pages_create_first'))?></p></div>
 <?php endif; ?>
 </div>
 <?php admin_footer(); ?>
