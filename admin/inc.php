@@ -16,6 +16,7 @@ function admin_header($title, $active=''){
         'pages'=>['pages.php','Pagina\'s'],
         'animals'=>['content.php?type=animal','Dieren'],
         'categories'=>['content.php?type=category','Categorieën'],
+        'zoos'=>['zoos.php','Dierentuinen'],
         'messages'=>['messages.php','Berichten'],
         'settings'=>['settings.php','Site-instellingen'],
     ];

@@ -270,6 +270,22 @@ var BLOCKS = {
       return wrap('photocount', id, s, html);
     }
   },
+  class_split: {
+    label:'Gewervelde / Ongewervelde', icon:'&#128062;', group:'Layout',
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
+    data:function(){ return {image:'', title:'Ontdek onze dierenwereld', gewerveldeLabel:'Gewervelde dieren', ongewerveldeLabel:'Ongewervelde dieren'}; },
+    render:function(d, s, id){
+      var img = d.image ? imgSrc(d.image) : '';
+      var html = '<div class="pb-class-split">';
+      if(img) html += '<div class="pb-class-split-img"><img src="'+esc(img)+'"></div>';
+      if(d.title) html += '<h2 data-edit-field="title">'+esc(d.title)+'</h2>';
+      html += '<div class="pb-class-split-buttons">';
+      html += '<a class="pb-btn pb-btn-solid pb-btn-lg" href="#" onclick="return false" data-edit-field="gewerveldeLabel">'+esc(d.gewerveldeLabel||'Gewervelde dieren')+'</a>';
+      html += '<a class="pb-btn pb-btn-outline pb-btn-lg" href="#" onclick="return false" data-edit-field="ongewerveldeLabel">'+esc(d.ongewerveldeLabel||'Ongewervelde dieren')+'</a>';
+      html += '</div></div>';
+      return wrap('class_split', id, s, html);
+    }
+  },
   contact: {
     label:'Contactformulier', icon:'&#9993;', group:'Formulier',
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
@@ -1175,6 +1191,13 @@ function contentFieldsHtml(block){
       break;
     case 'photocount':
       html += '<div class="pbe-field"><label>Tekst naast het getal</label><input type="text" data-bind="data.label" value="'+esc(d.label||"foto's op deze website")+'"></div>';
+      break;
+    case 'class_split':
+      html += imageFieldHtml(d.image, 'image', 'Foto');
+      html += '<div class="pbe-field"><label>Titel (optioneel)</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';
+      html += '<div class="pbe-field"><label>Knoptekst — gewervelde dieren</label><input type="text" data-bind="data.gewerveldeLabel" value="'+esc(d.gewerveldeLabel||'')+'"></div>';
+      html += '<div class="pbe-field"><label>Knoptekst — ongewervelde dieren</label><input type="text" data-bind="data.ongewerveldeLabel" value="'+esc(d.ongewerveldeLabel||'')+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">De knoppen linken automatisch naar het overzicht van gewervelde klassen en naar de Ongewervelde-categorie — enkel foto en teksten zijn aanpasbaar.</p>';
       break;
     case 'subcategories':
       html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle sub-categorieën en dieren binnen déze categorie, met coverfoto — enkel zinvol op een categoriepagina.</p>';
