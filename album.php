@@ -1,4 +1,4 @@
-<?php require 'functions.php'; $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM albums WHERE slug=? AND published=1'); $st->execute([$slug]); $a=$st->fetch(); if(!$a){ http_response_code(404); die('Pagina niet gevonden'); }
+<?php require 'functions.php'; $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM albums WHERE slug=? AND published=1'); $st->execute([$slug]); $a=$st->fetch(); if(!$a){ http_response_code(404); die(t('page_not_found')); }
 track_view('albums', $a['id']);
 $blocks = pb_decode_blocks($a['blocks'] ?? null);
 if($blocks){

@@ -1,6 +1,6 @@
 <?php require 'functions.php';
 $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM posts WHERE slug=? AND published=1'); $st->execute([$slug]); $p=$st->fetch();
-if(!$p){ http_response_code(404); die('Pagina niet gevonden'); }
+if(!$p){ http_response_code(404); die(t('page_not_found')); }
 track_view('posts', $p['id']);
 $blocks = pb_decode_blocks($p['blocks'] ?? null);
 if($blocks){
