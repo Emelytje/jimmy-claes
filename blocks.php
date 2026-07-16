@@ -396,6 +396,10 @@ function pb_category_ancestors($categoryId){
 // admin/settings.php (kleurenpicker), zodat ze nooit uit elkaar kunnen lopen.
 function pb_class_color_map(){
     return [
+        // "Gewervelde" is geen echte categorie (bewuste keuze), maar
+        // gewervelde.php gebruikt deze zelfde instelling rechtstreeks voor
+        // zijn eigen banner — vandaar toch een plek hier.
+        'gewervelde'    => ['class_color_gewervelde',     '#e0a868'],
         'vissen'        => ['class_color_vissen',        '#a9cde0'],
         'vogels'        => ['class_color_vogels',        '#e3cf8f'],
         'reptielen'     => ['class_color_reptielen',      '#a9cfae'],

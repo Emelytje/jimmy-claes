@@ -9,9 +9,12 @@ $st = db()->prepare("SELECT id, title, slug, description, cover_image FROM categ
 $st->execute(array_merge(GEWERVELDE_CLASS_TITLES, GEWERVELDE_CLASS_TITLES));
 $rows = $st->fetchAll();
 
+[$gewerveldeColorKey, $gewerveldeColorDefault] = pb_class_color_map()['gewervelde'];
+$classColor = setting($gewerveldeColorKey, $gewerveldeColorDefault);
+
 header_html('Gewervelde dieren', 'Alle diersoorten met een wervelkolom: amfibieën, reptielen, vissen, vogels en zoogdieren.');
 ?>
-<section class="hero"><div><h1>Gewervelde dieren</h1></div></section>
+<section class="hero" style="background:<?=e($classColor)?>"><div><h1>Gewervelde dieren</h1></div></section>
 <?=pb_render_back_button()?>
 <main class="wrap">
 <?php if(!$rows): ?>
