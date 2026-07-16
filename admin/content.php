@@ -48,6 +48,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     } elseif($action==='update_title_en' && $type==='category'){
         $id = (int)($_POST['id'] ?? 0);
         $titleEn = trim($_POST['title_en'] ?? '');
+        if(!pb_has_column('categories','title_en')) db()->exec('ALTER TABLE categories ADD COLUMN title_en VARCHAR(160) DEFAULT NULL');
         if($id) db()->prepare('UPDATE categories SET title_en=? WHERE id=?')->execute([$titleEn !== '' ? $titleEn : null, $id]);
     }
     header('Location: content.php?type='.$type); exit;

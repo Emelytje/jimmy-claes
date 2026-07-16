@@ -33,7 +33,12 @@ $pages = db()->query('SELECT * FROM pages ORDER BY sort_order, updated_at DESC')
 
 $homepageNeedsMigration = false;
 foreach($pages as $p){
-    if((int)$p['is_homepage'] === 1 && !pb_decode_blocks($p['blocks'] ?? null)){ $homepageNeedsMigration = true; break; }
+    // Ook signaleren als de Home-pagina al blokken heeft maar nog niet
+    // gepubliceerd is: index.php vereist is_homepage=1 EN published=1, dus
+    // anders blijft de site stilletjes op de oude vaste opmaak draaien
+    // terwijl de editor wél de nieuwe blokken toont — precies het soort
+    // onzichtbare mismatch die deze knop moet oplossen.
+    if((int)$p['is_homepage'] === 1 && (!pb_decode_blocks($p['blocks'] ?? null) || !$p['published'])){ $homepageNeedsMigration = true; break; }
 }
 
 admin_header(t('admin_pages'), 'pages');

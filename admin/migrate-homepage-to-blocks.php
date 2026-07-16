@@ -17,6 +17,7 @@ $home = $st->fetch();
 $done = false;
 $alreadyHadBlocks = false;
 $created = false;
+$publishedExisting = false;
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_verify();
@@ -33,7 +34,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     } else {
         $homeId = (int)$home['id'];
         $existingBlocks = pb_decode_blocks($home['blocks'] ?? null);
-        if($existingBlocks) $alreadyHadBlocks = true;
+        if($existingBlocks){
+            $alreadyHadBlocks = true;
+            // Blokken zijn er al maar de pagina stond nog op concept — dan
+            // draaide de site alsnog stilletjes op de oude vaste opmaak.
+            // Enkel publiceren, de bestaande blokken niet aanraken.
+            if(!$home['published']){
+                db()->prepare('UPDATE pages SET published=1 WHERE id=?')->execute([$homeId]);
+                $publishedExisting = true;
+            }
+        }
     }
 
     if(!$alreadyHadBlocks){
@@ -67,15 +77,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $done = true;
     }
 
-    header('Location: migrate-homepage-to-blocks.php?done=1'.($alreadyHadBlocks ? '&skip=1' : '').($created ? '&created=1' : '')); exit;
+    header('Location: migrate-homepage-to-blocks.php?done=1'.($alreadyHadBlocks ? '&skip=1' : '').($created ? '&created=1' : '').($publishedExisting ? '&published=1' : '')); exit;
 }
 
-if(isset($_GET['done'])){ $done = true; $alreadyHadBlocks = isset($_GET['skip']); $created = isset($_GET['created']); }
+if(isset($_GET['done'])){ $done = true; $alreadyHadBlocks = isset($_GET['skip']); $created = isset($_GET['created']); $publishedExisting = isset($_GET['published']); }
 
 admin_header('Homepage omzetten naar blokken', 'pages');
 ?>
 <div class="a-card"><div class="a-card-pad">
-<?php if($done && $alreadyHadBlocks): ?>
+<?php if($done && $alreadyHadBlocks && $publishedExisting): ?>
+  <div class="notice">De Home-pagina had al blokken, maar stond nog op concept — nu gepubliceerd. De bestaande blokken zijn niet aangeraakt.</div>
+  <p><a class="a-btn a-btn-ghost" href="pages.php">Naar Pagina's</a></p>
+<?php elseif($done && $alreadyHadBlocks): ?>
   <div class="notice">De Home-pagina had al blokken — niets aangepast, je huidige opbouw blijft ongemoeid.</div>
   <p><a class="a-btn a-btn-ghost" href="pages.php">Naar Pagina's</a></p>
 <?php elseif($done): ?>

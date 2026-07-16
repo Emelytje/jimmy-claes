@@ -9,15 +9,30 @@
  */
 require __DIR__.'/inc.php';
 
+// Vaste lijst toegelaten tabel/kolomnamen — $table/$column komen nooit uit
+// een request, maar dit blokkeert per ongeluk hergebruik met request-data
+// later, en houdt de SQL-interpolatie hieronder aantoonbaar veilig.
+const AT_ALLOWED_TABLES = ['categories', 'animals'];
+const AT_ALLOWED_COLUMNS = ['title_en', 'description_en'];
+
 function at_column_exists($table, $column){
+    if(!in_array($table, AT_ALLOWED_TABLES, true) || !in_array($column, AT_ALLOWED_COLUMNS, true)) return false;
     $st = db()->prepare("SHOW COLUMNS FROM $table LIKE ?");
     $st->execute([$column]);
     return (bool)$st->fetch();
 }
 function at_ensure_column($table, $column, $ddl){
+    if(!in_array($table, AT_ALLOWED_TABLES, true) || !in_array($column, AT_ALLOWED_COLUMNS, true)) return false;
     if(!at_column_exists($table, $column)){
-        db()->exec("ALTER TABLE $table ADD COLUMN $column $ddl");
-        return true;
+        try{
+            db()->exec("ALTER TABLE $table ADD COLUMN $column $ddl");
+            return true;
+        }catch(Exception $e){
+            // Kolom bestaat intussen al (dubbele klik/race), of hosting laat
+            // geen ALTER toe — geen fatale fout, gewoon negeren en verder
+            // met wat er al kan.
+            return false;
+        }
     }
     return false;
 }
