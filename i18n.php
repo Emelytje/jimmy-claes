@@ -84,6 +84,7 @@ function i18n_dictionary(){
         'vertebrates'       => ['nl' => 'Gewervelde dieren', 'en' => 'Vertebrates'],
         'invertebrates'     => ['nl' => 'Ongewervelde dieren', 'en' => 'Invertebrates'],
         'footer_by'         => ['nl' => 'Website door', 'en' => 'Website by'],
+        'photos_on_site'    => ['nl' => 'foto\'s op deze website', 'en' => 'photos on this website'],
 
         // login
         'login_title'       => ['nl' => 'Welkom terug', 'en' => 'Welcome back'],
@@ -139,6 +140,10 @@ function i18n_dictionary(){
         'type_animal'       => ['nl' => 'Dier', 'en' => 'Animal'],
         'type_album'        => ['nl' => 'Album', 'en' => 'Album'],
         'type_post'         => ['nl' => 'Blogpost', 'en' => 'Blog post'],
+
+        'homepage_migration_notice_pre'  => ['nl' => 'Je homepage draait nog op de vaste basisopmaak, niet op blokken — daarom lijkt "Home" leeg in de editor. ', 'en' => 'Your homepage is still running on the fixed default layout, not on blocks — that\'s why "Home" looks empty in the editor. '],
+        'homepage_migration_notice_link' => ['nl' => 'Zet dit één keer om naar blokken', 'en' => 'Convert it to blocks (one-time)'],
+        'homepage_migration_notice_post' => ['nl' => ' om de homepage net als elke andere pagina te kunnen bewerken (bv. om het "Gewervelde / Ongewervelde"-blok toe te voegen).', 'en' => ' so you can edit the homepage just like any other page (e.g. to add the "Vertebrates / Invertebrates" block).'],
 
         // pagina's / dieren aanmaakformulier
         'new_page_title_label' => ['nl' => 'Titel van de nieuwe pagina', 'en' => 'Title of the new page'],
@@ -214,5 +219,63 @@ function i18n_dictionary(){
         'none_dash'         => ['nl' => '— geen —', 'en' => '— none —'],
         'confirm_delete_page' => ['nl' => 'Pagina \'', 'en' => 'Permanently delete the page \''],
         'no_pages_create_first' => ['nl' => 'Maak hierboven je eerste pagina aan.', 'en' => 'Create your first page above.'],
+
+        // pagebuilder editor topbar + instellingen-modal
+        'back'              => ['nl' => 'Terug', 'en' => 'Back'],
+        'desktop'           => ['nl' => 'Desktop', 'en' => 'Desktop'],
+        'mobile'            => ['nl' => 'Mobiel', 'en' => 'Mobile'],
+        'all_saved'         => ['nl' => 'Alles opgeslagen', 'en' => 'All changes saved'],
+        'view_type'         => ['nl' => 'Bekijk', 'en' => 'View'],
+        'settings_btn'      => ['nl' => 'Instellingen', 'en' => 'Settings'],
+        'type_settings'     => ['nl' => '-instellingen', 'en' => ' settings'],
+        'live_published'    => ['nl' => 'Live (gepubliceerd)', 'en' => 'Live (published)'],
+        'show_in_main_menu' => ['nl' => 'Tonen in hoofdmenu', 'en' => 'Show in main menu'],
+        'set_as_homepage'   => ['nl' => 'Instellen als homepage', 'en' => 'Set as homepage'],
+        'homepage_hint'     => ['nl' => 'Als homepage vervangt deze pagina de standaard-voorpagina volledig.', 'en' => 'As the homepage, this page completely replaces the default front page.'],
+        'cover_photo_label' => ['nl' => 'Coverfoto (gebruikt in overzichten)', 'en' => 'Cover photo (used in overviews)'],
+        'choose_other_photo' => ['nl' => 'Andere foto kiezen (of sleep hier)', 'en' => 'Choose another photo (or drop here)'],
+        'upload_photo'      => ['nl' => 'Foto uploaden (of sleep hier)', 'en' => 'Upload photo (or drop here)'],
+        'short_description' => ['nl' => 'Korte omschrijving', 'en' => 'Short description'],
+        'short_description_placeholder' => ['nl' => 'Tekst die zichtbaar is onder de titel in overzichten (bv. op de homepage)', 'en' => 'Text shown under the title in overviews (e.g. on the homepage)'],
+        'short_vs_seo_hint' => ['nl' => 'Dit is andere, zichtbare tekst dan de SEO-omschrijving hieronder (die is enkel voor zoekmachines).', 'en' => 'This is separate, visible text — different from the SEO description below (which is only for search engines).'],
+        'no_category'       => ['nl' => 'Geen categorie', 'en' => 'No category'],
+        'seo_title'         => ['nl' => 'SEO-titel', 'en' => 'SEO title'],
+        'seo_description'   => ['nl' => 'SEO-omschrijving', 'en' => 'SEO description'],
+        'seo_description_placeholder' => ['nl' => 'Korte omschrijving voor zoekmachines', 'en' => 'Short description for search engines'],
+        'url_autoupdate_hint' => ['nl' => 'past automatisch mee met de titel bij opslaan', 'en' => 'updates automatically with the title when saved'],
+        'type_category'     => ['nl' => 'Categorie', 'en' => 'Category'],
+
+        // admin eenmalige tools (homepage-migratie, vertalingen, dubbele dieren)
+        'hp_migrate_title'  => ['nl' => 'Homepage omzetten naar blokken', 'en' => 'Convert homepage to blocks'],
+        'hp_migrate_done_published' => ['nl' => 'De Home-pagina had al blokken, maar stond nog op concept — nu gepubliceerd. De bestaande blokken zijn niet aangeraakt.', 'en' => 'The Home page already had blocks, but was still a draft — it is now published. The existing blocks were not touched.'],
+        'hp_migrate_done_skip' => ['nl' => 'De Home-pagina had al blokken — niets aangepast, je huidige opbouw blijft ongemoeid.', 'en' => 'The Home page already had blocks — nothing was changed, your current layout is left untouched.'],
+        'hp_migrate_done_created' => ['nl' => ' (nieuwe Home-pagina aangemaakt)', 'en' => ' (new Home page created)'],
+        'hp_migrate_done_main' => ['nl' => 'Klaar%s. De homepage is nu opgebouwd uit gewone blokken — dezelfde titel, tekst en dierenkaarten als voorheen — en meteen gepubliceerd.', 'en' => 'Done%s. The homepage is now built from regular blocks — the same title, text and animal cards as before — and published right away.'],
+        'hp_migrate_done_hint' => ['nl' => 'Ga naar <a href="pages.php">Pagina\'s</a> en open "Home" om verder aan te passen, bijvoorbeeld het "Gewervelde / Ongewervelde"-blok toevoegen.', 'en' => 'Go to <a href="pages.php">Pages</a> and open "Home" to make further changes, e.g. adding the "Vertebrates / Invertebrates" block.'],
+        'to_pages'          => ['nl' => 'Naar Pagina\'s', 'en' => 'Go to Pages'],
+        'hp_migrate_intro1' => ['nl' => 'Je homepage toont nu nog de vaste, niet-bewerkbare basisopmaak (titel + tekst uit Site-instellingen, plus een rooster met alle dieren) — dat is waarom de pagebuilder-editor voor "Home" leeg lijkt: die pagina zelf heeft nog geen blokken en staat nog op concept.', 'en' => 'Your homepage currently still shows the fixed, non-editable default layout (title + text from Site settings, plus a grid of all animals) — that\'s why the page builder editor looks empty for "Home": that page itself has no blocks yet and is still a draft.'],
+        'hp_migrate_intro2' => ['nl' => 'Deze knop zet dat één keer om in gewone, versleepbare blokken — met exact dezelfde titel, tekst en dierenkaarten — en publiceert de pagina meteen. Daarna toont de editor precies wat er live staat, en kan je zelf blokken toevoegen zoals "Gewervelde / Ongewervelde".', 'en' => 'This button converts that, once, into regular, draggable blocks — with exactly the same title, text and animal cards — and publishes the page right away. After that, the editor shows exactly what is live, and you can add blocks yourself such as "Vertebrates / Invertebrates".'],
+        'hp_migrate_safe_hint' => ['nl' => 'Veilig om te draaien: als de Home-pagina al blokken heeft, gebeurt er niets.', 'en' => 'Safe to run: if the Home page already has blocks, nothing happens.'],
+        'convert_btn'       => ['nl' => 'Omzetten', 'en' => 'Convert'],
+
+        'at_title'          => ['nl' => 'Vertalingen toevoegen (NL/EN)', 'en' => 'Add translations (NL/EN)'],
+        'at_done'           => ['nl' => 'Klaar.', 'en' => 'Done.'],
+        'at_db_updated'     => ['nl' => ' Database aangepast voor tweetaligheid.', 'en' => ' Database updated for bilingual support.'],
+        'at_add_btn'        => ['nl' => 'Vertalingen toevoegen', 'en' => 'Add translations'],
+        'at_translated_summary' => ['nl' => '%d categorienaam/namen vertaald, %d hadden al een Engelse naam (ongemoeid gelaten)', 'en' => '%d category name(s) translated, %d already had an English name (left untouched)'],
+        'at_nomatch_summary' => ['nl' => ', %d herkende ik niet uit de standaardboom (zelf aangemaakte categorie?) — die kan je los vertalen bij het bewerken van die categorie.', 'en' => ', %d I did not recognise from the standard tree (a category you created yourself?) — you can translate those separately when editing that category.'],
+        'to_categories'     => ['nl' => 'Naar Categorieën', 'en' => 'Go to Categories'],
+        'view_english_site' => ['nl' => 'Bekijk de Engelse site', 'en' => 'View the English site'],
+        'at_explain'        => ['nl' => 'De site heeft nu een taalknop (NL/EN) rechtsboven. Deze knop hier vult automatisch de Engelse naam in voor elke categorie die overeenkomt met de standaard taxonomieboom (bv. "Vissen" → "Fish"). Dieren-titels worden niet aangepast — dat zijn al Latijnse soortnamen. Veilig om te herdraaien: bestaande Engelse namen (ook zelf ingevulde) worden nooit overschreven.', 'en' => 'The site now has a language button (NL/EN) in the top right. This button automatically fills in the English name for every category that matches the standard taxonomy tree (e.g. "Vissen" → "Fish"). Animal titles are not changed — those are already Latin species names. Safe to run again: existing English names (including ones you typed yourself) are never overwritten.'],
+
+        'fda_title'         => ['nl' => 'Dubbele dieren opruimen', 'en' => 'Clean up duplicate animals'],
+        'cleanup_btn'       => ['nl' => 'Opruimen', 'en' => 'Clean up'],
+        'fda_done_summary'  => ['nl' => 'Klaar. %d dubbele dier(en) samengevoegd, %d foto(\'s) verhuisd naar het overblijvende exemplaar met de schone link (zonder "-2"). Niets is verloren gegaan.', 'en' => 'Done. %d duplicate animal(s) merged, %d photo(s) moved to the remaining copy with the clean link (without "-2"). Nothing was lost.'],
+        'fda_skipped_legit' => ['nl' => ' %d soortnaam(en) die bewust dubbel in de boom voorkomen (bv. Lathamus discolor) zijn overgeslagen — die blijven allebei apart bestaan, dat is correct.', 'en' => ' %d species name(s) that intentionally appear twice in the tree (e.g. Lathamus discolor) were skipped — both remain separate, which is correct.'],
+        'to_animals_check'  => ['nl' => 'Naar Dieren', 'en' => 'Go to Animals'],
+        'check_the_list'    => ['nl' => 'controleer de lijst.', 'en' => 'check the list.'],
+        'view_site'         => ['nl' => 'Bekijk de site', 'en' => 'View the site'],
+        'fda_explain1'      => ['nl' => 'Als je foto\'s uploadt maar ze niet op de verwachte link (zonder "-2" erachter) verschijnen, zijn er waarschijnlijk twee rijen voor diezelfde soort aangemaakt — dit gebeurt soms doordat de categorieboom onderweg verschoof. Dit voegt zulke duplicaten samen: alle foto\'s verhuizen naar het exemplaar met de schone link, de rest wordt verwijderd.', 'en' => 'If you upload photos but they don\'t show up on the expected link (without "-2" at the end), there are probably two rows for the same species — this sometimes happens because the category tree shifted along the way. This merges such duplicates: all photos move to the copy with the clean link, the rest is removed.'],
+        'fda_explain2'      => ['nl' => 'Categorie, publicatiestatus en coverfoto worden overgenomen als het overblijvende exemplaar die zelf nog niet had. Niets gaat verloren. Veilig om meermaals te draaien.', 'en' => 'Category, publish status and cover photo are copied over if the remaining copy did not already have them. Nothing is lost. Safe to run multiple times.'],
     ];
 }

@@ -583,7 +583,7 @@ function pb_count_total_photos(){
 
 function pb_render_photocount($d){
     $count = pb_count_total_photos();
-    $label = trim($d['label'] ?? '') ?: "foto's op deze website";
+    $label = trim($d['label'] ?? '') ?: t('photos_on_site');
     return '<div class="pb-photocount"><span class="pb-photocount-num">'.number_format($count, 0, ',', '.').'</span><span class="pb-photocount-label">'.e($label).'</span></div>';
 }
 

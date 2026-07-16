@@ -90,18 +90,18 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $done = true;
 }
 
-admin_header('Dubbele dieren opruimen', '');
+admin_header(t('fda_title'), '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
-  <div class="notice">Klaar. <?=$stats['merged']?> dubbele dier(en) samengevoegd, <?=$stats['photosMoved']?> foto('s) verhuisd naar het overblijvende exemplaar met de schone link (zonder "-2"). Niets is verloren gegaan.<?php if($stats['skippedLegit']): ?> <?=$stats['skippedLegit']?> soortnaam(en) die bewust dubbel in de boom voorkomen (bv. Lathamus discolor) zijn overgeslagen — die blijven allebei apart bestaan, dat is correct.<?php endif; ?></div>
-  <p><a class="a-btn" href="content.php?type=animal">Naar Dieren</a> — controleer de lijst. <a class="a-btn a-btn-ghost" href="../index.php" target="_blank">Bekijk de site</a></p>
+  <div class="notice"><?=sprintf(e(t('fda_done_summary')), $stats['merged'], $stats['photosMoved'])?><?php if($stats['skippedLegit']): ?><?=sprintf(e(t('fda_skipped_legit')), $stats['skippedLegit'])?><?php endif; ?></div>
+  <p><a class="a-btn" href="content.php?type=animal"><?=e(t('to_animals_check'))?></a> — <?=e(t('check_the_list'))?> <a class="a-btn a-btn-ghost" href="../index.php" target="_blank"><?=e(t('view_site'))?></a></p>
 <?php else: ?>
-  <h2 style="margin-top:0">Dubbele dieren opruimen</h2>
-  <p>Als je foto's uploadt maar ze niet op de verwachte link (zonder "-2" erachter) verschijnen, zijn er waarschijnlijk twee rijen voor diezelfde soort aangemaakt — dit gebeurt soms doordat de categorieboom onderweg verschoof. Dit voegt zulke duplicaten samen: alle foto's verhuizen naar het exemplaar met de schone link, de rest wordt verwijderd. Categorie, publicatiestatus en coverfoto worden overgenomen als het overblijvende exemplaar die zelf nog niet had. Niets gaat verloren. Veilig om meermaals te draaien.</p>
+  <h2 style="margin-top:0"><?=e(t('fda_title'))?></h2>
+  <p><?=e(t('fda_explain1'))?> <?=e(t('fda_explain2'))?></p>
   <form method="post">
     <?=csrf_field()?>
-    <button class="a-btn" type="submit">Opruimen</button>
+    <button class="a-btn" type="submit"><?=e(t('cleanup_btn'))?></button>
   </form>
 <?php endif; ?>
 </div></div>
