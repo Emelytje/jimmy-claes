@@ -71,6 +71,16 @@ if($type === 'category'){
     $st = db()->prepare($sql);
     $st->execute($params);
     $items = $st->fetchAll();
+
+    // Categorienaam per dier ophalen zodat gelijknamige soorten (bv.
+    // Lathamus discolor, bewust twee keer in de boom) in de lijst uit elkaar
+    // te houden zijn.
+    if($type === 'animal' && $items){
+        $catNames = [];
+        foreach(db()->query('SELECT id, title FROM categories') as $c){ $catNames[(int)$c['id']] = $c['title']; }
+        foreach($items as &$it){ $it['category_title'] = $it['category_id'] ? ($catNames[(int)$it['category_id']] ?? '') : ''; }
+        unset($it);
+    }
 }
 
 // Hoofdcategorieën ("klassen") voor de filter — enkel zinvol bij dieren,
@@ -131,10 +141,11 @@ admin_header($info['label'], $info['nav']);
 <?php endif; ?>
 <?php if($items): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th>Titel</th><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
+    <tr><th>Titel</th><?php if($type==='animal'): ?><th>Categorie</th><?php endif; ?><th>Link</th><th>Status</th><th>Bezoeken</th><th>Aangemaakt</th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
       <td data-label="Titel"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
+      <?php if($type==='animal'): ?><td data-label="Categorie"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">— geen —</span>'?></td><?php endif; ?>
       <td data-label="Link"><code><?=e($info['view'].$p['slug'])?></code></td>
       <td data-label="Status">
         <form method="post" style="display:inline">

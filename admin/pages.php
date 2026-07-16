@@ -30,8 +30,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $pages = db()->query('SELECT * FROM pages ORDER BY sort_order, updated_at DESC')->fetchAll();
+
+$homepageNeedsMigration = false;
+foreach($pages as $p){
+    if((int)$p['is_homepage'] === 1 && !pb_decode_blocks($p['blocks'] ?? null)){ $homepageNeedsMigration = true; break; }
+}
+
 admin_header("Pagina's", 'pages');
 ?>
+<?php if($homepageNeedsMigration): ?>
+<div class="notice" style="margin-bottom:20px">Je homepage draait nog op de vaste basisopmaak, niet op blokken — daarom lijkt "Home" leeg in de editor. <a href="migrate-homepage-to-blocks.php">Zet dit één keer om naar blokken</a> om de homepage net als elke andere pagina te kunnen bewerken (bv. om het "Gewervelde / Ongewervelde"-blok toe te voegen).</div>
+<?php endif; ?>
 <div class="a-card">
   <div class="a-card-pad">
     <form method="post" class="a-inline-form">
