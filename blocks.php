@@ -524,20 +524,25 @@ function pb_render_categories_grid($d){
 }
 
 // Vaste ingangspagina op de homepage om tussen Gewervelde en Ongewervelde
-// dieren te kiezen en van daaruit verder te navigeren. Geen instelbare
-// linkbestemming (die twee overzichtspagina's bestaan al), enkel foto/titel/
-// knoptekst zijn aanpasbaar in de editor.
+// dieren te kiezen en van daaruit verder te navigeren: twee foto's naast
+// elkaar, elk met een titel eronder — tikken op de foto zelf navigeert.
+// Geen instelbare linkbestemming (die twee overzichtspagina's bestaan al),
+// enkel de 2 foto's en de teksten zijn aanpasbaar in de editor.
 function pb_render_class_split($d){
-    $img = trim($d['image'] ?? '');
     $title = trim($d['title'] ?? '');
+    $gImg = trim($d['gewerveldeImage'] ?? '');
+    $oImg = trim($d['ongewerveldeImage'] ?? '');
     $gLabel = trim($d['gewerveldeLabel'] ?? '') ?: 'Gewervelde dieren';
     $oLabel = trim($d['ongewerveldeLabel'] ?? '') ?: 'Ongewervelde dieren';
     $html = '<div class="pb-class-split">';
-    if($img !== '') $html .= '<div class="pb-class-split-img"><img src="'.e($img).'" alt="" loading="lazy"></div>';
     if($title !== '') $html .= '<h2>'.e($title).'</h2>';
-    $html .= '<div class="pb-class-split-buttons">';
-    $html .= '<a class="pb-btn pb-btn-solid pb-btn-lg" href="gewervelde.php">'.e($gLabel).'</a>';
-    $html .= '<a class="pb-btn pb-btn-outline pb-btn-lg" href="category.php?slug=ongewervelde">'.e($oLabel).'</a>';
+    $html .= '<div class="pb-class-split-cards">';
+    $html .= '<a class="pb-class-split-card" href="gewervelde.php">'
+        .($gImg !== '' ? '<img src="'.e($gImg).'" alt="" loading="lazy">' : '<div class="pb-class-split-noimg"></div>')
+        .'<span>'.e($gLabel).'</span></a>';
+    $html .= '<a class="pb-class-split-card" href="category.php?slug=ongewervelde">'
+        .($oImg !== '' ? '<img src="'.e($oImg).'" alt="" loading="lazy">' : '<div class="pb-class-split-noimg"></div>')
+        .'<span>'.e($oLabel).'</span></a>';
     $html .= '</div></div>';
     return $html;
 }

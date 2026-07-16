@@ -271,14 +271,18 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-photocount-label{ font-size:.95rem; color:var(--pb-text-color,var(--ink-soft)); }
 
 /* ---------- gewervelde/ongewervelde keuzeblok (homepage) ---------- */
-.pb-class-split{ display:flex; flex-direction:column; align-items:center; gap:20px; text-align:center; padding:20px; }
-.pb-class-split-img{ width:100%; max-width:640px; border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-md); }
-.pb-class-split-img img{ width:100%; height:360px; object-fit:cover; }
+.pb-class-split{ display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center; padding:20px; }
 .pb-class-split h2{ margin:0; }
-.pb-class-split-buttons{ display:flex; flex-wrap:wrap; gap:16px; justify-content:center; }
+.pb-class-split-cards{ display:flex; flex-wrap:wrap; gap:28px; justify-content:center; width:100%; max-width:880px; }
+.pb-class-split-card{ display:block; flex:1 1 280px; max-width:380px; color:var(--ink); transition:transform .3s var(--ease); }
+.pb-class-split-card:hover{ transform:translateY(-6px); }
+.pb-class-split-card img,.pb-class-split-noimg{ width:100%; height:260px; object-fit:cover; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); }
+.pb-class-split-noimg{ background:linear-gradient(135deg,var(--accent),var(--paper)); }
+.pb-class-split-card span{ display:block; margin-top:14px; font-family:var(--font-heading); font-size:1.3rem; font-weight:600; }
 @media(max-width:600px){
-  .pb-class-split-img img{ height:220px; }
-  .pb-class-split-buttons{ flex-direction:column; align-items:stretch; }
+  .pb-class-split-cards{ flex-direction:column; align-items:center; }
+  .pb-class-split-card{ width:100%; max-width:320px; }
+  .pb-class-split-card img,.pb-class-split-noimg{ height:200px; }
 }
 
 /* ---------- lightbox ---------- */
