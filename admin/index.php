@@ -20,7 +20,7 @@ $typeUrls = ['page'=>'page.php?slug=', 'animal'=>'animal.php?slug=', 'album'=>'a
 $typeLabels = ['page'=>"Pagina", 'animal'=>'Dier', 'album'=>'Album', 'post'=>'Blogpost'];
 $unreadMessages = (int)db()->query('SELECT COUNT(*) c FROM messages WHERE is_read=0')->fetch()['c'];
 
-admin_header('Dashboard', 'index');
+admin_header(t('admin_dashboard'), 'index');
 ?>
 <div class="a-stats">
   <div class="a-stat"><div class="num"><?=$total?></div><div class="label">Pagina's totaal</div></div>

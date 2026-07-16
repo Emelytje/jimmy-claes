@@ -54,6 +54,9 @@ p{ margin:0 0 1em; }
 .top nav{ display:flex; gap:28px; align-items:center; }
 .top nav a{ color:var(--ink-soft); font-weight:500; font-size:.97rem; position:relative; padding:4px 0; transition:color .2s var(--ease); }
 .top nav a::after{ content:''; position:absolute; left:0; right:100%; bottom:-2px; height:2px; background:var(--primary); transition:right .25s var(--ease); }
+.lang-switch{ border:1.5px solid var(--line); border-radius:999px; padding:4px 12px !important; font-size:.8rem !important; font-weight:700 !important; letter-spacing:.03em; }
+.lang-switch::after{ display:none; }
+.lang-switch:hover{ border-color:var(--primary); color:var(--primary) !important; }
 .top nav a:hover{ color:var(--ink); }
 .top nav a:hover::after{ right:0; }
 .nav-dropdown{ position:relative; }

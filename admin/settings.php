@@ -85,7 +85,7 @@ if(!empty($_SESSION['admin_id'])){
     $currentUser = $st->fetch();
 }
 
-admin_header('Site-instellingen', 'settings');
+admin_header(t('admin_settings'), 'settings');
 ?>
 <?php if($saved): ?><div class="notice" style="margin-bottom:20px">Instellingen opgeslagen.</div><?php endif; ?>
 <div class="a-card">

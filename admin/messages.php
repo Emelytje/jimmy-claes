@@ -14,7 +14,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $items = db()->query('SELECT * FROM messages ORDER BY created_at DESC')->fetchAll();
-admin_header('Berichten', 'messages');
+admin_header(t('admin_messages'), 'messages');
 ?>
 <p style="font-size:.85rem;color:#8a7c6c;margin-top:-10px">Berichten via het contactformulier komen hier altijd terecht, ook als de e-mailmelding (indien ingesteld bij Site-instellingen) niet aankomt.</p>
 <div class="a-card">

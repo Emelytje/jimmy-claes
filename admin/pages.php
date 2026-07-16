@@ -36,7 +36,7 @@ foreach($pages as $p){
     if((int)$p['is_homepage'] === 1 && !pb_decode_blocks($p['blocks'] ?? null)){ $homepageNeedsMigration = true; break; }
 }
 
-admin_header("Pagina's", 'pages');
+admin_header(t('admin_pages'), 'pages');
 ?>
 <?php if($homepageNeedsMigration): ?>
 <div class="notice" style="margin-bottom:20px">Je homepage draait nog op de vaste basisopmaak, niet op blokken — daarom lijkt "Home" leeg in de editor. <a href="migrate-homepage-to-blocks.php">Zet dit één keer om naar blokken</a> om de homepage net als elke andere pagina te kunnen bewerken (bv. om het "Gewervelde / Ongewervelde"-blok toe te voegen).</div>
@@ -63,7 +63,7 @@ admin_header("Pagina's", 'pages');
       <td data-label="Status">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$p['id']?>">
-          <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?'Live':'Concept'?></button>
+          <button type="submit" class="a-pill <?=$p['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$p['published']?t('live'):t('draft')?></button>
         </form>
       </td>
       <td data-label="In menu">
@@ -74,11 +74,11 @@ admin_header("Pagina's", 'pages');
       </td>
       <td data-label="Bijgewerkt"><?=e(date('d-m-Y H:i',strtotime($p['updated_at'])))?></td>
       <td class="row-actions">
-        <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="../page.php?slug=<?=e($p['slug'])?>" target="_blank">Bekijk</a><?php endif; ?>
-        <a class="a-btn a-btn-sm" href="page-edit.php?id=<?=$p['id']?>">Bewerken</a>
+        <?php if($p['published']): ?><a class="a-btn a-btn-sm a-btn-ghost" href="../page.php?slug=<?=e($p['slug'])?>" target="_blank"><?=e(t('view'))?></a><?php endif; ?>
+        <a class="a-btn a-btn-sm" href="page-edit.php?id=<?=$p['id']?>"><?=e(t('edit'))?></a>
         <form method="post" onsubmit="return confirm('Pagina \'<?=e(addslashes($p['title']))?>\' definitief verwijderen?');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$p['id']?>">
-          <button type="submit" class="a-btn a-btn-sm a-btn-danger">Verwijder</button>
+          <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
       </td>
     </tr>
