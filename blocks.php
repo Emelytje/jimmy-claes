@@ -204,14 +204,15 @@ function pb_render_image($d){
     $imgStyle = $imgStyleParts ? ' style="'.e(implode(';',$imgStyleParts)).'"' : '';
     $img = '<img src="'.$src.'" alt="'.$alt.'" loading="lazy" class="'.$cls.'"'.$imgStyle.'>';
     if(!empty($d['link'])) $img = '<a href="'.e($d['link']).'">'.$img.'</a>';
+    $badge = pb_gallery_zoo_badge($d['zoo_id'] ?? null);
     $caption = !empty($d['caption']) ? '<figcaption>'.e($d['caption']).'</figcaption>' : '';
 
-    $figureStyle = '';
+    $figureStyleDecls = ['position:relative'];
     if(isset($d['widthPct']) && $d['widthPct']!==''){
         $wp = max(10, min(100, (float)$d['widthPct']));
-        $figureStyle = ' style="max-width:'.$wp.'%;margin-left:auto;margin-right:auto"';
+        $figureStyleDecls[] = 'max-width:'.$wp.'%'; $figureStyleDecls[] = 'margin-left:auto'; $figureStyleDecls[] = 'margin-right:auto';
     }
-    return '<figure class="pb-figure"'.$figureStyle.'>'.$img.$caption.'</figure>';
+    return '<figure class="pb-figure" style="'.e(implode(';', $figureStyleDecls)).'">'.$img.$badge.$caption.'</figure>';
 }
 
 function pb_safe_aspect_ratio($v){
