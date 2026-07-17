@@ -169,6 +169,7 @@ function render_block($block, $depth=0, $ctx=[]){
         case 'subcategories': $inner = pb_render_subcategories($data, $ctx); break;
         case 'categories_grid': $inner = pb_render_categories_grid($data); break;
         case 'photocount': $inner = pb_render_photocount($data); break;
+        case 'species_progress': $inner = pb_render_species_progress($data); break;
         case 'class_split': $inner = pb_render_class_split($data); break;
         case 'slideshow':  $inner = pb_render_slideshow($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
@@ -427,6 +428,11 @@ function pb_category_ancestors($categoryId){
 // admin/settings.php (kleurenpicker), zodat ze nooit uit elkaar kunnen lopen.
 function pb_class_color_map(){
     return [
+        // Homepage-achtergrondkleur: geen echte dierklasse, maar hergebruikt
+        // hetzelfde instellingen-mechanisme (kleurenkiezer + opslaan) als de
+        // klasse-banners hieronder. Leeg (geen standaardkleur) zolang niet
+        // ingesteld, zodat de homepage er niet ongevraagd anders uitziet.
+        'homepage'      => ['class_color_homepage',       ''],
         // "Gewervelde" is geen echte categorie (bewuste keuze), maar
         // gewervelde.php gebruikt deze zelfde instelling rechtstreeks voor
         // zijn eigen banner — vandaar toch een plek hier.
@@ -638,6 +644,39 @@ function pb_count_total_photos(){
         }
         return $cached = $count;
     }catch(Exception $e){ return 0; }
+}
+
+// Aantal diersoorten met minstens één foto (oude photos-tabel of blokken)
+// t.o.v. het totaal aantal aangemaakte diersoorten — voor de "X van de Y
+// soorten al gefotografeerd"-voortgangsbalk.
+function pb_species_progress(){
+    static $cached = null;
+    if($cached !== null) return $cached;
+    try{
+        $animals = db()->query('SELECT id, blocks FROM animals')->fetchAll();
+        $total = count($animals);
+        if(!$total) return $cached = [0, 0];
+        $legacyCounts = [];
+        foreach(db()->query('SELECT animal_id, COUNT(*) c FROM photos GROUP BY animal_id') as $row){
+            $legacyCounts[(int)$row['animal_id']] = (int)$row['c'];
+        }
+        $with = 0;
+        foreach($animals as $a){
+            $has = ($legacyCounts[(int)$a['id']] ?? 0) > 0 || pb_count_blocks_images(pb_decode_blocks($a['blocks'] ?? null)) > 0;
+            if($has) $with++;
+        }
+        return $cached = [$with, $total];
+    }catch(Exception $e){ return [0, 0]; }
+}
+
+function pb_render_species_progress($d){
+    [$with, $total] = pb_species_progress();
+    $pct = $total > 0 ? round(($with / $total) * 100) : 0;
+    $label = trim($d['label'] ?? '') ?: t('species_progress_label');
+    $text = sprintf(t('species_progress_text'), $with, $total);
+    return '<div class="pb-species-progress"><div class="pb-species-progress-label">'.e($label).'</div>'
+        .'<div class="pb-species-progress-bar"><div class="pb-species-progress-fill" style="width:'.$pct.'%"></div></div>'
+        .'<div class="pb-species-progress-text">'.e($text).'</div></div>';
 }
 
 function pb_render_photocount($d){

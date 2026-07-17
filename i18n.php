@@ -301,5 +301,7 @@ function i18n_dictionary(){
         'bdl_ambiguous_label' => ['nl' => 'Overgeslagen (naam komt dubbel voor, bewust twee dieren met deze titel):', 'en' => 'Skipped (name occurs twice, intentionally two animals with this title):'],
         'bdl_do_more'       => ['nl' => 'Nog een lijst koppelen', 'en' => 'Link another list'],
         'bulk_drive_links_btn' => ['nl' => 'Drive-links in bulk koppelen', 'en' => 'Bulk-link Drive links'],
+        'species_progress_label' => ['nl' => 'Voortgang', 'en' => 'Progress'],
+        'species_progress_text' => ['nl' => '%d van de %d diersoorten al gefotografeerd', 'en' => '%d of %d animal species photographed so far'],
     ];
 }
