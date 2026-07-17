@@ -56,6 +56,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $q = trim($_GET['q'] ?? '');
 $klasse = (int)($_GET['klasse'] ?? 0);
+$noPhotos = !empty($_GET['nophotos']);
 
 if($type === 'category'){
     $items = pbe_category_tree_flat();
@@ -86,6 +87,26 @@ if($type === 'category'){
         foreach(db()->query("SELECT id, title$catEnCol FROM categories") as $c){ $catNames[(int)$c['id']] = localized_field($c, 'title'); }
         foreach($items as &$it){ $it['category_title'] = $it['category_id'] ? ($catNames[(int)$it['category_id']] ?? '') : ''; }
         unset($it);
+
+        // Foto-aantal per dier: telt zowel de oude photos-tabel als foto's
+        // die in blokken zitten (image/gallery/slideshow), zodat "geen
+        // foto's"-filter ook klopt voor dieren die via de pagebuilder
+        // bewerkt zijn in plaats van de oude manier.
+        $ids = array_column($items, 'id');
+        $legacyCounts = [];
+        if($ids){
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $st = db()->prepare("SELECT animal_id, COUNT(*) c FROM photos WHERE animal_id IN ($ph) GROUP BY animal_id");
+            $st->execute($ids);
+            foreach($st as $row) $legacyCounts[(int)$row['animal_id']] = (int)$row['c'];
+        }
+        foreach($items as &$it){
+            $blocksCount = pb_count_blocks_images(pb_decode_blocks($it['blocks'] ?? null));
+            $it['photo_count'] = ($legacyCounts[(int)$it['id']] ?? 0) + $blocksCount;
+        }
+        unset($it);
+
+        if($noPhotos) $items = array_values(array_filter($items, function($it){ return $it['photo_count'] === 0; }));
     }
 }
 
@@ -136,8 +157,11 @@ admin_header($typeLabel, $info['nav']);
         </select>
       </div>
       <?php endif; ?>
+      <?php if($type === 'animal'): ?>
+      <label class="pbe-check" style="align-self:center"><input type="checkbox" name="nophotos" value="1" <?=$noPhotos?'checked':''?>> <?=e(t('no_photos_filter_label'))?></label>
+      <?php endif; ?>
       <button class="a-btn" type="submit"><?=e(t('filter'))?></button>
-      <?php if($q !== '' || $klasse): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>"><?=e(t('clear_filter'))?></a><?php endif; ?>
+      <?php if($q !== '' || $klasse || $noPhotos): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>"><?=e(t('clear_filter'))?></a><?php endif; ?>
     </form>
   </div>
 </div>
@@ -148,11 +172,14 @@ admin_header($typeLabel, $info['nav']);
 <?php endif; ?>
 <?php if($items): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><?php endif; ?><?php if($type==='category'): ?><th><?=e(t('english_name'))?></th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
+    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><th><?=e(t('photos_label'))?></th><?php endif; ?><?php if($type==='category'): ?><th><?=e(t('english_name'))?></th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
       <td data-label="<?=e(t('title_label'))?>"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
-      <?php if($type==='animal'): ?><td data-label="<?=e(t('category_label'))?>"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">'.e(t('none_dash')).'</span>'?></td><?php endif; ?>
+      <?php if($type==='animal'): ?>
+      <td data-label="<?=e(t('category_label'))?>"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">'.e(t('none_dash')).'</span>'?></td>
+      <td data-label="<?=e(t('photos_label'))?>"><?php if($p['photo_count']===0): ?><span class="a-pill a-pill-draft"><?=e(t('no_photos_pill'))?></span><?php else: ?><?=(int)$p['photo_count']?><?php endif; ?></td>
+      <?php endif; ?>
       <?php if($type==='category'): ?>
       <td data-label="<?=e(t('english_name'))?>">
         <form method="post" class="a-inline-form" style="gap:6px">

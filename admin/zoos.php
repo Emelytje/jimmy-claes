@@ -2,6 +2,8 @@
 require __DIR__.'/inc.php';
 
 db()->exec("CREATE TABLE IF NOT EXISTS zoos(id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(160) NOT NULL, url VARCHAR(500) NOT NULL, sort_order INT DEFAULT 0, published TINYINT DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+if(!pb_has_column('zoos','city')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN city VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
+if(!pb_has_column('zoos','country')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN country VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
 
 function zoos_normalize_url($url){
     $url = trim($url);
@@ -16,17 +18,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($action==='create'){
         $title = trim($_POST['title'] ?? '');
         $url = zoos_normalize_url($_POST['url'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        $country = trim($_POST['country'] ?? '');
         if($title!=='' && $url!==''){
-            $st = db()->prepare('INSERT INTO zoos(title,url) VALUES(?,?)');
-            $st->execute([$title, $url]);
+            $st = db()->prepare('INSERT INTO zoos(title,url,city,country) VALUES(?,?,?,?)');
+            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null]);
         }
     } elseif($action==='update'){
         $id = (int)($_POST['id'] ?? 0);
         $title = trim($_POST['title'] ?? '');
         $url = zoos_normalize_url($_POST['url'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        $country = trim($_POST['country'] ?? '');
         if($id && $title!=='' && $url!==''){
-            $st = db()->prepare('UPDATE zoos SET title=?, url=? WHERE id=?');
-            $st->execute([$title, $url, $id]);
+            $st = db()->prepare('UPDATE zoos SET title=?, url=?, city=?, country=? WHERE id=?');
+            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null, $id]);
         }
     } elseif($action==='delete'){
         $id = (int)($_POST['id'] ?? 0);
@@ -65,6 +71,8 @@ admin_header(t('admin_zoos'), 'zoos');
       <input type="hidden" name="action" value="create">
       <div class="a-field"><label><?=e(t('name_label'))?></label><input type="text" name="title" placeholder="Bijv. Zoo Antwerpen" required></div>
       <div class="a-field"><label><?=e(t('website_url'))?></label><input type="text" name="url" placeholder="https://www.zooantwerpen.be" required></div>
+      <div class="a-field"><label><?=e(t('city_label'))?></label><input type="text" name="city" placeholder="Bijv. Antwerpen"></div>
+      <div class="a-field"><label><?=e(t('country_label'))?></label><input type="text" name="country" placeholder="Bijv. België"></div>
       <button class="a-btn" type="submit"><?=e(t('add_btn'))?></button>
     </form>
   </div>
@@ -73,16 +81,18 @@ admin_header(t('admin_zoos'), 'zoos');
 <div class="a-card">
 <?php if($zoos): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th colspan="2"><?=e(t('name_url'))?></th><th><?=e(t('status'))?></th><th></th></tr>
+    <tr><th colspan="4"><?=e(t('name_url'))?></th><th><?=e(t('status'))?></th><th></th></tr>
     <?php foreach($zoos as $i=>$z): ?>
     <tr>
-      <td data-label="<?=e(t('name_url'))?>" colspan="2">
+      <td data-label="<?=e(t('name_url'))?>" colspan="4">
         <form method="post" class="a-inline-form" style="gap:8px">
           <?=csrf_field()?>
           <input type="hidden" name="action" value="update">
           <input type="hidden" name="id" value="<?=$z['id']?>">
           <div class="a-field"><input type="text" name="title" value="<?=e($z['title'])?>" required></div>
           <div class="a-field"><input type="text" name="url" value="<?=e($z['url'])?>" required></div>
+          <div class="a-field"><input type="text" name="city" value="<?=e($z['city'] ?? '')?>" placeholder="<?=e(t('city_label'))?>"></div>
+          <div class="a-field"><input type="text" name="country" value="<?=e($z['country'] ?? '')?>" placeholder="<?=e(t('country_label'))?>"></div>
           <button type="submit" class="a-btn a-btn-sm a-btn-ghost"><?=e(t('save'))?></button>
         </form>
       </td>

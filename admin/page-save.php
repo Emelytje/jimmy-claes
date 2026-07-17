@@ -77,8 +77,11 @@ if($type === 'page'){
     $descCol = PBS_DESC_COLS[$type];
     if($type === 'animal'){
         $category_id = (int)($body['category_id'] ?? 0) ?: null;
-        $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, category_id=?, meta_title=?, meta_description=? WHERE id=?");
-        $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $category_id, $meta_title, $meta_description, $id]);
+        if(!pb_has_column('animals','drive_url')){ try{ db()->exec("ALTER TABLE animals ADD COLUMN drive_url VARCHAR(500) DEFAULT NULL"); }catch(Exception $e){} }
+        $drive_url = trim((string)($body['drive_url'] ?? ''));
+        if($drive_url !== '' && !preg_match('~^https?://~i', $drive_url)) $drive_url = 'https://'.$drive_url;
+        $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, category_id=?, drive_url=?, meta_title=?, meta_description=? WHERE id=?");
+        $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $category_id, $drive_url !== '' ? $drive_url : null, $meta_title, $meta_description, $id]);
     } else {
         $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, meta_title=?, meta_description=? WHERE id=?");
         $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $meta_title, $meta_description, $id]);

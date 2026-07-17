@@ -5,17 +5,18 @@ $classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category
 // Soortnamen zijn al Latijn en worden nooit vertaald — enkel de beschrijving
 // (indien ingevuld) kan een Engelse variant hebben.
 $descLocalized = localized_field($a, 'description');
+$bodyAttrs = !empty($a['drive_url']) ? 'data-drive-url="'.e($a['drive_url']).'"' : '';
 if($blocks){
     $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
     $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
-    header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $descLocalized, '', $headExtra);
+    header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $descLocalized, '', $headExtra, $bodyAttrs);
     echo '<section class="hero"'.($classColor ? ' style="background:'.e($classColor).'"' : '').'><div><h1>'.e($a['title']).'</h1></div></section>';
     echo pb_render_back_button();
     echo '<main class="pb-page pb-animal-photos">'.render_blocks($blocks).'</main>';
     footer_html();
     exit;
 }
-header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $descLocalized); ?>
+header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $descLocalized, '', '', $bodyAttrs); ?>
 <?php
 $st = db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC');
 $st->execute([$a['id']]);

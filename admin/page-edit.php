@@ -40,10 +40,19 @@ $initial = [
     'is_homepage' => (bool)($page['is_homepage'] ?? false),
     'cover_image' => $page['cover_image'] ?? '',
     'description' => $typeInfo['desc_col'] ? ($page[$typeInfo['desc_col']] ?? '') : '',
+    'drive_url' => $type === 'animal' ? ($page['drive_url'] ?? '') : '',
     'blocks' => $blocks,
     'csrf' => csrf_token(),
     'lang' => current_lang(),
 ];
+
+$zoosForPicker = [];
+try{
+    $zooCols = 'id, title'.(pb_has_column('zoos','city') ? ', city' : '').(pb_has_column('zoos','country') ? ', country' : '');
+    $zoosForPicker = db()->query("SELECT $zooCols FROM zoos WHERE published=1 ORDER BY sort_order, title")->fetchAll();
+    foreach($zoosForPicker as &$z){ $z['label'] = zoo_label($z); }
+    unset($z);
+}catch(Exception $e){}
 ?><!doctype html>
 <html lang="<?=e(current_lang())?>">
 <head>
@@ -125,6 +134,11 @@ $initial = [
         <?=pbe_category_options($page['category_id'] ?? null)?>
       </select>
     </div>
+    <div class="pbe-field">
+      <label><?=e(t('drive_url_label'))?></label>
+      <input type="text" id="pbeDriveUrl" value="<?=e($page['drive_url'] ?? '')?>" placeholder="https://drive.google.com/drive/folders/...">
+      <p style="font-size:.78rem;color:#8a7c6c;margin-top:4px"><?=e(t('drive_url_hint'))?></p>
+    </div>
     <?php endif; ?>
     <?php endif; ?>
     <div class="pbe-field"><label><?=e(t('seo_title'))?></label><input type="text" id="pbeMetaTitle" value="<?=e($page['meta_title'])?>" placeholder="<?=e($page['title'])?>"></div>
@@ -134,7 +148,8 @@ $initial = [
 </div>
 
 <script src="assets/sortable.min.js?v=<?=asset_v(__DIR__.'/assets/sortable.min.js')?>"></script>
-<script>window.PBE_INITIAL = <?=json_encode($initial, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP)?>;</script>
+<script>window.PBE_INITIAL = <?=json_encode($initial, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP)?>;
+window.PBE_ZOOS = <?=json_encode($zoosForPicker, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_AMP)?>;</script>
 <script src="assets/pagebuilder.js?v=<?=asset_v(__DIR__.'/assets/pagebuilder.js')?>"></script>
 <script>
 (function(){

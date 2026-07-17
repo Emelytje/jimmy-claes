@@ -166,6 +166,8 @@ function i18n_dictionary(){
         'zoos_desc'         => ['nl' => 'Deze links vervangen de dierenklassen bovenaan de site. De klassen (Amfibieën, Ongewervelde, enz.) zijn nu bereikbaar via de knoppen op de homepage.', 'en' => 'These links replace the animal classes at the top of the site. The classes (Amphibians, Invertebrates, etc.) are now reachable via the buttons on the homepage.'],
         'name_label'        => ['nl' => 'Naam', 'en' => 'Name'],
         'website_url'       => ['nl' => 'Website (URL)', 'en' => 'Website (URL)'],
+        'city_label'        => ['nl' => 'Stad', 'en' => 'City'],
+        'country_label'     => ['nl' => 'Land', 'en' => 'Country'],
         'add_btn'           => ['nl' => '+ Toevoegen', 'en' => '+ Add'],
         'name_url'          => ['nl' => 'Naam / URL', 'en' => 'Name / URL'],
         'no_zoos_yet'       => ['nl' => 'Nog geen dierentuinen', 'en' => 'No zoos yet'],
@@ -278,5 +280,11 @@ function i18n_dictionary(){
         'fda_explain1'      => ['nl' => 'Als je foto\'s uploadt maar ze niet op de verwachte link (zonder "-2" erachter) verschijnen, zijn er waarschijnlijk twee rijen voor diezelfde soort aangemaakt — dit gebeurt soms doordat de categorieboom onderweg verschoof. Dit voegt zulke duplicaten samen: alle foto\'s verhuizen naar het exemplaar met de schone link, de rest wordt verwijderd.', 'en' => 'If you upload photos but they don\'t show up on the expected link (without "-2" at the end), there are probably two rows for the same species — this sometimes happens because the category tree shifted along the way. This merges such duplicates: all photos move to the copy with the clean link, the rest is removed.'],
         'fda_explain2'      => ['nl' => 'Categorie, publicatiestatus en coverfoto worden overgenomen als het overblijvende exemplaar die zelf nog niet had. Niets gaat verloren. Veilig om meermaals te draaien.', 'en' => 'Category, publish status and cover photo are copied over if the remaining copy did not already have them. Nothing is lost. Safe to run multiple times.'],
         'fallback_preview_notice' => ['nl' => 'Dit item heeft nog geen eigen blokken — dit is een voorbeeld dat overeenkomt met wat nu live staat. Druk op Opslaan om het echt om te zetten naar bewerkbare blokken.', 'en' => 'This item doesn\'t have its own blocks yet — this is a preview matching what is currently live. Press Save to actually convert it to editable blocks.'],
+        'drive_url_label'   => ['nl' => 'Google Drive-link (optioneel)', 'en' => 'Google Drive link (optional)'],
+        'drive_url_hint'    => ['nl' => 'Als je hier een link invult, opent een klik op eender welke foto van dit dier die Drive-map in een nieuw tabblad, in plaats van de normale foto-zoom.', 'en' => 'If you fill in a link here, clicking any photo of this animal will open that Drive folder in a new tab, instead of the normal photo zoom.'],
+        'no_slideshow_photos_public' => ['nl' => 'Nog geen foto\'s in de slideshow.', 'en' => 'No photos in the slideshow yet.'],
+        'no_photos_filter_label' => ['nl' => 'Enkel dieren zonder foto\'s', 'en' => 'Only animals without photos'],
+        'photos_label'      => ['nl' => 'Foto\'s', 'en' => 'Photos'],
+        'no_photos_pill'    => ['nl' => 'Geen foto\'s', 'en' => 'No photos'],
     ];
 }

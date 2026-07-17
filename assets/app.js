@@ -57,10 +57,18 @@
 
   // Group images per gallery container so the lightbox can page through
   // "the rest of this gallery" with prev/next, not just open one photo.
+  // A pagebuilder gallery block's own wrapper section is class="pb-block
+  // pb-gallery" — that also matches the ".pb-gallery" selector below, so
+  // without dedup every image in such a block would get bound twice (once
+  // via the outer section, once via the real ".pb-gallery" grid div inside
+  // it), silently double-firing every click handler.
   var groups = [];
+  var claimedImgs = [];
   document.querySelectorAll('.pb-gallery, .gallery').forEach(function(container){
-    var imgs = Array.prototype.slice.call(container.querySelectorAll('img'));
-    if(imgs.length) groups.push(imgs);
+    var imgs = Array.prototype.slice.call(container.querySelectorAll('img')).filter(function(img){
+      return claimedImgs.indexOf(img) === -1;
+    });
+    if(imgs.length){ groups.push(imgs); claimedImgs = claimedImgs.concat(imgs); }
   });
   document.querySelectorAll('.pb-figure img').forEach(function(img){
     if(!img.closest('.pb-gallery') && !img.closest('.gallery')) groups.push([img]);
@@ -94,11 +102,25 @@
     function prev(){ currentIndex = (currentIndex - 1 + currentGroup.length) % currentGroup.length; show(); }
     function next(){ currentIndex = (currentIndex + 1) % currentGroup.length; show(); }
 
+    // Simpele afschrikking tegen rechtstreeks downloaden (rechtsklik-opslaan
+    // / slepen) — geen harde beveiliging (de bron-URL blijft altijd
+    // technisch bereikbaar), maar voorkomt de gewone manieren om een foto
+    // mee te nemen, ook wanneer er een Google Drive-link is ingesteld.
+    function preventImageSaving(img){
+      img.setAttribute('draggable', 'false');
+      img.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+      img.addEventListener('dragstart', function(e){ e.preventDefault(); });
+    }
+    preventImageSaving(boxImg);
+
+    var driveUrl = document.body.getAttribute('data-drive-url') || '';
     groups.forEach(function(group){
       group.forEach(function(img, idx){
-        img.style.cursor = 'zoom-in';
+        preventImageSaving(img);
+        img.style.cursor = driveUrl ? 'pointer' : 'zoom-in';
         img.addEventListener('click', function(e){
           if(img.closest('a')) e.preventDefault();
+          if(driveUrl){ window.open(driveUrl, '_blank', 'noopener'); return; }
           openBox(group, idx);
         });
       });

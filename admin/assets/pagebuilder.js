@@ -10,6 +10,7 @@ function esc(s){
   });
 }
 var PB_LANG = (window.PBE_INITIAL && window.PBE_INITIAL.lang === 'en') ? 'en' : 'nl';
+var PBE_ZOOS = window.PBE_ZOOS || [];
 var PB_DICT = {
   layout:['Layout','Layout'], content_group:['Inhoud','Content'], media:['Media','Media'], form_group:['Formulier','Form'], advanced:['Geavanceerd','Advanced'],
   hero:['Hero','Hero'], heading:['Titel','Heading'], text_block:['Tekst','Text'], photo:['Foto','Photo'], photo_gallery:['Fotogalerij','Photo gallery'],
@@ -104,6 +105,7 @@ var PB_DICT = {
   form_send:['Versturen','Send'],
   default_html_comment:['<!-- Eigen HTML -->','<!-- Custom HTML -->'],
   layout_label:['Layout','Layout'],
+  zoo_none:['Geen zoo','No zoo'],
   photos_on_site:["foto's op deze website",'photos on this website'],
   html_block_chars:['HTML-blok','HTML block'],
   html_block_chars_suffix:['tekens) — bewerk rechts &#8594;','characters) — edit on the right &#8594;'],
@@ -250,6 +252,7 @@ var BLOCKS = {
       d.images.forEach(function(img){
         var cls = 'pb-gallery-item'+(img.size==='large' ? ' pb-gallery-item-lg' : '');
         html += '<figure class="'+cls+'"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
+          + zooBadgeHtml(img.zoo_id)
           + (img.caption ? '<figcaption>'+esc(img.caption)+'</figcaption>' : '') + '</figure>';
       });
       html += '</div>';
@@ -265,6 +268,7 @@ var BLOCKS = {
       var html = '<div class="pb-slideshow"><div class="pb-slideshow-track">';
       d.images.forEach(function(img, i){
         html += '<figure class="pb-slideshow-slide'+(i===0?' is-active':'')+'"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
+          + zooBadgeHtml(img.zoo_id)
           + (img.caption ? '<figcaption>'+esc(img.caption)+'</figcaption>' : '') + '</figure>';
       });
       html += '</div>';
@@ -1251,7 +1255,7 @@ function contentFieldsHtml(block){
     case 'gallery':
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
         var sizeBtn = d.layout!=='masonry' ? '<button type="button" class="pbe-gallery-size-btn'+(img.size==='large'?' is-active':'')+'" data-gallery-size="'+i+'" title="'+pbT('large_tile_title')+'">&#9974;</button>' : '';
-        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="'+pbT('caption_placeholder')+'" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+sizeBtn+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
+        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="'+pbT('caption_placeholder')+'" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+zooSelectHtml(i, img.zoo_id)+sizeBtn+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
       html += galleryUploadControlsHtml();
       html += '<div class="pbe-row" style="margin-top:14px"><div class="pbe-field"><label>'+pbT('columns_label')+'</label><select data-bind="data.columns">'+[2,3,4].map(function(c){return '<option value="'+c+'" '+(d.columns==c?'selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
@@ -1306,13 +1310,13 @@ function contentFieldsHtml(block){
       break;
     case 'slideshow':
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
-        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="'+pbT('caption_placeholder')+'" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'"><button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
+        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="'+pbT('caption_placeholder')+'" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+zooSelectHtml(i, img.zoo_id)+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
       html += galleryUploadControlsHtml();
       html += '<div class="pbe-field" style="margin-top:14px"><label>'+pbT('interval_seconds')+'</label><input type="number" min="2" max="15" data-bind="data.interval" value="'+(d.interval!=null?d.interval:5)+'"></div>';
       break;
     case 'photocount':
-      html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||"foto's op deze website")+'"></div>';
+      html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('photos_on_site'))+'"></div>';
       break;
     case 'class_split':
       html += '<div class="pbe-field"><label>'+pbT('title_optional')+'</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';
@@ -1351,6 +1355,19 @@ function galleryUploadControlsHtml(){
     + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAddFolder" style="margin-top:6px">'+pbT('upload_whole_folder')+'</button>'
     + '<input type="file" id="pbeGalleryFolder" webkitdirectory directory multiple style="display:none">'
     + '</div>';
+}
+function zooBadgeHtml(zooId){
+  if(!zooId) return '';
+  var zoo = PBE_ZOOS.filter(function(z){ return String(z.id)===String(zooId); })[0];
+  if(!zoo || !zoo.label) return '';
+  return '<span class="pb-gallery-zoo-badge">'+esc(zoo.label)+'</span>';
+}
+function zooSelectHtml(idx, selectedZooId){
+  var opts = '<option value="">'+pbT('zoo_none')+'</option>';
+  PBE_ZOOS.forEach(function(z){
+    opts += '<option value="'+z.id+'" '+(String(selectedZooId||'')===String(z.id)?'selected':'')+'>'+esc(z.label||z.title)+'</option>';
+  });
+  return '<select class="pbe-gallery-zoo" data-gallery-zoo="'+idx+'">'+opts+'</select>';
 }
 // Haalt alle afbeeldingsbestanden uit een drag-and-drop (losse foto's of een
 // hele gesleepte map, recursief) — valt terug op de platte bestandenlijst in
@@ -1484,6 +1501,13 @@ settingsEl.addEventListener('change', function(e){
     var block = blocksById[selectedId]; if(!block) return;
     block.data.images[parseInt(galCap.getAttribute('data-gallery-caption'),10)].caption = galCap.value;
     updateBlockDom(block.id);
+    return;
+  }
+  var galZoo = e.target.closest('[data-gallery-zoo]');
+  if(galZoo){
+    var block5 = blocksById[selectedId]; if(!block5) return;
+    block5.data.images[parseInt(galZoo.getAttribute('data-gallery-zoo'),10)].zoo_id = galZoo.value || null;
+    updateBlockDom(block5.id);
   }
 });
 function resizeColumns(block, count){
@@ -1600,6 +1624,7 @@ function collectPayload(){
     }
     if(contentType === 'animal'){
       payload.category_id = document.getElementById('pbeAnimalCategory').value;
+      payload.drive_url = document.getElementById('pbeDriveUrl').value;
     }
   }
   return payload;
@@ -1628,6 +1653,13 @@ var watchedSettingsFields = [titleInput, document.getElementById('pbeMetaTitle')
 if(contentType === 'page'){
   watchedSettingsFields.push(document.getElementById('pbeShowNav'), document.getElementById('pbeIsHomepage'));
 } else {
+  watchedSettingsFields.push(document.getElementById('pbeDescription'));
+  var parentCategoryEl = document.getElementById('pbeParentCategory');
+  if(parentCategoryEl) watchedSettingsFields.push(parentCategoryEl);
+  var animalCategoryEl = document.getElementById('pbeAnimalCategory');
+  if(animalCategoryEl) watchedSettingsFields.push(animalCategoryEl);
+  var driveUrlEl = document.getElementById('pbeDriveUrl');
+  if(driveUrlEl) watchedSettingsFields.push(driveUrlEl);
   var coverBtn = document.getElementById('pbeCoverUploadBtn');
   var coverFile = document.getElementById('pbeCoverFile');
   var coverZone = document.getElementById('pbeCoverDropzone');
