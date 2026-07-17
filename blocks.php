@@ -573,11 +573,39 @@ function pb_render_class_split($d){
     return $html;
 }
 
+// Telt foto's binnen blokken (image/gallery/slideshow), inclusief genest in
+// columns/row-blokken — nodig omdat de photos/album_photos-tabellen enkel de
+// oude, niet-pagebuilder foto's bijhouden en dus content die via blokken is
+// toegevoegd (de normale weg tegenwoordig) anders onzichtbaar blijft voor de teller.
+function pb_count_blocks_images($blocks){
+    $count = 0;
+    foreach((array)$blocks as $b){
+        $type = $b['type'] ?? '';
+        $data = $b['data'] ?? [];
+        if($type === 'image'){
+            if(!empty($data['src'])) $count++;
+        } elseif($type === 'gallery' || $type === 'slideshow'){
+            foreach((array)($data['images'] ?? []) as $img){ if(!empty($img['src'])) $count++; }
+        } elseif($type === 'columns'){
+            foreach((array)($data['cols'] ?? []) as $col){ $count += pb_count_blocks_images($col['blocks'] ?? []); }
+        } elseif($type === 'row'){
+            foreach((array)($data['cells'] ?? []) as $cell){ $count += pb_count_blocks_images($cell['blocks'] ?? []); }
+        }
+    }
+    return $count;
+}
+
 function pb_count_total_photos(){
+    static $cached = null;
+    if($cached !== null) return $cached;
     try{
-        $a = (int)db()->query('SELECT COUNT(*) c FROM photos')->fetch()['c'];
-        $b = (int)db()->query('SELECT COUNT(*) c FROM album_photos')->fetch()['c'];
-        return $a + $b;
+        $count = (int)db()->query('SELECT COUNT(*) c FROM photos')->fetch()['c'];
+        $count += (int)db()->query('SELECT COUNT(*) c FROM album_photos')->fetch()['c'];
+        foreach(['pages','animals','albums','posts','categories'] as $table){
+            $rows = db()->query("SELECT blocks FROM $table WHERE blocks IS NOT NULL AND blocks <> '' AND blocks <> '[]'")->fetchAll();
+            foreach($rows as $row) $count += pb_count_blocks_images(pb_decode_blocks($row['blocks']));
+        }
+        return $cached = $count;
     }catch(Exception $e){ return 0; }
 }
 
