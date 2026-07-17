@@ -3,7 +3,17 @@ require __DIR__.'/inc.php';
 
 $fields = ['site_title','intro_title','intro_text','primary_color','accent_color','font','meta_description','contact_email'];
 $classColorMap = pb_class_color_map();
-$classColorLabels = [
+$classColorLabels = current_lang() === 'en' ? [
+    'gewervelde'    => 'Vertebrates (entry page)',
+    'vissen'        => 'Fish',
+    'vogels'        => 'Birds',
+    'reptielen'     => 'Reptiles',
+    'zoogdieren'    => 'Mammals',
+    'amfibieën'     => 'Amphibians',
+    'ongewervelde'  => 'Invertebrates',
+    'spinachtigen'  => 'Arachnids',
+    'schijfkwallen' => 'Moon jellyfish',
+] : [
     'gewervelde'    => 'Gewervelde (ingangspagina)',
     'vissen'        => 'Vissen',
     'vogels'        => 'Vogels',
@@ -33,18 +43,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $me = $st->fetch();
 
         if(!$me || !password_verify($currentPassword, $me['password_hash'])){
-            $accountError = 'Huidig wachtwoord is onjuist.';
+            $accountError = t('err_wrong_current_password');
         } elseif($newUsername === ''){
-            $accountError = 'Gebruikersnaam mag niet leeg zijn.';
+            $accountError = t('err_username_empty');
         } elseif($newPassword !== '' && strlen($newPassword) < 8){
-            $accountError = 'Nieuw wachtwoord moet minstens 8 tekens zijn.';
+            $accountError = t('err_password_too_short');
         } elseif($newPassword !== $newPassword2){
-            $accountError = 'Nieuw wachtwoord komt niet overeen met de bevestiging.';
+            $accountError = t('err_password_mismatch');
         } else {
             $chk = db()->prepare('SELECT id FROM users WHERE username=? AND id<>?');
             $chk->execute([$newUsername, $me['id']]);
             if($chk->fetch()){
-                $accountError = 'Die gebruikersnaam is al in gebruik.';
+                $accountError = t('err_username_taken');
             } else {
                 if($newPassword !== ''){
                     db()->prepare('UPDATE users SET username=?, password_hash=? WHERE id=?')
@@ -87,35 +97,35 @@ if(!empty($_SESSION['admin_id'])){
 
 admin_header(t('admin_settings'), 'settings');
 ?>
-<?php if($saved): ?><div class="notice" style="margin-bottom:20px">Instellingen opgeslagen.</div><?php endif; ?>
+<?php if($saved): ?><div class="notice" style="margin-bottom:20px"><?=e(t('settings_saved'))?></div><?php endif; ?>
 <div class="a-card">
   <div class="a-card-pad">
     <form method="post">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="site">
 
-      <div class="a-field"><label>Sitenaam</label><input type="text" name="site_title" value="<?=e($values['site_title'])?>"></div>
-      <div class="a-field"><label>Introtitel (homepage)</label><input type="text" name="intro_title" value="<?=e($values['intro_title'])?>"></div>
-      <div class="a-field"><label>Introtekst (homepage)</label><textarea name="intro_text" rows="3"><?=e($values['intro_text'])?></textarea></div>
-      <div class="a-field"><label>SEO-omschrijving (standaard)</label><textarea name="meta_description" rows="2"><?=e($values['meta_description'])?></textarea></div>
-      <div class="a-field"><label>Contact-e-mailadres</label><input type="email" name="contact_email" value="<?=e($values['contact_email'])?>" placeholder="jij@voorbeeld.nl"><p style="font-size:.78rem;color:#8a7c6c;margin-top:4px">Berichten via het contactformulier worden hierheen gemaild.</p></div>
+      <div class="a-field"><label><?=e(t('site_name'))?></label><input type="text" name="site_title" value="<?=e($values['site_title'])?>"></div>
+      <div class="a-field"><label><?=e(t('intro_title_label'))?></label><input type="text" name="intro_title" value="<?=e($values['intro_title'])?>"></div>
+      <div class="a-field"><label><?=e(t('intro_text_label'))?></label><textarea name="intro_text" rows="3"><?=e($values['intro_text'])?></textarea></div>
+      <div class="a-field"><label><?=e(t('seo_desc_label'))?></label><textarea name="meta_description" rows="2"><?=e($values['meta_description'])?></textarea></div>
+      <div class="a-field"><label><?=e(t('contact_email_label'))?></label><input type="email" name="contact_email" value="<?=e($values['contact_email'])?>" placeholder="jij@voorbeeld.nl"><p style="font-size:.78rem;color:#8a7c6c;margin-top:4px"><?=e(t('contact_email_hint'))?></p></div>
 
       <div class="pbe-row" style="display:flex;gap:20px">
-        <div class="a-field" style="flex:1"><label>Hoofdkleur</label><input type="color" name="primary_color" value="<?=e($values['primary_color'] ?: '#7b5f46')?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer"></div>
-        <div class="a-field" style="flex:1"><label>Accentkleur</label><input type="color" name="accent_color" value="<?=e($values['accent_color'] ?: '#eadfd2')?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer"></div>
+        <div class="a-field" style="flex:1"><label><?=e(t('primary_color'))?></label><input type="color" name="primary_color" value="<?=e($values['primary_color'] ?: '#7b5f46')?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer"></div>
+        <div class="a-field" style="flex:1"><label><?=e(t('accent_color'))?></label><input type="color" name="accent_color" value="<?=e($values['accent_color'] ?: '#eadfd2')?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer"></div>
       </div>
 
       <div class="a-field">
-        <label>Lettertype (koppen)</label>
+        <label><?=e(t('heading_font'))?></label>
         <select name="font">
-          <?php foreach(['Georgia (standaard)'=>'Georgia','Fraunces'=>'Fraunces','Playfair Display'=>'Playfair Display','Cormorant Garamond'=>'Cormorant Garamond','Lora'=>'Lora','Merriweather'=>'Merriweather'] as $label=>$val): ?>
+          <?php foreach([(current_lang()==='en'?'Georgia (default)':'Georgia (standaard)')=>'Georgia','Fraunces'=>'Fraunces','Playfair Display'=>'Playfair Display','Cormorant Garamond'=>'Cormorant Garamond','Lora'=>'Lora','Merriweather'=>'Merriweather'] as $label=>$val): ?>
           <option value="<?=e($val)?>" <?=$values['font']===$val || ($values['font']==='' && $val==='Georgia') ? 'selected':''?>><?=e($label)?></option>
           <?php endforeach; ?>
         </select>
       </div>
 
-      <h2 style="margin-top:28px">Bannerkleuren per dierklasse</h2>
-      <p style="color:#8a7c6c;font-size:.9rem;margin-top:-8px">De achtergrondkleur boven de titel op categorie- en dierenpagina's, per klasse (geldt ook voor alle sub-categorieën eronder).</p>
+      <h2 style="margin-top:28px"><?=e(t('class_banner_colors'))?></h2>
+      <p style="color:#8a7c6c;font-size:.9rem;margin-top:-8px"><?=e(t('class_banner_colors_desc'))?></p>
       <div class="pbe-row" style="display:flex;flex-wrap:wrap;gap:20px">
         <?php foreach($classColorMap as $key => [$settingKey, $default]): ?>
         <div class="a-field" style="flex:1;min-width:160px">
@@ -125,26 +135,26 @@ admin_header(t('admin_settings'), 'settings');
         <?php endforeach; ?>
       </div>
 
-      <button class="a-btn" type="submit" style="margin-top:20px">Opslaan</button>
+      <button class="a-btn" type="submit" style="margin-top:20px"><?=e(t('save'))?></button>
     </form>
   </div>
 </div>
 
 <div class="a-card">
   <div class="a-card-pad">
-    <h2 style="margin-top:0">Inloggegevens</h2>
-    <?php if($accountSaved): ?><div class="notice" style="margin-bottom:16px">Inloggegevens bijgewerkt.</div><?php endif; ?>
+    <h2 style="margin-top:0"><?=e(t('login_credentials'))?></h2>
+    <?php if($accountSaved): ?><div class="notice" style="margin-bottom:16px"><?=e(t('credentials_updated'))?></div><?php endif; ?>
     <?php if($accountError): ?><div class="notice" style="margin-bottom:16px"><?=e($accountError)?></div><?php endif; ?>
     <form method="post">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="account">
 
-      <div class="a-field"><label>Gebruikersnaam</label><input type="text" name="username" value="<?=e($currentUser['username'] ?? '')?>" required></div>
-      <div class="a-field"><label>Huidig wachtwoord</label><input type="password" name="current_password" placeholder="Vereist om te bevestigen" required></div>
-      <div class="a-field"><label>Nieuw wachtwoord</label><input type="password" name="new_password" placeholder="Laat leeg om wachtwoord niet te wijzigen"></div>
-      <div class="a-field"><label>Nieuw wachtwoord (bevestig)</label><input type="password" name="new_password_confirm" placeholder="Herhaal nieuw wachtwoord"></div>
+      <div class="a-field"><label><?=e(t('login_username'))?></label><input type="text" name="username" value="<?=e($currentUser['username'] ?? '')?>" required></div>
+      <div class="a-field"><label><?=e(t('current_password'))?></label><input type="password" name="current_password" placeholder="<?=e(t('current_password_hint'))?>" required></div>
+      <div class="a-field"><label><?=e(t('new_password'))?></label><input type="password" name="new_password" placeholder="<?=e(t('new_password_hint'))?>"></div>
+      <div class="a-field"><label><?=e(t('new_password_confirm'))?></label><input type="password" name="new_password_confirm" placeholder="<?=e(t('new_password_confirm_hint'))?>"></div>
 
-      <button class="a-btn" type="submit">Inloggegevens opslaan</button>
+      <button class="a-btn" type="submit"><?=e(t('save_credentials'))?></button>
     </form>
   </div>
 </div>

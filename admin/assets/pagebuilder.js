@@ -9,6 +9,126 @@ function esc(s){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];
   });
 }
+var PB_LANG = (window.PBE_INITIAL && window.PBE_INITIAL.lang === 'en') ? 'en' : 'nl';
+var PBE_ZOOS = window.PBE_ZOOS || [];
+var PB_DICT = {
+  layout:['Layout','Layout'], content_group:['Inhoud','Content'], media:['Media','Media'], form_group:['Formulier','Form'], advanced:['Geavanceerd','Advanced'],
+  hero:['Hero','Hero'], heading:['Titel','Heading'], text_block:['Tekst','Text'], photo:['Foto','Photo'], photo_gallery:['Fotogalerij','Photo gallery'],
+  photo_slideshow:['Fotoslideshow','Photo slideshow'], video:['Video','Video'], button_block:['Knop','Button'], divider:['Scheidingslijn','Divider'],
+  quote:['Citaat','Quote'], columns:['Kolommen','Columns'], row:['Rij','Row'], recent_added:['Recent toegevoegd','Recently added'],
+  subcategories:['Sub-categorieën','Sub-categories'], categories_overview:['Categorieën-overzicht','Categories overview'], photo_counter:['Fototeller','Photo counter'],
+  class_split_label:['Gewervelde / Ongewervelde','Vertebrates / Invertebrates'], contact_form:['Contactformulier','Contact form'], custom_html:['Eigen HTML','Custom HTML'],
+  drag:['Verslepen','Drag'], duplicate:['Dupliceren','Duplicate'], remove:['Verwijderen','Delete'],
+  drop_block_here:['Sleep hier een blok','Drop a block here'],
+  row_label:['Rij','Row'],
+  style_group:['Stijl','Style'], content_group_title:['Inhoud','Content'],
+  font_label:['Lettertype','Font'], default_label:['Standaard','Default'],
+  text_size_px:['Tekstgrootte (px)','Text size (px)'], radius_px:['Radius (px)','Radius (px)'],
+  text_color:['Tekstkleur','Text color'], clear_label:['wis','clear'],
+  bg_color:['Achtergrondkleur','Background color'], transparent_label:['Transparant','Transparent'],
+  alignment:['Uitlijning','Alignment'], align_left:['Links','Left'], align_center:['Midden','Center'], align_right:['Rechts','Right'],
+  padding_top_bottom:['Padding boven/onder','Padding top/bottom'], padding_sides:['Padding zijkant','Padding sides'],
+  shadow_label:['Schaduw','Shadow'], shadow_none:['Geen','None'], shadow_soft:['Zacht','Soft'], shadow_medium:['Middel','Medium'], shadow_large:['Groot','Large'],
+  scroll_animation:['Animatie bij scrollen','Animation on scroll'],
+  anim_none:['Geen','None'], anim_fade_up:['Fade omhoog','Fade up'], anim_fade_in:['Fade in','Fade in'],
+  anim_slide_left:['Schuif van links','Slide from left'], anim_slide_right:['Schuif van rechts','Slide from right'], anim_zoom_in:['Inzoomen','Zoom in'],
+  heading_level:['Kop-niveau','Heading level'],
+  tip_title_dblclick:['Tip: dubbelklik de titel in het canvas om de tekst te wijzigen.','Tip: double-click the title in the canvas to change the text.'],
+  tip_text_dblclick:['Dubbelklik de tekst in het canvas om te bewerken. Selecteer tekst en gebruik Ctrl+B / Ctrl+I voor vet/cursief.','Double-click the text in the canvas to edit it. Select text and use Ctrl+B / Ctrl+I for bold/italic.'],
+  bg_photo:['Achtergrondfoto','Background photo'],
+  overlay_darkness:['Overlay-donkerte','Overlay darkness'],
+  button_link_url:['Knop-link (URL)','Button link (URL)'],
+  tip_hero:['Tip: dubbelklik titel, ondertitel of knoptekst in het canvas om te bewerken. Laat de knoptekst leeg om de knop op de site te verbergen.','Tip: double-click the title, subtitle or button text in the canvas to edit them. Leave the button text empty to hide the button on the site.'],
+  alt_text_seo:['Alt-tekst (SEO)','Alt text (SEO)'],
+  link_optional:['Link (optioneel)','Link (optional)'],
+  width_label:['Breedte','Width'], contained_label:['Passend','Contained'], full_label:['Volledig','Full'],
+  custom_width_pct:['Aangepaste breedte (% — laat leeg voor automatisch)','Custom width (% — leave blank for automatic)'],
+  clear_auto:['wis (automatisch)','clear (automatic)'],
+  tip_image:["Tip: sleep de foto tegen de rand van een ander blok om ze naast elkaar te zetten, of gebruik hierboven een vaste breedte om de foto kleiner te maken. Dubbelklik het bijschrift om het te wijzigen.","Tip: drag the photo against the edge of another block to place them side by side, or use a fixed width above to make the photo smaller. Double-click the caption to change it."],
+  large_tile_title:['Grote tegel (2x zo groot in het raster)','Large tile (2x bigger in the grid)'],
+  caption_placeholder:['Bijschrift','Caption'],
+  columns_label:['Kolommen','Columns'], grid_label:['Grid','Grid'], pinterest_label:['Pinterest','Pinterest'],
+  video_link_label:['YouTube / Vimeo-link of .mp4','YouTube / Vimeo link or .mp4'],
+  btn_style_solid:['Vol','Solid'], btn_style_outline:['Rand','Outline'], btn_style_ghost:['Tekst','Text'],
+  size_label:['Grootte','Size'],
+  tip_button:['Tip: dubbelklik de knoptekst in het canvas om te wijzigen.','Tip: double-click the button text in the canvas to change it.'],
+  divider_line:['Lijn','Line'], divider_dots:['Stippen','Dots'], divider_space:['Ruimte','Space'],
+  tip_quote:['Dubbelklik de quote of naam in het canvas om te bewerken.','Double-click the quote or name in the canvas to edit them.'],
+  num_columns:['Aantal kolommen','Number of columns'],
+  gap_px:['Tussenruimte (px)','Gap (px)'],
+  tip_columns:['Sleep blokken uit het paneel links direct in een kolom.','Drag blocks from the panel on the left directly into a column.'],
+  button_text_label:['Knoptekst','Button text'],
+  tip_contact:['Dubbelklik de titel in het canvas om te wijzigen. Berichten komen terecht in de <code>messages</code>-tabel.','Double-click the title in the canvas to change it. Messages end up in the <code>messages</code> table.'],
+  source_label:['Bron','Source'],
+  source_mixed:['Dieren + albums + blog (gemengd)','Animals + albums + blog (mixed)'],
+  source_animals:['Enkel dieren','Animals only'], source_albums:['Enkel albums','Albums only'],
+  source_posts:['Enkel blogposts','Blog posts only'], source_pages:["Enkel pagina's",'Pages only'],
+  count_label:['Aantal','Count'],
+  tip_recent:['Toont automatisch de nieuwste gepubliceerde content, ververst vanzelf.','Automatically shows the newest published content, updates itself.'],
+  html_code_label:['HTML-code','HTML code'],
+  tip_html:['Geavanceerd: wordt ongefilterd op de pagina geplaatst.','Advanced: placed on the page unfiltered.'],
+  stack_mobile:['Onder elkaar tonen op mobiel','Stack on mobile'],
+  tip_stack:['Uitvinken houdt de blokken naast elkaar, ook op een telefoon.','Unchecking keeps the blocks side by side, even on a phone.'],
+  unwrap_row:['Rij opheffen (blokken terugzetten)','Unwrap row (move blocks back out)'],
+  tip_row:["Tip: sleep de deelstreep tussen de foto's/blokken om de breedte te verdelen, of gebruik de resize-handles wanneer een blok geselecteerd is.","Tip: drag the divider between the photos/blocks to adjust the width, or use the resize handles when a block is selected."],
+  interval_seconds:['Wisseltijd (seconden)','Interval (seconds)'],
+  text_next_to_number:['Tekst naast het getal','Text next to the number'],
+  title_optional:['Titel (optioneel)','Title (optional)'],
+  photo_vertebrates:['Foto — gewervelde dieren','Photo — vertebrates'],
+  text_under_photo_vert:['Tekst onder de foto — gewervelde dieren','Text under the photo — vertebrates'],
+  photo_invertebrates:['Foto — ongewervelde dieren','Photo — invertebrates'],
+  text_under_photo_invert:['Tekst onder de foto — ongewervelde dieren','Text under the photo — invertebrates'],
+  tip_class_split:['Tikken op een foto linkt automatisch naar het overzicht van gewervelde klassen, of naar de Ongewervelde-categorie.','Tapping a photo automatically links to the vertebrates overview, or to the Invertebrates category.'],
+  tip_subcategories:['Toont automatisch alle sub-categorieën en dieren binnen déze categorie, met coverfoto — enkel zinvol op een categoriepagina.','Automatically shows all sub-categories and animals within this category, with cover photo — only useful on a category page.'],
+  tip_categories_grid:['Toont automatisch alle hoofdcategorieën (bv. Gewervelde dieren, Ongewervelde dieren) als grote kaartjes — geef die categorieën een coverfoto voor het beste resultaat.','Automatically shows all top-level categories (e.g. Vertebrates, Invertebrates) as large cards — give those categories a cover photo for the best result.'],
+  choose_other_photo_js:['Andere foto kiezen (of sleep hier)','Choose another photo (or drop here)'],
+  upload_photo_js:['Foto uploaden (of sleep hier)','Upload photo (or drop here)'],
+  remove_photo:['Foto verwijderen','Remove photo'],
+  add_photos:["+ Foto's toevoegen (of sleep hier)",'+ Add photos (or drop here)'],
+  upload_whole_folder:['Hele map uploaden','Upload entire folder'],
+  photo_label:['Foto','Photo'],
+  default_hero_title:['Titel van je pagina','Title of your page'],
+  default_hero_subtitle:['Een korte, krachtige ondertitel die de bezoeker verwelkomt.','A short, powerful subtitle that welcomes the visitor.'],
+  default_button_text:['Knoptekst','Button text'],
+  default_title_text:['Nieuwe titel','New heading'],
+  default_text_html:['Dubbelklik om deze tekst te bewerken.','Double-click to edit this text.'],
+  default_button_click:['Klik hier','Click here'],
+  default_quote_text:['Een mooie quote over dieren en fotografie.','A beautiful quote about animals and photography.'],
+  default_quote_author:['Naam','Name'],
+  default_class_split_title:['Ontdek onze dierenwereld','Discover our animal world'],
+  default_vertebrates_label:['Gewervelde dieren','Vertebrates'],
+  default_invertebrates_label:['Ongewervelde dieren','Invertebrates'],
+  default_contact_title:['Neem contact op','Get in touch'],
+  form_name:['Naam','Name'],
+  form_email_optional:['E-mail (optioneel)','Email (optional)'],
+  form_message:['Bericht','Message'],
+  form_send:['Versturen','Send'],
+  default_html_comment:['<!-- Eigen HTML -->','<!-- Custom HTML -->'],
+  layout_label:['Layout','Layout'],
+  zoo_none:['Geen zoo','No zoo'],
+  photos_on_site:["foto's op deze website",'photos on this website'],
+  html_block_chars:['HTML-blok','HTML block'],
+  html_block_chars_suffix:['tekens) — bewerk rechts &#8594;','characters) — edit on the right &#8594;'],
+  uploading_dots:['Bezig met uploaden...','Uploading...'],
+  try_again:['Opnieuw proberen','Try again'],
+  saving_dots:['Opslaan…','Saving…'],
+  save_error:['Fout','Error'],
+  save_unknown:['onbekend','unknown'],
+  save_failed_network:['Opslaan mislukt (netwerk)','Save failed (network)'],
+  empty_canvas:['Sleep hier een blok naartoe vanuit het paneel links om te beginnen.','Drag a block here from the panel on the left to get started.'],
+  select_block_to_style:['Selecteer een blok in het canvas om het te stylen.','Select a block in the canvas to style it.'],
+  block_settings:['Blokinstellingen','Block settings'],
+  no_photo_chosen:['Geen foto gekozen — kies er een rechts &#8594;','No photo chosen — pick one on the right &#8594;'],
+  no_photos_choose_right:["Nog geen foto's — voeg ze toe rechts &#8594;","No photos yet — add them on the right &#8594;"],
+  paste_video_link:['Plak een YouTube/Vimeo-link rechts &#8594;','Paste a YouTube/Vimeo link on the right &#8594;'],
+  unrecognized_video_link:['Onherkenbare video-link','Unrecognized video link'],
+  recent_live_preview:['Live voorbeeld verschijnt op de site zelf — toont automatisch de nieuwste gepubliceerde content.','A live preview appears on the site itself — automatically shows the newest published content.'],
+  subcategories_live_preview:['Live voorbeeld verschijnt op de site zelf — toont automatisch de sub-categorieën en dieren in déze categorie. Werkt enkel op een categoriepagina.','A live preview appears on the site itself — automatically shows the sub-categories and animals in this category. Only works on a category page.'],
+  categories_grid_live_preview:['Live voorbeeld verschijnt op de site zelf — toont automatisch alle hoofdcategorieën (bv. Gewervelde dieren) als kaartjes, ideaal voor de homepage.','A live preview appears on the site itself — automatically shows all top-level categories (e.g. Vertebrates) as cards, ideal for the homepage.'],
+  unsaved_changes:['Niet opgeslagen wijzigingen…','Unsaved changes…'],
+  saved:['Opgeslagen ✓','Saved ✓']
+};
+function pbT(key){ var e = PB_DICT[key]; if(!e) return key; return PB_LANG==='en' ? e[1] : e[0]; }
 function uid(){ return 'b_' + Math.random().toString(16).slice(2,10); }
 function clamp(n,min,max){ n=parseInt(n,10); if(isNaN(n)) n=min; return Math.max(min,Math.min(max,n)); }
 function debounce(fn, wait){ var t; return function(){ var args=arguments, ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,args); }, wait); }; }
@@ -73,9 +193,9 @@ var DEFAULT_SETTINGS = { fontFamily:'', fontSize:'', textColor:'', bgColor:'', a
 
 var BLOCKS = {
   hero: {
-    label:'Hero', icon:'&#9733;', group:'Layout',
+    label:pbT('hero'), icon:'&#9733;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center', paddingY:'', paddingX:'', animation:'fade-in'}); },
-    data:function(){ return {title:'Titel van je pagina', subtitle:'Een korte, krachtige ondertitel die de bezoeker verwelkomt.', buttonText:'', buttonHref:'#', bgImage:'', overlay:45}; },
+    data:function(){ return {title:pbT('default_hero_title'), subtitle:pbT('default_hero_subtitle'), buttonText:'', buttonHref:'#', bgImage:'', overlay:45}; },
     render:function(d, s, id){
       var bg = d.bgImage ? imgSrc(d.bgImage) : '';
       var extra = bg ? {'background-image':"url('"+bg.replace(/'/g,'')+"')"} : null;
@@ -84,34 +204,34 @@ var BLOCKS = {
       html += '<div class="pb-inner pb-hero-inner">';
       html += '<h1 data-edit-field="title">'+esc(d.title)+'</h1>';
       html += '<p class="pb-hero-subtitle" data-edit-field="subtitle">'+esc(d.subtitle)+'</p>';
-      html += '<a class="pb-btn pb-btn-solid pb-btn-lg" href="'+esc(d.buttonHref||'#')+'" data-edit-field="buttonText" onclick="return false">'+esc(d.buttonText||'Knoptekst')+'</a>';
+      html += '<a class="pb-btn pb-btn-solid pb-btn-lg" href="'+esc(d.buttonHref||'#')+'" data-edit-field="buttonText" onclick="return false">'+esc(d.buttonText||pbT('default_button_text'))+'</a>';
       html += '</div></section>';
       return html;
     }
   },
   title: {
-    label:'Titel', icon:'&#84;', group:'Inhoud',
+    label:pbT('heading'), icon:'&#84;', group:pbT('content_group'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {text:'Nieuwe titel', level:'h2'}; },
+    data:function(){ return {text:pbT('default_title_text'), level:'h2'}; },
     render:function(d, s, id){
       var lvl = ['h1','h2','h3'].indexOf(d.level)>=0 ? d.level : 'h2';
       return wrap('title', id, s, '<'+lvl+' data-edit-field="text">'+esc(d.text)+'</'+lvl+'>');
     }
   },
   text: {
-    label:'Tekst', icon:'&#182;', group:'Inhoud',
+    label:pbT('text_block'), icon:'&#182;', group:pbT('content_group'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {html:'Dubbelklik om deze tekst te bewerken.'}; },
+    data:function(){ return {html:pbT('default_text_html')}; },
     render:function(d, s, id){
       return wrap('text', id, s, '<div class="pb-text" data-edit-field="html" data-edit-html="1">'+(d.html||'')+'</div>');
     }
   },
   image: {
-    label:'Foto', icon:'&#128247;', group:'Media',
+    label:pbT('photo'), icon:'&#128247;', group:pbT('media'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {src:'', alt:'', caption:'', width:'full', link:'', aspectRatio:null, widthPct:''}; },
     render:function(d, s, id){
-      if(!d.src) return wrap('image', id, s, '<div class="pbe-empty-col" style="min-height:140px">Geen foto gekozen — kies er een rechts &#8594;</div>');
+      if(!d.src) return wrap('image', id, s, '<div class="pbe-empty-col" style="min-height:140px">'+pbT('no_photo_chosen')+'</div>');
       var cls = d.width==='full' ? 'pb-img-full' : 'pb-img-contained';
       var arStyle = d.aspectRatio ? ' style="aspect-ratio:'+d.aspectRatio+';object-fit:cover;height:auto"' : '';
       var img = '<img src="'+esc(imgSrc(d.src))+'" alt="'+esc(d.alt)+'" class="'+cls+'"'+arStyle+'>';
@@ -121,17 +241,18 @@ var BLOCKS = {
     }
   },
   gallery: {
-    label:'Fotogalerij', icon:'&#128444;', group:'Media',
+    label:pbT('photo_gallery'), icon:'&#128444;', group:pbT('media'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {images:[], columns:3, layout:'grid'}; },
     render:function(d, s, id){
       var cols = clamp(d.columns||3,2,4);
       var layout = d.layout==='masonry' ? 'masonry' : 'grid';
-      if(!d.images || !d.images.length) return wrap('gallery', id, s, '<div class="pbe-empty-col" style="min-height:140px">Nog geen foto\'s — voeg ze toe rechts &#8594;</div>');
+      if(!d.images || !d.images.length) return wrap('gallery', id, s, '<div class="pbe-empty-col" style="min-height:140px">'+pbT('no_photos_choose_right')+'</div>');
       var html = '<div class="pb-gallery pb-gallery-'+layout+'" style="--pb-cols:'+cols+'">';
       d.images.forEach(function(img){
         var cls = 'pb-gallery-item'+(img.size==='large' ? ' pb-gallery-item-lg' : '');
         html += '<figure class="'+cls+'"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
+          + zooBadgeHtml(img.zoo_id)
           + (img.caption ? '<figcaption>'+esc(img.caption)+'</figcaption>' : '') + '</figure>';
       });
       html += '</div>';
@@ -139,14 +260,15 @@ var BLOCKS = {
     }
   },
   slideshow: {
-    label:'Fotoslideshow', icon:'&#127909;', group:'Media',
+    label:pbT('photo_slideshow'), icon:'&#127909;', group:pbT('media'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {images:[], interval:5}; },
     render:function(d, s, id){
-      if(!d.images || !d.images.length) return wrap('slideshow', id, s, '<div class="pbe-empty-col" style="min-height:140px">Nog geen foto\'s — voeg ze toe rechts &#8594;</div>');
+      if(!d.images || !d.images.length) return wrap('slideshow', id, s, '<div class="pbe-empty-col" style="min-height:140px">'+pbT('no_photos_choose_right')+'</div>');
       var html = '<div class="pb-slideshow"><div class="pb-slideshow-track">';
       d.images.forEach(function(img, i){
         html += '<figure class="pb-slideshow-slide'+(i===0?' is-active':'')+'"><img src="'+esc(imgSrc(img.src))+'" alt="'+esc(img.alt||'')+'">'
+          + zooBadgeHtml(img.zoo_id)
           + (img.caption ? '<figcaption>'+esc(img.caption)+'</figcaption>' : '') + '</figure>';
       });
       html += '</div>';
@@ -160,45 +282,45 @@ var BLOCKS = {
     }
   },
   video: {
-    label:'Video', icon:'&#9654;', group:'Media',
+    label:pbT('video'), icon:'&#9654;', group:pbT('media'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {url:'', poster:''}; },
     render:function(d, s, id){
-      if(!d.url) return wrap('video', id, s, '<div class="pbe-empty-col" style="min-height:140px">Plak een YouTube/Vimeo-link rechts &#8594;</div>');
+      if(!d.url) return wrap('video', id, s, '<div class="pbe-empty-col" style="min-height:140px">'+pbT('paste_video_link')+'</div>');
       var embed = videoEmbed(d.url);
       var inner;
       if(embed) inner = '<div class="pb-video-wrap"><iframe src="'+esc(embed)+'"></iframe></div>';
       else if(/\.(mp4|webm|ogg)(\?.*)?$/i.test(d.url)) inner = '<div class="pb-video-wrap"><video controls src="'+esc(d.url)+'"></video></div>';
-      else inner = '<div class="pbe-empty-col">Onherkenbare video-link</div>';
+      else inner = '<div class="pbe-empty-col">'+pbT('unrecognized_video_link')+'</div>';
       return wrap('video', id, s, inner);
     }
   },
   button: {
-    label:'Knop', icon:'&#128433;', group:'Inhoud',
+    label:pbT('button_block'), icon:'&#128433;', group:pbT('content_group'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {text:'Klik hier', href:'#', style:'solid', size:'md'}; },
+    data:function(){ return {text:pbT('default_button_click'), href:'#', style:'solid', size:'md'}; },
     render:function(d, s, id){
-      var html = '<a class="pb-btn pb-btn-'+esc(d.style||'solid')+' pb-btn-'+esc(d.size||'md')+'" href="'+esc(d.href||'#')+'" data-edit-field="text" onclick="return false">'+esc(d.text||'Knoptekst')+'</a>';
+      var html = '<a class="pb-btn pb-btn-'+esc(d.style||'solid')+' pb-btn-'+esc(d.size||'md')+'" href="'+esc(d.href||'#')+'" data-edit-field="text" onclick="return false">'+esc(d.text||pbT('default_button_text'))+'</a>';
       return wrap('button', id, s, html);
     }
   },
   divider: {
-    label:'Scheidingslijn', icon:'&#8213;', group:'Layout',
+    label:pbT('divider'), icon:'&#8213;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {paddingY:20, animation:'none'}); },
     data:function(){ return {style:'line'}; },
     render:function(d, s, id){ return wrap('divider', id, s, '<div class="pb-divider pb-divider-'+esc(d.style||'line')+'"></div>'); }
   },
   quote: {
-    label:'Citaat', icon:'&#8220;', group:'Inhoud',
+    label:pbT('quote'), icon:'&#8220;', group:pbT('content_group'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center', paddingY:64}); },
-    data:function(){ return {text:'Een mooie quote over dieren en fotografie.', author:'Naam'}; },
+    data:function(){ return {text:pbT('default_quote_text'), author:pbT('default_quote_author')}; },
     render:function(d, s, id){
       var html = '<blockquote class="pb-quote"><p data-edit-field="text">'+esc(d.text)+'</p><cite data-edit-field="author">'+esc(d.author||'')+'</cite></blockquote>';
       return wrap('quote', id, s, html);
     }
   },
   columns: {
-    label:'Kolommen', icon:'&#9638;', group:'Layout',
+    label:pbT('columns'), icon:'&#9638;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {count:2, gap:32, cols:[{blocks:[]},{blocks:[]}]}; },
     render:function(d, s, id, depth){
@@ -207,7 +329,7 @@ var BLOCKS = {
       (d.cols||[]).forEach(function(col, i){
         html += '<div class="pb-column pbe-sortable-zone" data-col-owner="'+id+'" data-col-index="'+i+'">';
         html += renderList(col.blocks||[], depth+1);
-        if(!col.blocks || !col.blocks.length) html += '<div class="pbe-empty-col">Sleep hier een blok</div>';
+        if(!col.blocks || !col.blocks.length) html += '<div class="pbe-empty-col">'+pbT('drop_block_here')+'</div>';
         html += '</div>';
       });
       html += '</div>';
@@ -221,12 +343,12 @@ var BLOCKS = {
     render:function(d, s, id, depth){
       var cells = d.cells || [];
       var html = '<div class="pb-row-flex" data-row-id="'+id+'" data-stack="'+((!('mobileStack' in d)||d.mobileStack)?1:0)+'" style="--pb-row-gap:'+(d.gap!=null?d.gap:24)+'px">';
-      html += '<button type="button" class="pbe-row-tab" data-action="select-row" data-row-select="'+id+'">Rij</button>';
+      html += '<button type="button" class="pbe-row-tab" data-action="select-row" data-row-select="'+id+'">'+pbT('row_label')+'</button>';
       cells.forEach(function(cell, i){
         var w = cell.widthPct!=null ? cell.widthPct : (100/cells.length);
         html += '<div class="pb-cell pbe-sortable-zone" data-cell-owner="'+id+'" data-cell-index="'+i+'" style="width:'+w+'%">';
         html += renderList(cell.blocks||[], depth+1);
-        if(!cell.blocks || !cell.blocks.length) html += '<div class="pbe-empty-col">Sleep hier een blok</div>';
+        if(!cell.blocks || !cell.blocks.length) html += '<div class="pbe-empty-col">'+pbT('drop_block_here')+'</div>';
         html += '</div>';
         if(i < cells.length-1) html += '<div class="pbe-col-resizer" data-row-id="'+id+'" data-left-index="'+i+'" data-right-index="'+(i+1)+'"><span class="pbe-col-resizer-handle"></span></div>';
       });
@@ -235,45 +357,45 @@ var BLOCKS = {
     }
   },
   recent: {
-    label:'Recent toegevoegd', icon:'&#128337;', group:'Layout',
+    label:pbT('recent_added'), icon:'&#128337;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {source:'mixed', count:3}; },
     render:function(d, s, id){
-      var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch de nieuwste gepubliceerde content.</div>';
+      var html = '<div class="pbe-empty-col" style="min-height:110px">'+pbT('recent_live_preview')+'</div>';
       return wrap('recent', id, s, html);
     }
   },
   subcategories: {
-    label:'Sub-categorieën', icon:'&#128193;', group:'Layout',
+    label:pbT('subcategories'), icon:'&#128193;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {}; },
     render:function(d, s, id){
-      var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch de sub-categorieën en dieren in déze categorie. Werkt enkel op een categoriepagina.</div>';
+      var html = '<div class="pbe-empty-col" style="min-height:110px">'+pbT('subcategories_live_preview')+'</div>';
       return wrap('subcategories', id, s, html);
     }
   },
   categories_grid: {
-    label:'Categorieën-overzicht', icon:'&#128506;', group:'Layout',
+    label:pbT('categories_overview'), icon:'&#128506;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
     data:function(){ return {}; },
     render:function(d, s, id){
-      var html = '<div class="pbe-empty-col" style="min-height:110px">Live voorbeeld verschijnt op de site zelf — toont automatisch alle hoofdcategorieën (bv. Gewervelde dieren) als kaartjes, ideaal voor de homepage.</div>';
+      var html = '<div class="pbe-empty-col" style="min-height:110px">'+pbT('categories_grid_live_preview')+'</div>';
       return wrap('categories_grid', id, s, html);
     }
   },
   photocount: {
-    label:"Fototeller", icon:'&#128202;', group:'Layout',
+    label:pbT('photo_counter'), icon:'&#128202;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
-    data:function(){ return {label:"foto's op deze website"}; },
+    data:function(){ return {label:pbT('photos_on_site')}; },
     render:function(d, s, id){
-      var html = '<div class="pb-photocount"><span class="pb-photocount-num">—</span><span class="pb-photocount-label">'+esc(d.label||"foto's op deze website")+'</span></div>';
+      var html = '<div class="pb-photocount"><span class="pb-photocount-num">—</span><span class="pb-photocount-label">'+esc(d.label||pbT('photos_on_site'))+'</span></div>';
       return wrap('photocount', id, s, html);
     }
   },
   class_split: {
-    label:'Gewervelde / Ongewervelde', icon:'&#128062;', group:'Layout',
+    label:pbT('class_split_label'), icon:'&#128062;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
-    data:function(){ return {gewerveldeImage:'', ongewerveldeImage:'', title:'Ontdek onze dierenwereld', gewerveldeLabel:'Gewervelde dieren', ongewerveldeLabel:'Ongewervelde dieren'}; },
+    data:function(){ return {gewerveldeImage:'', ongewerveldeImage:'', title:pbT('default_class_split_title'), gewerveldeLabel:pbT('default_vertebrates_label'), ongewerveldeLabel:pbT('default_invertebrates_label')}; },
     render:function(d, s, id){
       var gImg = d.gewerveldeImage ? imgSrc(d.gewerveldeImage) : '';
       var oImg = d.ongewerveldeImage ? imgSrc(d.ongewerveldeImage) : '';
@@ -282,44 +404,44 @@ var BLOCKS = {
       html += '<div class="pb-class-split-cards">';
       html += '<a class="pb-class-split-card" href="#" onclick="return false">'
         + (gImg ? '<img src="'+esc(gImg)+'">' : '<div class="pb-class-split-noimg"></div>')
-        + '<span data-edit-field="gewerveldeLabel">'+esc(d.gewerveldeLabel||'Gewervelde dieren')+'</span></a>';
+        + '<span data-edit-field="gewerveldeLabel">'+esc(d.gewerveldeLabel||pbT('default_vertebrates_label'))+'</span></a>';
       html += '<a class="pb-class-split-card" href="#" onclick="return false">'
         + (oImg ? '<img src="'+esc(oImg)+'">' : '<div class="pb-class-split-noimg"></div>')
-        + '<span data-edit-field="ongewerveldeLabel">'+esc(d.ongewerveldeLabel||'Ongewervelde dieren')+'</span></a>';
+        + '<span data-edit-field="ongewerveldeLabel">'+esc(d.ongewerveldeLabel||pbT('default_invertebrates_label'))+'</span></a>';
       html += '</div></div>';
       return wrap('class_split', id, s, html);
     }
   },
   contact: {
-    label:'Contactformulier', icon:'&#9993;', group:'Formulier',
+    label:pbT('contact_form'), icon:'&#9993;', group:pbT('form_group'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {title:'Neem contact op', buttonText:'Versturen'}; },
+    data:function(){ return {title:pbT('default_contact_title'), buttonText:pbT('form_send')}; },
     render:function(d, s, id){
       var html = (d.title ? '<h3 data-edit-field="title">'+esc(d.title)+'</h3>' : '')
         + '<div class="pb-contact-form" style="pointer-events:none;opacity:.85">'
-        + '<label>Naam<input disabled></label><label>E-mail (optioneel)<input disabled></label>'
-        + '<label>Bericht<textarea disabled rows="4"></textarea></label>'
-        + '<button type="button" disabled>'+esc(d.buttonText||'Versturen')+'</button></div>';
+        + '<label>'+pbT('form_name')+'<input disabled></label><label>'+pbT('form_email_optional')+'<input disabled></label>'
+        + '<label>'+pbT('form_message')+'<textarea disabled rows="4"></textarea></label>'
+        + '<button type="button" disabled>'+esc(d.buttonText||pbT('form_send'))+'</button></div>';
       return wrap('contact', id, s, html);
     }
   },
   html: {
-    label:'Eigen HTML', icon:'&#60;/&#62;', group:'Geavanceerd',
+    label:pbT('custom_html'), icon:'&#60;/&#62;', group:pbT('advanced'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {code:'<!-- Eigen HTML -->'}; },
+    data:function(){ return {code:pbT('default_html_comment')}; },
     render:function(d, s, id){
-      return wrap('html', id, s, '<div style="font-family:monospace;font-size:.8rem;color:#8a7c6c;border:1px dashed #cabfa9;padding:14px;border-radius:8px">HTML-blok (' + (d.code||'').length + ' tekens) — bewerk rechts &#8594;</div>');
+      return wrap('html', id, s, '<div style="font-family:monospace;font-size:.8rem;color:#8a7c6c;border:1px dashed #cabfa9;padding:14px;border-radius:8px">' + pbT('html_block_chars') + ' (' + (d.code||'').length + ' ' + pbT('html_block_chars_suffix') + '</div>');
     }
   }
 };
-var GROUP_ORDER = ['Layout','Inhoud','Media','Formulier','Geavanceerd'];
+var GROUP_ORDER = [pbT('layout'), pbT('content_group'), pbT('media'), pbT('form_group'), pbT('advanced')];
 
 function wrap(type, id, settings, inner){
   return '<section class="pb-block pb-'+type+'" data-block-id="'+id+'" data-block-type="'+type+'"'+styleAttr(settings)+animAttr(settings)+'>'
        + '<div class="pbe-block-toolbar">'
-       + '<button type="button" class="pbe-drag-handle" data-action="drag" title="Verslepen">&#9776;</button>'
-       + '<button type="button" data-action="duplicate" title="Dupliceren">&#10064;</button>'
-       + '<button type="button" data-action="delete" title="Verwijderen">&#128465;</button>'
+       + '<button type="button" class="pbe-drag-handle" data-action="drag" title="'+pbT('drag')+'">&#9776;</button>'
+       + '<button type="button" data-action="duplicate" title="'+pbT('duplicate')+'">&#10064;</button>'
+       + '<button type="button" data-action="delete" title="'+pbT('remove')+'">&#128465;</button>'
        + '</div><div class="pb-inner">'+inner+'</div></section>';
 }
 function renderList(blocks, depth){
@@ -410,7 +532,7 @@ var titleInput = document.getElementById('pbeTitleInput');
 function renderCanvas(){
   rebuildIndex();
   if(!state.blocks.length){
-    canvasEl.innerHTML = '<div class="pbe-empty-canvas">Sleep hier een blok naartoe vanuit het paneel links om te beginnen.</div>';
+    canvasEl.innerHTML = '<div class="pbe-empty-canvas">'+pbT('empty_canvas')+'</div>';
   } else {
     canvasEl.innerHTML = renderList(state.blocks, 0);
   }
@@ -1040,12 +1162,12 @@ function startBlockResize(e, handle){
    ============================================================ */
 function renderSettingsPanel(){
   if(!selectedId || !blocksById[selectedId]){
-    settingsEl.innerHTML = '<div class="pbe-noselect">Selecteer een blok in het canvas om het te stylen.</div>';
+    settingsEl.innerHTML = '<div class="pbe-noselect">'+pbT('select_block_to_style')+'</div>';
     return;
   }
   var block = blocksById[selectedId];
   var def = BLOCKS[block.type];
-  var html = '<h2>'+def.label+'</h2><span class="pbe-block-type">Blokinstellingen</span>';
+  var html = '<h2>'+def.label+'</h2><span class="pbe-block-type">'+pbT('block_settings')+'</span>';
   html += contentFieldsHtml(block);
   html += styleFieldsHtml(block);
   settingsEl.innerHTML = html;
@@ -1066,35 +1188,35 @@ ensureDatalist();
 
 function styleFieldsHtml(block){
   var s = block.settings;
-  var html = '<div class="pbe-group"><div class="pbe-group-title">Stijl</div>';
+  var html = '<div class="pbe-group"><div class="pbe-group-title">'+pbT('style_group')+'</div>';
 
-  html += '<div class="pbe-field"><label>Lettertype</label><input type="text" list="pbeFontList" placeholder="Standaard" data-bind="settings.fontFamily" value="'+esc(s.fontFamily||'')+'"></div>';
-  html += '<div class="pbe-row"><div class="pbe-field"><label>Tekstgrootte (px)</label><input type="number" min="10" max="120" data-bind="settings.fontSize" value="'+esc(s.fontSize||'')+'" placeholder="Standaard"></div>'
-        + '<div class="pbe-field"><label>Radius (px)</label><input type="number" min="0" max="80" data-bind="settings.radius" value="'+esc(s.radius!=null?s.radius:0)+'"></div></div>';
+  html += '<div class="pbe-field"><label>'+pbT('font_label')+'</label><input type="text" list="pbeFontList" placeholder="'+pbT('default_label')+'" data-bind="settings.fontFamily" value="'+esc(s.fontFamily||'')+'"></div>';
+  html += '<div class="pbe-row"><div class="pbe-field"><label>'+pbT('text_size_px')+'</label><input type="number" min="10" max="120" data-bind="settings.fontSize" value="'+esc(s.fontSize||'')+'" placeholder="'+pbT('default_label')+'"></div>'
+        + '<div class="pbe-field"><label>'+pbT('radius_px')+'</label><input type="number" min="0" max="80" data-bind="settings.radius" value="'+esc(s.radius!=null?s.radius:0)+'"></div></div>';
 
-  html += '<div class="pbe-field"><label>Tekstkleur</label><div class="pbe-color-row">'
+  html += '<div class="pbe-field"><label>'+pbT('text_color')+'</label><div class="pbe-color-row">'
     + '<input type="color" data-bind="settings.textColor" value="'+esc(s.textColor||'#2b2420')+'">'
-    + '<input type="text" data-bind="settings.textColor" value="'+esc(s.textColor||'')+'" placeholder="Standaard">'
-    + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="settings.textColor">wis</button></div></div>';
+    + '<input type="text" data-bind="settings.textColor" value="'+esc(s.textColor||'')+'" placeholder="'+pbT('default_label')+'">'
+    + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="settings.textColor">'+pbT('clear_label')+'</button></div></div>';
 
-  html += '<div class="pbe-field"><label>Achtergrondkleur</label><div class="pbe-color-row">'
+  html += '<div class="pbe-field"><label>'+pbT('bg_color')+'</label><div class="pbe-color-row">'
     + '<input type="color" data-bind="settings.bgColor" value="'+esc(s.bgColor||'#ffffff')+'">'
-    + '<input type="text" data-bind="settings.bgColor" value="'+esc(s.bgColor||'')+'" placeholder="Transparant">'
-    + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="settings.bgColor">wis</button></div></div>';
+    + '<input type="text" data-bind="settings.bgColor" value="'+esc(s.bgColor||'')+'" placeholder="'+pbT('transparent_label')+'">'
+    + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="settings.bgColor">'+pbT('clear_label')+'</button></div></div>';
 
-  html += '<div class="pbe-field"><label>Uitlijning</label><div class="pbe-seg" data-seg="settings.align">'
-    + ['left','center','right'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(s.align===a?'is-active':'')+'">'+({left:'Links',center:'Midden',right:'Rechts'}[a])+'</button>'; }).join('')
+  html += '<div class="pbe-field"><label>'+pbT('alignment')+'</label><div class="pbe-seg" data-seg="settings.align">'
+    + ['left','center','right'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(s.align===a?'is-active':'')+'">'+({left:pbT('align_left'),center:pbT('align_center'),right:pbT('align_right')}[a])+'</button>'; }).join('')
     + '</div></div>';
 
-  html += '<div class="pbe-row"><div class="pbe-field"><label>Padding boven/onder</label><input type="number" min="0" max="240" data-bind="settings.paddingY" value="'+esc(s.paddingY!==''&&s.paddingY!=null?s.paddingY:'')+'"></div>'
-        + '<div class="pbe-field"><label>Padding zijkant</label><input type="number" min="0" max="160" data-bind="settings.paddingX" value="'+esc(s.paddingX!==''&&s.paddingX!=null?s.paddingX:'')+'"></div></div>';
+  html += '<div class="pbe-row"><div class="pbe-field"><label>'+pbT('padding_top_bottom')+'</label><input type="number" min="0" max="240" data-bind="settings.paddingY" value="'+esc(s.paddingY!==''&&s.paddingY!=null?s.paddingY:'')+'"></div>'
+        + '<div class="pbe-field"><label>'+pbT('padding_sides')+'</label><input type="number" min="0" max="160" data-bind="settings.paddingX" value="'+esc(s.paddingX!==''&&s.paddingX!=null?s.paddingX:'')+'"></div></div>';
 
-  html += '<div class="pbe-field"><label>Schaduw</label><div class="pbe-seg" data-seg="settings.shadow">'
-    + ['none','sm','md','lg'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(s.shadow===a?'is-active':'')+'">'+({none:'Geen',sm:'Zacht',md:'Middel',lg:'Groot'}[a])+'</button>'; }).join('')
+  html += '<div class="pbe-field"><label>'+pbT('shadow_label')+'</label><div class="pbe-seg" data-seg="settings.shadow">'
+    + ['none','sm','md','lg'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(s.shadow===a?'is-active':'')+'">'+({none:pbT('shadow_none'),sm:pbT('shadow_soft'),md:pbT('shadow_medium'),lg:pbT('shadow_large')}[a])+'</button>'; }).join('')
     + '</div></div>';
 
-  html += '<div class="pbe-field"><label>Animatie bij scrollen</label><select data-bind="settings.animation">'
-    + [['none','Geen'],['fade-up','Fade omhoog'],['fade-in','Fade in'],['slide-left','Schuif van links'],['slide-right','Schuif van rechts'],['zoom-in','Inzoomen']]
+  html += '<div class="pbe-field"><label>'+pbT('scroll_animation')+'</label><select data-bind="settings.animation">'
+    + [['none',pbT('anim_none')],['fade-up',pbT('anim_fade_up')],['fade-in',pbT('anim_fade_in')],['slide-left',pbT('anim_slide_left')],['slide-right',pbT('anim_slide_right')],['zoom-in',pbT('anim_zoom_in')]]
       .map(function(o){ return '<option value="'+o[0]+'" '+(s.animation===o[0]?'selected':'')+'>'+o[1]+'</option>'; }).join('')
     + '</select></div>';
 
@@ -1103,112 +1225,112 @@ function styleFieldsHtml(block){
 }
 
 function contentFieldsHtml(block){
-  var d = block.data, html = '<div class="pbe-group"><div class="pbe-group-title">Inhoud</div>';
+  var d = block.data, html = '<div class="pbe-group"><div class="pbe-group-title">'+pbT('content_group_title')+'</div>';
   switch(block.type){
     case 'title':
-      html += '<div class="pbe-field"><label>Kop-niveau</label><div class="pbe-seg" data-seg="data.level">'
+      html += '<div class="pbe-field"><label>'+pbT('heading_level')+'</label><div class="pbe-seg" data-seg="data.level">'
         + ['h1','h2','h3'].map(function(l){ return '<button type="button" data-val="'+l+'" class="'+(d.level===l?'is-active':'')+'">'+l.toUpperCase()+'</button>'; }).join('') + '</div></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Tip: dubbelklik de titel in het canvas om de tekst te wijzigen.</p>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_title_dblclick')+'</p>';
       break;
     case 'text':
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Dubbelklik de tekst in het canvas om te bewerken. Selecteer tekst en gebruik Ctrl+B / Ctrl+I voor vet/cursief.</p>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_text_dblclick')+'</p>';
       break;
     case 'hero':
-      html += imageFieldHtml(d.bgImage, 'bgImage', 'Achtergrondfoto');
-      html += '<div class="pbe-field"><label>Overlay-donkerte</label><input type="range" min="0" max="100" data-bind="data.overlay" value="'+(d.overlay!=null?d.overlay:45)+'"></div>';
-      html += '<div class="pbe-field"><label>Knop-link (URL)</label><input type="text" data-bind="data.buttonHref" value="'+esc(d.buttonHref||'')+'" placeholder="contact.php of https://..."></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Tip: dubbelklik titel, ondertitel of knoptekst in het canvas om te bewerken. Laat de knoptekst leeg om de knop op de site te verbergen.</p>';
+      html += imageFieldHtml(d.bgImage, 'bgImage', pbT('bg_photo'));
+      html += '<div class="pbe-field"><label>'+pbT('overlay_darkness')+'</label><input type="range" min="0" max="100" data-bind="data.overlay" value="'+(d.overlay!=null?d.overlay:45)+'"></div>';
+      html += '<div class="pbe-field"><label>'+pbT('button_link_url')+'</label><input type="text" data-bind="data.buttonHref" value="'+esc(d.buttonHref||'')+'" placeholder="contact.php of https://..."></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_hero')+'</p>';
       break;
     case 'image':
-      html += imageFieldHtml(d.src, 'src', 'Foto');
-      html += '<div class="pbe-field"><label>Alt-tekst (SEO)</label><input type="text" data-bind="data.alt" value="'+esc(d.alt||'')+'"></div>';
-      html += '<div class="pbe-field"><label>Link (optioneel)</label><input type="text" data-bind="data.link" value="'+esc(d.link||'')+'" placeholder="https://..."></div>';
-      html += '<div class="pbe-field"><label>Breedte</label><div class="pbe-seg" data-seg="data.width"><button type="button" data-val="contained" class="'+(d.width!=='full'?'is-active':'')+'">Passend</button><button type="button" data-val="full" class="'+(d.width==='full'?'is-active':'')+'">Volledig</button></div></div>';
-      html += '<div class="pbe-field"><label>Aangepaste breedte (% — laat leeg voor automatisch)</label><div style="display:flex;gap:8px;align-items:center">'
+      html += imageFieldHtml(d.src, 'src', pbT('photo'));
+      html += '<div class="pbe-field"><label>'+pbT('alt_text_seo')+'</label><input type="text" data-bind="data.alt" value="'+esc(d.alt||'')+'"></div>';
+      html += '<div class="pbe-field"><label>'+pbT('link_optional')+'</label><input type="text" data-bind="data.link" value="'+esc(d.link||'')+'" placeholder="https://..."></div>';
+      html += '<div class="pbe-field"><label>'+pbT('width_label')+'</label><div class="pbe-seg" data-seg="data.width"><button type="button" data-val="contained" class="'+(d.width!=='full'?'is-active':'')+'">'+pbT('contained_label')+'</button><button type="button" data-val="full" class="'+(d.width==='full'?'is-active':'')+'">'+pbT('full_label')+'</button></div></div>';
+      html += '<div class="pbe-field"><label>'+pbT('custom_width_pct')+'</label><div style="display:flex;gap:8px;align-items:center">'
         + '<input type="range" min="10" max="100" style="flex:1" data-bind="data.widthPct" value="'+(d.widthPct!==''&&d.widthPct!=null?d.widthPct:100)+'">'
         + '<input type="number" min="10" max="100" style="width:60px" data-bind="data.widthPct" value="'+esc(d.widthPct!=null?d.widthPct:'')+'"></div>'
-        + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="data.widthPct" style="margin-top:4px">wis (automatisch)</button></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Tip: sleep de foto tegen de rand van een ander blok om ze naast elkaar te zetten, of gebruik hierboven een vaste breedte om de foto kleiner te maken. Dubbelklik het bijschrift om het te wijzigen.</p>';
+        + '<button type="button" class="pbe-clear-btn" data-action="clear-field" data-target="data.widthPct" style="margin-top:4px">'+pbT('clear_auto')+'</button></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_image')+'</p>';
       break;
     case 'gallery':
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
-        var sizeBtn = d.layout!=='masonry' ? '<button type="button" class="pbe-gallery-size-btn'+(img.size==='large'?' is-active':'')+'" data-gallery-size="'+i+'" title="Grote tegel (2x zo groot in het raster)">&#9974;</button>' : '';
-        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+sizeBtn+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
+        var sizeBtn = d.layout!=='masonry' ? '<button type="button" class="pbe-gallery-size-btn'+(img.size==='large'?' is-active':'')+'" data-gallery-size="'+i+'" title="'+pbT('large_tile_title')+'">&#9974;</button>' : '';
+        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="'+pbT('caption_placeholder')+'" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+zooSelectHtml(i, img.zoo_id)+sizeBtn+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
       html += galleryUploadControlsHtml();
-      html += '<div class="pbe-row" style="margin-top:14px"><div class="pbe-field"><label>Kolommen</label><select data-bind="data.columns">'+[2,3,4].map(function(c){return '<option value="'+c+'" '+(d.columns==c?'selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
-        + '<div class="pbe-field"><label>Layout</label><div class="pbe-seg" data-seg="data.layout"><button type="button" data-val="grid" class="'+(d.layout!=='masonry'?'is-active':'')+'">Grid</button><button type="button" data-val="masonry" class="'+(d.layout==='masonry'?'is-active':'')+'">Pinterest</button></div></div></div>';
+      html += '<div class="pbe-row" style="margin-top:14px"><div class="pbe-field"><label>'+pbT('columns_label')+'</label><select data-bind="data.columns">'+[2,3,4].map(function(c){return '<option value="'+c+'" '+(d.columns==c?'selected':'')+'>'+c+'</option>';}).join('')+'</select></div>'
+        + '<div class="pbe-field"><label>'+pbT('layout_label')+'</label><div class="pbe-seg" data-seg="data.layout"><button type="button" data-val="grid" class="'+(d.layout!=='masonry'?'is-active':'')+'">'+pbT('grid_label')+'</button><button type="button" data-val="masonry" class="'+(d.layout==='masonry'?'is-active':'')+'">'+pbT('pinterest_label')+'</button></div></div></div>';
       break;
     case 'video':
-      html += '<div class="pbe-field"><label>YouTube / Vimeo-link of .mp4</label><input type="text" data-bind="data.url" value="'+esc(d.url||'')+'" placeholder="https://youtube.com/watch?v=..."></div>';
+      html += '<div class="pbe-field"><label>'+pbT('video_link_label')+'</label><input type="text" data-bind="data.url" value="'+esc(d.url||'')+'" placeholder="https://youtube.com/watch?v=..."></div>';
       break;
     case 'button':
-      html += '<div class="pbe-field"><label>Link (URL)</label><input type="text" data-bind="data.href" value="'+esc(d.href||'')+'" placeholder="contact.php of https://..."></div>';
-      html += '<div class="pbe-field"><label>Stijl</label><div class="pbe-seg" data-seg="data.style">'
-        + ['solid','outline','ghost'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(d.style===a?'is-active':'')+'">'+({solid:'Vol',outline:'Rand',ghost:'Tekst'}[a])+'</button>'; }).join('') + '</div></div>';
-      html += '<div class="pbe-field"><label>Grootte</label><div class="pbe-seg" data-seg="data.size">'
+      html += '<div class="pbe-field"><label>'+pbT('link_optional').replace(' (optioneel)','').replace(' (optional)','')+'</label><input type="text" data-bind="data.href" value="'+esc(d.href||'')+'" placeholder="contact.php of https://..."></div>';
+      html += '<div class="pbe-field"><label>'+pbT('style_group')+'</label><div class="pbe-seg" data-seg="data.style">'
+        + ['solid','outline','ghost'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(d.style===a?'is-active':'')+'">'+({solid:pbT('btn_style_solid'),outline:pbT('btn_style_outline'),ghost:pbT('btn_style_ghost')}[a])+'</button>'; }).join('') + '</div></div>';
+      html += '<div class="pbe-field"><label>'+pbT('size_label')+'</label><div class="pbe-seg" data-seg="data.size">'
         + ['sm','md','lg'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(d.size===a?'is-active':'')+'">'+({sm:'S',md:'M',lg:'L'}[a])+'</button>'; }).join('') + '</div></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Tip: dubbelklik de knoptekst in het canvas om te wijzigen.</p>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_button')+'</p>';
       break;
     case 'divider':
-      html += '<div class="pbe-field"><label>Stijl</label><div class="pbe-seg" data-seg="data.style">'
-        + ['line','dots','space'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(d.style===a?'is-active':'')+'">'+({line:'Lijn',dots:'Stippen',space:'Ruimte'}[a])+'</button>'; }).join('') + '</div></div>';
+      html += '<div class="pbe-field"><label>'+pbT('style_group')+'</label><div class="pbe-seg" data-seg="data.style">'
+        + ['line','dots','space'].map(function(a){ return '<button type="button" data-val="'+a+'" class="'+(d.style===a?'is-active':'')+'">'+({line:pbT('divider_line'),dots:pbT('divider_dots'),space:pbT('divider_space')}[a])+'</button>'; }).join('') + '</div></div>';
       break;
     case 'quote':
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Dubbelklik de quote of naam in het canvas om te bewerken.</p>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_quote')+'</p>';
       break;
     case 'columns':
-      html += '<div class="pbe-field"><label>Aantal kolommen</label><div class="pbe-seg" data-seg="data.count">'
+      html += '<div class="pbe-field"><label>'+pbT('num_columns')+'</label><div class="pbe-seg" data-seg="data.count">'
         + [1,2,3,4].map(function(c){ return '<button type="button" data-val="'+c+'" class="'+((d.cols?d.cols.length:d.count)==c?'is-active':'')+'">'+c+'</button>'; }).join('') + '</div></div>';
-      html += '<div class="pbe-field"><label>Tussenruimte (px)</label><input type="number" min="0" max="120" data-bind="data.gap" value="'+esc(d.gap!=null?d.gap:32)+'"></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Sleep blokken uit het paneel links direct in een kolom.</p>';
+      html += '<div class="pbe-field"><label>'+pbT('gap_px')+'</label><input type="number" min="0" max="120" data-bind="data.gap" value="'+esc(d.gap!=null?d.gap:32)+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_columns')+'</p>';
       break;
     case 'contact':
-      html += '<div class="pbe-field"><label>Knoptekst</label><input type="text" data-bind="data.buttonText" value="'+esc(d.buttonText||'')+'"></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Dubbelklik de titel in het canvas om te wijzigen. Berichten komen terecht in de <code>messages</code>-tabel.</p>';
+      html += '<div class="pbe-field"><label>'+pbT('button_text_label')+'</label><input type="text" data-bind="data.buttonText" value="'+esc(d.buttonText||'')+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_contact')+'</p>';
       break;
     case 'recent':
-      html += '<div class="pbe-field"><label>Bron</label><select data-bind="data.source">'
-        + [['mixed','Dieren + albums + blog (gemengd)'],['animals','Enkel dieren'],['albums','Enkel albums'],['posts','Enkel blogposts'],['pages','Enkel pagina\'s']]
+      html += '<div class="pbe-field"><label>'+pbT('source_label')+'</label><select data-bind="data.source">'
+        + [['mixed',pbT('source_mixed')],['animals',pbT('source_animals')],['albums',pbT('source_albums')],['posts',pbT('source_posts')],['pages',pbT('source_pages')]]
           .map(function(o){ return '<option value="'+o[0]+'" '+(d.source===o[0]?'selected':'')+'>'+o[1]+'</option>'; }).join('')
         + '</select></div>';
-      html += '<div class="pbe-field"><label>Aantal</label><input type="number" min="1" max="12" data-bind="data.count" value="'+(d.count!=null?d.count:3)+'"></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch de nieuwste gepubliceerde content, ververst vanzelf.</p>';
+      html += '<div class="pbe-field"><label>'+pbT('count_label')+'</label><input type="number" min="1" max="12" data-bind="data.count" value="'+(d.count!=null?d.count:3)+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_recent')+'</p>';
       break;
     case 'html':
-      html += '<div class="pbe-field"><label>HTML-code</label><textarea data-bind="data.code" rows="10" style="font-family:monospace;font-size:.78rem">'+esc(d.code||'')+'</textarea></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Geavanceerd: wordt ongefilterd op de pagina geplaatst.</p>';
+      html += '<div class="pbe-field"><label>'+pbT('html_code_label')+'</label><textarea data-bind="data.code" rows="10" style="font-family:monospace;font-size:.78rem">'+esc(d.code||'')+'</textarea></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_html')+'</p>';
       break;
     case 'row':
-      html += '<label class="pbe-check-inline"><input type="checkbox" data-bind="data.mobileStack" '+((!('mobileStack' in d)||d.mobileStack)?'checked':'')+'> Onder elkaar tonen op mobiel</label>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:4px">Uitvinken houdt de blokken naast elkaar, ook op een telefoon.</p>';
-      html += '<div class="pbe-field" style="margin-top:14px"><label>Tussenruimte (px)</label><input type="number" min="0" max="120" data-bind="data.gap" value="'+(d.gap!=null?d.gap:24)+'"></div>';
-      html += '<button type="button" class="pbe-upload-btn" id="pbeUnwrapRow" style="margin-top:10px">Rij opheffen (blokken terugzetten)</button>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:10px">Tip: sleep de deelstreep tussen de foto\'s/blokken om de breedte te verdelen, of gebruik de resize-handles wanneer een blok geselecteerd is.</p>';
+      html += '<label class="pbe-check-inline"><input type="checkbox" data-bind="data.mobileStack" '+((!('mobileStack' in d)||d.mobileStack)?'checked':'')+'> '+pbT('stack_mobile')+'</label>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:4px">'+pbT('tip_stack')+'</p>';
+      html += '<div class="pbe-field" style="margin-top:14px"><label>'+pbT('gap_px')+'</label><input type="number" min="0" max="120" data-bind="data.gap" value="'+(d.gap!=null?d.gap:24)+'"></div>';
+      html += '<button type="button" class="pbe-upload-btn" id="pbeUnwrapRow" style="margin-top:10px">'+pbT('unwrap_row')+'</button>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c;margin-top:10px">'+pbT('tip_row')+'</p>';
       break;
     case 'slideshow':
       html += '<div id="pbeGalleryList" class="pbe-gallery-list">' + (d.images||[]).map(function(img,i){
-        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="Bijschrift" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'"><button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
+        return '<div class="pbe-gallery-item" data-idx="'+i+'"><img src="'+esc(imgSrc(img.src))+'"><input type="text" placeholder="'+pbT('caption_placeholder')+'" data-gallery-caption="'+i+'" value="'+esc(img.caption||'')+'">'+zooSelectHtml(i, img.zoo_id)+'<button type="button" data-gallery-remove="'+i+'">&#10005;</button></div>';
       }).join('') + '</div>';
       html += galleryUploadControlsHtml();
-      html += '<div class="pbe-field" style="margin-top:14px"><label>Wisseltijd (seconden)</label><input type="number" min="2" max="15" data-bind="data.interval" value="'+(d.interval!=null?d.interval:5)+'"></div>';
+      html += '<div class="pbe-field" style="margin-top:14px"><label>'+pbT('interval_seconds')+'</label><input type="number" min="2" max="15" data-bind="data.interval" value="'+(d.interval!=null?d.interval:5)+'"></div>';
       break;
     case 'photocount':
-      html += '<div class="pbe-field"><label>Tekst naast het getal</label><input type="text" data-bind="data.label" value="'+esc(d.label||"foto's op deze website")+'"></div>';
+      html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('photos_on_site'))+'"></div>';
       break;
     case 'class_split':
-      html += '<div class="pbe-field"><label>Titel (optioneel)</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';
-      html += imageFieldHtml(d.gewerveldeImage, 'gewerveldeImage', 'Foto — gewervelde dieren');
-      html += '<div class="pbe-field"><label>Tekst onder de foto — gewervelde dieren</label><input type="text" data-bind="data.gewerveldeLabel" value="'+esc(d.gewerveldeLabel||'')+'"></div>';
-      html += imageFieldHtml(d.ongewerveldeImage, 'ongewerveldeImage', 'Foto — ongewervelde dieren');
-      html += '<div class="pbe-field"><label>Tekst onder de foto — ongewervelde dieren</label><input type="text" data-bind="data.ongewerveldeLabel" value="'+esc(d.ongewerveldeLabel||'')+'"></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Tikken op een foto linkt automatisch naar het overzicht van gewervelde klassen, of naar de Ongewervelde-categorie.</p>';
+      html += '<div class="pbe-field"><label>'+pbT('title_optional')+'</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';
+      html += imageFieldHtml(d.gewerveldeImage, 'gewerveldeImage', pbT('photo_vertebrates'));
+      html += '<div class="pbe-field"><label>'+pbT('text_under_photo_vert')+'</label><input type="text" data-bind="data.gewerveldeLabel" value="'+esc(d.gewerveldeLabel||'')+'"></div>';
+      html += imageFieldHtml(d.ongewerveldeImage, 'ongewerveldeImage', pbT('photo_invertebrates'));
+      html += '<div class="pbe-field"><label>'+pbT('text_under_photo_invert')+'</label><input type="text" data-bind="data.ongewerveldeLabel" value="'+esc(d.ongewerveldeLabel||'')+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_class_split')+'</p>';
       break;
     case 'subcategories':
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle sub-categorieën en dieren binnen déze categorie, met coverfoto — enkel zinvol op een categoriepagina.</p>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_subcategories')+'</p>';
       break;
     case 'categories_grid':
-      html += '<p style="font-size:.78rem;color:#8a7c6c">Toont automatisch alle hoofdcategorieën (bv. Gewervelde dieren, Ongewervelde dieren) als grote kaartjes — geef die categorieën een coverfoto voor het beste resultaat.</p>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_categories_grid')+'</p>';
       break;
   }
   html += '</div>';
@@ -1216,23 +1338,36 @@ function contentFieldsHtml(block){
 }
 function imageFieldHtml(src, fieldKey, label){
   fieldKey = fieldKey || 'src';
-  var html = '<div class="pbe-field"><label>'+esc(label||'Foto')+'</label>';
+  var html = '<div class="pbe-field"><label>'+esc(label||pbT('photo_label'))+'</label>';
   if(src) html += '<img src="'+esc(imgSrc(src))+'" style="width:100%;border-radius:8px;margin-bottom:8px">';
   html += '<div class="pbe-dropzone" data-image-dropzone="'+fieldKey+'">';
-  html += '<button type="button" class="pbe-upload-btn" data-image-field="'+fieldKey+'">'+(src?'Andere foto kiezen (of sleep hier)':'Foto uploaden (of sleep hier)')+'</button>';
+  html += '<button type="button" class="pbe-upload-btn" data-image-field="'+fieldKey+'">'+(src?pbT('choose_other_photo_js'):pbT('upload_photo_js'))+'</button>';
   html += '<input type="file" accept="image/*" style="display:none" data-image-file="'+fieldKey+'">';
   html += '</div>';
-  if(src) html += '<button type="button" class="pbe-clear-btn" data-clear-image="'+fieldKey+'" style="margin-top:8px">Foto verwijderen</button>';
+  if(src) html += '<button type="button" class="pbe-clear-btn" data-clear-image="'+fieldKey+'" style="margin-top:8px">'+pbT('remove_photo')+'</button>';
   html += '</div>';
   return html;
 }
 function galleryUploadControlsHtml(){
   return '<div class="pbe-dropzone" id="pbeGalleryDropzone">'
-    + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">+ Foto\'s toevoegen (of sleep hier)</button>'
+    + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAdd">'+pbT('add_photos')+'</button>'
     + '<input type="file" id="pbeGalleryFile" accept="image/*" multiple style="display:none">'
-    + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAddFolder" style="margin-top:6px">Hele map uploaden</button>'
+    + '<button type="button" class="pbe-upload-btn" id="pbeGalleryAddFolder" style="margin-top:6px">'+pbT('upload_whole_folder')+'</button>'
     + '<input type="file" id="pbeGalleryFolder" webkitdirectory directory multiple style="display:none">'
     + '</div>';
+}
+function zooBadgeHtml(zooId){
+  if(!zooId) return '';
+  var zoo = PBE_ZOOS.filter(function(z){ return String(z.id)===String(zooId); })[0];
+  if(!zoo || !zoo.label) return '';
+  return '<span class="pb-gallery-zoo-badge">'+esc(zoo.label)+'</span>';
+}
+function zooSelectHtml(idx, selectedZooId){
+  var opts = '<option value="">'+pbT('zoo_none')+'</option>';
+  PBE_ZOOS.forEach(function(z){
+    opts += '<option value="'+z.id+'" '+(String(selectedZooId||'')===String(z.id)?'selected':'')+'>'+esc(z.label||z.title)+'</option>';
+  });
+  return '<select class="pbe-gallery-zoo" data-gallery-zoo="'+idx+'">'+opts+'</select>';
 }
 // Haalt alle afbeeldingsbestanden uit een drag-and-drop (losse foto's of een
 // hele gesleepte map, recursief) — valt terug op de platte bestandenlijst in
@@ -1366,6 +1501,13 @@ settingsEl.addEventListener('change', function(e){
     var block = blocksById[selectedId]; if(!block) return;
     block.data.images[parseInt(galCap.getAttribute('data-gallery-caption'),10)].caption = galCap.value;
     updateBlockDom(block.id);
+    return;
+  }
+  var galZoo = e.target.closest('[data-gallery-zoo]');
+  if(galZoo){
+    var block5 = blocksById[selectedId]; if(!block5) return;
+    block5.data.images[parseInt(galZoo.getAttribute('data-gallery-zoo'),10)].zoo_id = galZoo.value || null;
+    updateBlockDom(block5.id);
   }
 });
 function resizeColumns(block, count){
@@ -1388,12 +1530,12 @@ function bindImageUploadButtons(block){
     var file = settingsEl.querySelector('[data-image-file="'+key+'"]');
     var zone = settingsEl.querySelector('[data-image-dropzone="'+key+'"]');
     function handleOne(f){
-      btn.textContent = 'Bezig met uploaden...';
+      btn.textContent = pbT('uploading_dots');
       uploadImage(f).then(function(path){
         block.data[key] = path;
         renderSettingsPanel();
         updateBlockDom(block.id);
-      }).catch(function(err){ alert(err); btn.textContent = 'Opnieuw proberen'; });
+      }).catch(function(err){ alert(err); btn.textContent = pbT('try_again'); });
     }
     btn.addEventListener('click', function(){ file.click(); });
     file.addEventListener('change', function(){
@@ -1419,12 +1561,12 @@ function bindGalleryButtons(block){
   if(!addBtn || !file) return;
   function handleMany(files){
     if(!files.length) return;
-    addBtn.textContent = 'Bezig met uploaden...';
+    addBtn.textContent = pbT('uploading_dots');
     Promise.all(files.map(uploadImage)).then(function(paths){
       paths.forEach(function(p){ block.data.images.push({src:p, alt:'', caption:''}); });
       renderSettingsPanel();
       updateBlockDom(block.id);
-    }).catch(function(err){ alert(err); }).finally(function(){ addBtn.textContent = "+ Foto's toevoegen (of sleep hier)"; });
+    }).catch(function(err){ alert(err); }).finally(function(){ addBtn.textContent = pbT('add_photos'); });
   }
   addBtn.addEventListener('click', function(){ file.click(); });
   file.addEventListener('change', function(){ handleMany(Array.prototype.slice.call(file.files)); });
@@ -1452,7 +1594,7 @@ function uploadImage(file){
    ============================================================ */
 function markDirty(){
   dirty = true;
-  saveStateEl.textContent = 'Niet opgeslagen wijzigingen…';
+  saveStateEl.textContent = pbT('unsaved_changes');
   scheduleAutosave();
 }
 var scheduleAutosave = debounce(function(){ saveNow(); }, 1500);
@@ -1482,13 +1624,14 @@ function collectPayload(){
     }
     if(contentType === 'animal'){
       payload.category_id = document.getElementById('pbeAnimalCategory').value;
+      payload.drive_url = document.getElementById('pbeDriveUrl').value;
     }
   }
   return payload;
 }
 function saveNow(){
   if(!dirty) return;
-  saveStateEl.textContent = 'Opslaan…';
+  saveStateEl.textContent = pbT('saving_dots');
   var payload = collectPayload();
   fetch('page-save.php', {
     method:'POST', credentials:'same-origin',
@@ -1498,29 +1641,36 @@ function saveNow(){
     if(j.ok){
       dirty = false;
       state.slug = j.slug; state.title = payload.title;
-      saveStateEl.textContent = 'Opgeslagen ✓';
+      saveStateEl.textContent = pbT('saved');
       document.getElementById('pbeViewLink').href = TYPE_VIEW_PREFIX[contentType]+encodeURIComponent(j.slug);
     } else {
-      saveStateEl.textContent = 'Fout: '+(j.error||'onbekend');
+      saveStateEl.textContent = pbT('save_error')+': '+(j.error||pbT('save_unknown'));
     }
-  }).catch(function(){ saveStateEl.textContent = 'Opslaan mislukt (netwerk)'; });
+  }).catch(function(){ saveStateEl.textContent = pbT('save_failed_network'); });
 }
 document.getElementById('pbeSaveBtn').addEventListener('click', saveNow);
 var watchedSettingsFields = [titleInput, document.getElementById('pbeMetaTitle'), document.getElementById('pbeMetaDesc'), document.getElementById('pbePublished')];
 if(contentType === 'page'){
   watchedSettingsFields.push(document.getElementById('pbeShowNav'), document.getElementById('pbeIsHomepage'));
 } else {
+  watchedSettingsFields.push(document.getElementById('pbeDescription'));
+  var parentCategoryEl = document.getElementById('pbeParentCategory');
+  if(parentCategoryEl) watchedSettingsFields.push(parentCategoryEl);
+  var animalCategoryEl = document.getElementById('pbeAnimalCategory');
+  if(animalCategoryEl) watchedSettingsFields.push(animalCategoryEl);
+  var driveUrlEl = document.getElementById('pbeDriveUrl');
+  if(driveUrlEl) watchedSettingsFields.push(driveUrlEl);
   var coverBtn = document.getElementById('pbeCoverUploadBtn');
   var coverFile = document.getElementById('pbeCoverFile');
   var coverZone = document.getElementById('pbeCoverDropzone');
   if(coverBtn && coverFile){
     function handleCover(f){
-      coverBtn.textContent = 'Bezig met uploaden...';
+      coverBtn.textContent = pbT('uploading_dots');
       uploadImage(f).then(function(path){
         coverImage = path;
-        coverBtn.textContent = 'Andere foto kiezen (of sleep hier)';
+        coverBtn.textContent = pbT('choose_other_photo_js');
         markDirty();
-      }).catch(function(err){ alert(err); coverBtn.textContent = 'Foto uploaden (of sleep hier)'; });
+      }).catch(function(err){ alert(err); coverBtn.textContent = pbT('upload_photo_js'); });
     }
     coverBtn.addEventListener('click', function(){ coverFile.click(); });
     coverFile.addEventListener('change', function(){

@@ -82,21 +82,21 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $done = true;
 }
 
-admin_header('Vertalingen toevoegen (NL/EN)', '');
+admin_header(t('at_title'), '');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done): ?>
   <div class="notice">
-    Klaar.<?php if($stats['columnsAdded']): ?> Database aangepast voor tweetaligheid.<?php endif; ?>
-    <?=$stats['translated']?> categorienaam/namen vertaald, <?=$stats['alreadyHad']?> hadden al een Engelse naam (ongemoeid gelaten)<?php if($stats['noMatch']): ?>, <?=$stats['noMatch']?> herkende ik niet uit de standaardboom (zelf aangemaakte categorie?) — die kan je los vertalen bij het bewerken van die categorie.<?php else: ?>.<?php endif; ?>
+    <?=e(t('at_done'))?><?php if($stats['columnsAdded']): ?><?=e(t('at_db_updated'))?><?php endif; ?>
+    <?=sprintf(e(t('at_translated_summary')), $stats['translated'], $stats['alreadyHad'])?><?php if($stats['noMatch']): ?><?=sprintf(e(t('at_nomatch_summary')), $stats['noMatch'])?><?php else: ?>.<?php endif; ?>
   </div>
-  <p><a class="a-btn" href="content.php?type=category">Naar Categorieën</a> <a class="a-btn a-btn-ghost" href="../index.php?lang=en" target="_blank">Bekijk de Engelse site</a></p>
+  <p><a class="a-btn" href="content.php?type=category"><?=e(t('to_categories'))?></a> <a class="a-btn a-btn-ghost" href="../index.php?lang=en" target="_blank"><?=e(t('view_english_site'))?></a></p>
 <?php else: ?>
-  <h2 style="margin-top:0">Vertalingen toevoegen (NL/EN)</h2>
-  <p>De site heeft nu een taalknop (NL/EN) rechtsboven. Deze knop hier vult automatisch de Engelse naam in voor elke categorie die overeenkomt met de standaard taxonomieboom (bv. "Vissen" → "Fish"). Dieren-titels worden niet aangepast — dat zijn al Latijnse soortnamen. Veilig om te herdraaien: bestaande Engelse namen (ook zelf ingevulde) worden nooit overschreven.</p>
+  <h2 style="margin-top:0"><?=e(t('at_title'))?></h2>
+  <p><?=e(t('at_explain'))?></p>
   <form method="post">
     <?=csrf_field()?>
-    <button class="a-btn" type="submit">Vertalingen toevoegen</button>
+    <button class="a-btn" type="submit"><?=e(t('at_add_btn'))?></button>
   </form>
 <?php endif; ?>
 </div></div>

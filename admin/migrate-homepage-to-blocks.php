@@ -82,27 +82,27 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 if(isset($_GET['done'])){ $done = true; $alreadyHadBlocks = isset($_GET['skip']); $created = isset($_GET['created']); $publishedExisting = isset($_GET['published']); }
 
-admin_header('Homepage omzetten naar blokken', 'pages');
+admin_header(t('hp_migrate_title'), 'pages');
 ?>
 <div class="a-card"><div class="a-card-pad">
 <?php if($done && $alreadyHadBlocks && $publishedExisting): ?>
-  <div class="notice">De Home-pagina had al blokken, maar stond nog op concept — nu gepubliceerd. De bestaande blokken zijn niet aangeraakt.</div>
-  <p><a class="a-btn a-btn-ghost" href="pages.php">Naar Pagina's</a></p>
+  <div class="notice"><?=e(t('hp_migrate_done_published'))?></div>
+  <p><a class="a-btn a-btn-ghost" href="pages.php"><?=e(t('to_pages'))?></a></p>
 <?php elseif($done && $alreadyHadBlocks): ?>
-  <div class="notice">De Home-pagina had al blokken — niets aangepast, je huidige opbouw blijft ongemoeid.</div>
-  <p><a class="a-btn a-btn-ghost" href="pages.php">Naar Pagina's</a></p>
+  <div class="notice"><?=e(t('hp_migrate_done_skip'))?></div>
+  <p><a class="a-btn a-btn-ghost" href="pages.php"><?=e(t('to_pages'))?></a></p>
 <?php elseif($done): ?>
-  <div class="notice">Klaar<?php if($created): ?> (nieuwe Home-pagina aangemaakt)<?php endif; ?>. De homepage is nu opgebouwd uit gewone blokken — dezelfde titel, tekst en dierenkaarten als voorheen — en meteen gepubliceerd.</div>
-  <p>Ga naar <a href="pages.php">Pagina's</a> en open "Home" om verder aan te passen, bijvoorbeeld het "Gewervelde / Ongewervelde"-blok toevoegen.</p>
-  <p><a class="a-btn" href="pages.php">Naar Pagina's</a></p>
+  <div class="notice"><?=sprintf(e(t('hp_migrate_done_main')), $created ? e(t('hp_migrate_done_created')) : '')?></div>
+  <p><?=t('hp_migrate_done_hint')?></p>
+  <p><a class="a-btn" href="pages.php"><?=e(t('to_pages'))?></a></p>
 <?php else: ?>
-  <h2 style="margin-top:0">Homepage omzetten naar blokken</h2>
-  <p>Je homepage toont nu nog de vaste, niet-bewerkbare basisopmaak (titel + tekst uit Site-instellingen, plus een rooster met alle dieren) — dat is waarom de pagebuilder-editor voor "Home" leeg lijkt: die pagina zelf heeft nog geen blokken en staat nog op concept.</p>
-  <p>Deze knop zet dat één keer om in gewone, versleepbare blokken — met exact dezelfde titel, tekst en dierenkaarten — en publiceert de pagina meteen. Daarna toont de editor precies wat er live staat, en kan je zelf blokken toevoegen zoals "Gewervelde / Ongewervelde".</p>
-  <p style="color:#8a7c6c;font-size:.9rem">Veilig om te draaien: als de Home-pagina al blokken heeft, gebeurt er niets.</p>
+  <h2 style="margin-top:0"><?=e(t('hp_migrate_title'))?></h2>
+  <p><?=e(t('hp_migrate_intro1'))?></p>
+  <p><?=e(t('hp_migrate_intro2'))?></p>
+  <p style="color:#8a7c6c;font-size:.9rem"><?=e(t('hp_migrate_safe_hint'))?></p>
   <form method="post">
     <?=csrf_field()?>
-    <button class="a-btn" type="submit">Omzetten</button>
+    <button class="a-btn" type="submit"><?=e(t('convert_btn'))?></button>
   </form>
 <?php endif; ?>
 </div></div>

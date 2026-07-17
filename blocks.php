@@ -220,6 +220,35 @@ function pb_safe_aspect_ratio($v){
     return (string)round($n, 4);
 }
 
+// Alle zoos eenmalig per request opgehaald en op id gezet, zodat een
+// galerij met veel foto's niet voor elke foto apart een query doet.
+function pb_zoos_by_id(){
+    static $map = null;
+    if($map !== null) return $map;
+    $map = [];
+    try{
+        $rows = db()->query('SELECT * FROM zoos')->fetchAll();
+        foreach($rows as $z) $map[(int)$z['id']] = $z;
+    }catch(Exception $e){}
+    return $map;
+}
+
+// "Zoo Antwerpen, Antwerpen, België" — enkel de ingevulde delen, geen extra
+// tekst ervoor/erna, zoals gevraagd voor het foto-tagje in een fotogalerij.
+function zoo_label($zoo){
+    if(!$zoo) return '';
+    $parts = [];
+    foreach(['title','city','country'] as $f){ if(!empty($zoo[$f])) $parts[] = trim($zoo[$f]); }
+    return implode(', ', $parts);
+}
+
+function pb_gallery_zoo_badge($zooId){
+    if(empty($zooId)) return '';
+    $zoo = pb_zoos_by_id()[(int)$zooId] ?? null;
+    $label = zoo_label($zoo);
+    return $label !== '' ? '<span class="pb-gallery-zoo-badge">'.e($label).'</span>' : '';
+}
+
 function pb_render_gallery($d){
     $cols = max(2, min(4, (int)($d['columns'] ?? 3)));
     $layout = ($d['layout'] ?? 'grid') === 'masonry' ? 'masonry' : 'grid';
@@ -228,6 +257,7 @@ function pb_render_gallery($d){
         if(empty($img['src'])) continue;
         $cls = 'pb-gallery-item'.((($img['size'] ?? '') === 'large') ? ' pb-gallery-item-lg' : '');
         $html .= '<figure class="'.$cls.'"><img src="'.e($img['src']).'" alt="'.e($img['alt'] ?? '').'" loading="lazy">';
+        $html .= pb_gallery_zoo_badge($img['zoo_id'] ?? null);
         if(!empty($img['caption'])) $html .= '<figcaption>'.e($img['caption']).'</figcaption>';
         $html .= '</figure>';
     }
@@ -573,29 +603,58 @@ function pb_render_class_split($d){
     return $html;
 }
 
+// Telt foto's binnen blokken (image/gallery/slideshow), inclusief genest in
+// columns/row-blokken — nodig omdat de photos/album_photos-tabellen enkel de
+// oude, niet-pagebuilder foto's bijhouden en dus content die via blokken is
+// toegevoegd (de normale weg tegenwoordig) anders onzichtbaar blijft voor de teller.
+function pb_count_blocks_images($blocks){
+    $count = 0;
+    foreach((array)$blocks as $b){
+        $type = $b['type'] ?? '';
+        $data = $b['data'] ?? [];
+        if($type === 'image'){
+            if(!empty($data['src'])) $count++;
+        } elseif($type === 'gallery' || $type === 'slideshow'){
+            foreach((array)($data['images'] ?? []) as $img){ if(!empty($img['src'])) $count++; }
+        } elseif($type === 'columns'){
+            foreach((array)($data['cols'] ?? []) as $col){ $count += pb_count_blocks_images($col['blocks'] ?? []); }
+        } elseif($type === 'row'){
+            foreach((array)($data['cells'] ?? []) as $cell){ $count += pb_count_blocks_images($cell['blocks'] ?? []); }
+        }
+    }
+    return $count;
+}
+
 function pb_count_total_photos(){
+    static $cached = null;
+    if($cached !== null) return $cached;
     try{
-        $a = (int)db()->query('SELECT COUNT(*) c FROM photos')->fetch()['c'];
-        $b = (int)db()->query('SELECT COUNT(*) c FROM album_photos')->fetch()['c'];
-        return $a + $b;
+        $count = (int)db()->query('SELECT COUNT(*) c FROM photos')->fetch()['c'];
+        $count += (int)db()->query('SELECT COUNT(*) c FROM album_photos')->fetch()['c'];
+        foreach(['pages','animals','albums','posts','categories'] as $table){
+            $rows = db()->query("SELECT blocks FROM $table WHERE blocks IS NOT NULL AND blocks <> '' AND blocks <> '[]'")->fetchAll();
+            foreach($rows as $row) $count += pb_count_blocks_images(pb_decode_blocks($row['blocks']));
+        }
+        return $cached = $count;
     }catch(Exception $e){ return 0; }
 }
 
 function pb_render_photocount($d){
     $count = pb_count_total_photos();
-    $label = trim($d['label'] ?? '') ?: "foto's op deze website";
+    $label = trim($d['label'] ?? '') ?: t('photos_on_site');
     return '<div class="pb-photocount"><span class="pb-photocount-num">'.number_format($count, 0, ',', '.').'</span><span class="pb-photocount-label">'.e($label).'</span></div>';
 }
 
 function pb_render_slideshow($d){
     $images = $d['images'] ?? [];
-    if(!$images) return '<div class="pbe-empty-col" style="min-height:140px">Nog geen foto\'s in de slideshow.</div>';
+    if(!$images) return '<div class="pbe-empty-col" style="min-height:140px">'.e(t('no_slideshow_photos_public')).'</div>';
     $interval = max(2, min(15, (int)($d['interval'] ?? 5)));
     $html = '<div class="pb-slideshow" data-interval="'.$interval.'000">';
     $html .= '<div class="pb-slideshow-track">';
     foreach($images as $i => $img){
         if(empty($img['src'])) continue;
         $html .= '<figure class="pb-slideshow-slide'.($i===0?' is-active':'').'"><img src="'.e($img['src']).'" alt="'.e($img['alt'] ?? '').'" loading="lazy">'
+            .pb_gallery_zoo_badge($img['zoo_id'] ?? null)
             .(!empty($img['caption']) ? '<figcaption>'.e($img['caption']).'</figcaption>' : '').'</figure>';
     }
     $html .= '</div>';
@@ -607,4 +666,53 @@ function pb_render_slideshow($d){
         $html .= '</div>';
     }
     return $html.'</div>';
+}
+
+// Bouwt een blokken-array die overeenkomt met wat de live pagina toont via de
+// oude vaste opmaak (zie animal.php/category.php/album.php/post.php), voor
+// content die nog geen echte blokken heeft. Wordt enkel gebruikt om de
+// pagebuilder-editor te vullen zodat die niet leeg lijkt terwijl de live
+// pagina wél inhoud toont — wordt pas echt opgeslagen als de gebruiker zelf
+// op Opslaan drukt (zelfde principe als de homepage-omzet-knop).
+function pb_default_blocks_for($type, $row){
+    $defaultSettings = ['fontFamily'=>'','fontSize'=>'','textColor'=>'','bgColor'=>'','align'=>'left','paddingY'=>56,'paddingX'=>24,'radius'=>0,'shadow'=>'none','animation'=>'fade-up'];
+    $heroSettings = array_merge($defaultSettings, ['align'=>'center','paddingY'=>'','paddingX'=>'','animation'=>'fade-in']);
+    $blocks = [];
+
+    if($type === 'animal'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'hero', 'settings'=>$heroSettings,
+            'data'=>['title'=>$row['title'] ?? '', 'subtitle'=>$row['description'] ?? '', 'buttonText'=>'', 'buttonHref'=>'#', 'bgImage'=>'', 'overlay'=>45]];
+        $st = db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC');
+        $st->execute([$row['id']]);
+        $photos = $st->fetchAll();
+        if($photos){
+            $images = [];
+            foreach($photos as $p) $images[] = ['src'=>$p['image_path'], 'alt'=>$p['title'] ?? '', 'caption'=>$p['caption'] ?? ''];
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'gallery', 'settings'=>$defaultSettings, 'data'=>['images'=>$images, 'columns'=>3, 'layout'=>'grid']];
+        }
+    } elseif($type === 'category'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'hero', 'settings'=>$heroSettings,
+            'data'=>['title'=>$row['title'] ?? '', 'subtitle'=>$row['description'] ?? '', 'buttonText'=>'', 'buttonHref'=>'#', 'bgImage'=>'', 'overlay'=>45]];
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'subcategories', 'settings'=>$defaultSettings, 'data'=>[]];
+    } elseif($type === 'album'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'hero', 'settings'=>$heroSettings,
+            'data'=>['title'=>$row['title'] ?? '', 'subtitle'=>$row['description'] ?? '', 'buttonText'=>'', 'buttonHref'=>'#', 'bgImage'=>'', 'overlay'=>45]];
+        $st = db()->prepare('SELECT * FROM album_photos WHERE album_id=? ORDER BY sort_order,id DESC');
+        $st->execute([$row['id']]);
+        $photos = $st->fetchAll();
+        if($photos){
+            $images = [];
+            foreach($photos as $p) $images[] = ['src'=>$p['image_path'], 'alt'=>$p['title'] ?? '', 'caption'=>$p['caption'] ?? ''];
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'gallery', 'settings'=>$defaultSettings, 'data'=>['images'=>$images, 'columns'=>3, 'layout'=>'grid']];
+        }
+    } elseif($type === 'post'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'title', 'settings'=>$defaultSettings, 'data'=>['text'=>$row['title'] ?? '', 'level'=>'h1']];
+        if(!empty($row['cover_image'])){
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'image', 'settings'=>$defaultSettings, 'data'=>['src'=>$row['cover_image'], 'alt'=>'', 'caption'=>'', 'width'=>'full', 'link'=>'', 'aspectRatio'=>null, 'widthPct'=>'']];
+        }
+        if(!empty($row['content'])){
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'text', 'settings'=>$defaultSettings, 'data'=>['html'=>nl2br(e($row['content']))]];
+        }
+    }
+    return $blocks;
 }

@@ -2,6 +2,8 @@
 require __DIR__.'/inc.php';
 
 db()->exec("CREATE TABLE IF NOT EXISTS zoos(id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(160) NOT NULL, url VARCHAR(500) NOT NULL, sort_order INT DEFAULT 0, published TINYINT DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+if(!pb_has_column('zoos','city')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN city VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
+if(!pb_has_column('zoos','country')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN country VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
 
 function zoos_normalize_url($url){
     $url = trim($url);
@@ -16,17 +18,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($action==='create'){
         $title = trim($_POST['title'] ?? '');
         $url = zoos_normalize_url($_POST['url'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        $country = trim($_POST['country'] ?? '');
         if($title!=='' && $url!==''){
-            $st = db()->prepare('INSERT INTO zoos(title,url) VALUES(?,?)');
-            $st->execute([$title, $url]);
+            $st = db()->prepare('INSERT INTO zoos(title,url,city,country) VALUES(?,?,?,?)');
+            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null]);
         }
     } elseif($action==='update'){
         $id = (int)($_POST['id'] ?? 0);
         $title = trim($_POST['title'] ?? '');
         $url = zoos_normalize_url($_POST['url'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        $country = trim($_POST['country'] ?? '');
         if($id && $title!=='' && $url!==''){
-            $st = db()->prepare('UPDATE zoos SET title=?, url=? WHERE id=?');
-            $st->execute([$title, $url, $id]);
+            $st = db()->prepare('UPDATE zoos SET title=?, url=?, city=?, country=? WHERE id=?');
+            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null, $id]);
         }
     } elseif($action==='delete'){
         $id = (int)($_POST['id'] ?? 0);
@@ -58,14 +64,16 @@ admin_header(t('admin_zoos'), 'zoos');
 ?>
 <div class="a-card">
   <div class="a-card-pad">
-    <h2 style="margin-top:0">Dierentuinen in de hoofdnavigatie</h2>
-    <p style="color:#8a7c6c;font-size:.9rem">Deze links vervangen de dierenklassen bovenaan de site. De klassen (Amfibieën, Ongewervelde, enz.) zijn nu bereikbaar via de knoppen op de homepage.</p>
+    <h2 style="margin-top:0"><?=e(t('zoos_heading'))?></h2>
+    <p style="color:#8a7c6c;font-size:.9rem"><?=e(t('zoos_desc'))?></p>
     <form method="post" class="a-inline-form">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">
-      <div class="a-field"><label>Naam</label><input type="text" name="title" placeholder="Bijv. Zoo Antwerpen" required></div>
-      <div class="a-field"><label>Website (URL)</label><input type="text" name="url" placeholder="https://www.zooantwerpen.be" required></div>
-      <button class="a-btn" type="submit">+ Toevoegen</button>
+      <div class="a-field"><label><?=e(t('name_label'))?></label><input type="text" name="title" placeholder="Bijv. Zoo Antwerpen" required></div>
+      <div class="a-field"><label><?=e(t('website_url'))?></label><input type="text" name="url" placeholder="https://www.zooantwerpen.be" required></div>
+      <div class="a-field"><label><?=e(t('city_label'))?></label><input type="text" name="city" placeholder="Bijv. Antwerpen"></div>
+      <div class="a-field"><label><?=e(t('country_label'))?></label><input type="text" name="country" placeholder="Bijv. België"></div>
+      <button class="a-btn" type="submit"><?=e(t('add_btn'))?></button>
     </form>
   </div>
 </div>
@@ -73,20 +81,22 @@ admin_header(t('admin_zoos'), 'zoos');
 <div class="a-card">
 <?php if($zoos): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th colspan="2">Naam / URL</th><th>Status</th><th></th></tr>
+    <tr><th colspan="4"><?=e(t('name_url'))?></th><th><?=e(t('status'))?></th><th></th></tr>
     <?php foreach($zoos as $i=>$z): ?>
     <tr>
-      <td data-label="Naam / URL" colspan="2">
+      <td data-label="<?=e(t('name_url'))?>" colspan="4">
         <form method="post" class="a-inline-form" style="gap:8px">
           <?=csrf_field()?>
           <input type="hidden" name="action" value="update">
           <input type="hidden" name="id" value="<?=$z['id']?>">
           <div class="a-field"><input type="text" name="title" value="<?=e($z['title'])?>" required></div>
           <div class="a-field"><input type="text" name="url" value="<?=e($z['url'])?>" required></div>
+          <div class="a-field"><input type="text" name="city" value="<?=e($z['city'] ?? '')?>" placeholder="<?=e(t('city_label'))?>"></div>
+          <div class="a-field"><input type="text" name="country" value="<?=e($z['country'] ?? '')?>" placeholder="<?=e(t('country_label'))?>"></div>
           <button type="submit" class="a-btn a-btn-sm a-btn-ghost"><?=e(t('save'))?></button>
         </form>
       </td>
-      <td data-label="Status">
+      <td data-label="<?=e(t('status'))?>">
         <form method="post" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="toggle_published"><input type="hidden" name="id" value="<?=$z['id']?>">
           <button type="submit" class="a-pill <?=$z['published']?'a-pill-live':'a-pill-draft'?>" style="border:none;cursor:pointer"><?=$z['published']?t('live'):t('hidden')?></button>
@@ -101,7 +111,7 @@ admin_header(t('admin_zoos'), 'zoos');
           <?=csrf_field()?><input type="hidden" name="action" value="move_down"><input type="hidden" name="id" value="<?=$z['id']?>">
           <button type="submit" class="a-btn a-btn-sm a-btn-ghost" <?=$i===count($zoos)-1?'disabled':''?>>&darr;</button>
         </form>
-        <form method="post" onsubmit="return confirm('\'<?=e(addslashes($z['title']))?>\' verwijderen uit de navigatie?');" style="display:inline">
+        <form method="post" onsubmit="return confirm('\'<?=e(addslashes($z['title']))?><?=e(t('confirm_delete_zoo'))?>');" style="display:inline">
           <?=csrf_field()?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$z['id']?>">
           <button type="submit" class="a-btn a-btn-sm a-btn-danger"><?=e(t('delete'))?></button>
         </form>
@@ -110,7 +120,7 @@ admin_header(t('admin_zoos'), 'zoos');
     <?php endforeach; ?>
   </table></div>
 <?php else: ?>
-  <div class="a-empty"><h3>Nog geen dierentuinen</h3><p>Voeg hierboven je eerste link toe, bijv. Zoo Antwerpen.</p></div>
+  <div class="a-empty"><h3><?=e(t('no_zoos_yet'))?></h3><p><?=e(t('add_first_zoo'))?></p></div>
 <?php endif; ?>
 </div>
 <?php admin_footer(); ?>
