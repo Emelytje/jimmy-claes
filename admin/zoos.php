@@ -66,6 +66,7 @@ admin_header(t('admin_zoos'), 'zoos');
   <div class="a-card-pad">
     <h2 style="margin-top:0"><?=e(t('zoos_heading'))?></h2>
     <p style="color:#8a7c6c;font-size:.9rem"><?=e(t('zoos_desc'))?></p>
+    <p><a class="a-btn a-btn-ghost" href="bulk-zoos.php"><?=e(t('bulk_zoos_btn'))?></a></p>
     <form method="post" class="a-inline-form">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">

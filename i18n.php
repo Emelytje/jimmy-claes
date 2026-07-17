@@ -302,5 +302,11 @@ function i18n_dictionary(){
         'bdl_do_more'       => ['nl' => 'Nog een lijst koppelen', 'en' => 'Link another list'],
         'bulk_drive_links_btn' => ['nl' => 'Drive-links in bulk koppelen', 'en' => 'Bulk-link Drive links'],
         'species_progress_label_simple' => ['nl' => 'diersoorten al gefotografeerd', 'en' => 'animal species photographed'],
+        'bz_title'          => ['nl' => 'Dierentuinen in bulk toevoegen', 'en' => 'Bulk-add zoos'],
+        'bz_explain'        => ['nl' => 'Upload een CSV-bestand (bv. opgeslagen vanuit Excel, LibreOffice/.ods of Google Sheets als "CSV"). Herkende kolomnamen: Naam, Stad, Land, Website (in eender welke volgorde, NL of EN) — zonder herkenbare kopregel wordt die volgorde aangenomen. Een dierentuin met een naam die al bestaat wordt bijgewerkt, nieuwe namen worden aangemaakt. Veilig om meermaals te draaien.', 'en' => 'Upload a CSV file (e.g. saved from Excel, LibreOffice/.ods or Google Sheets as "CSV"). Recognized column names: Name, City, Country, Website (in any order, NL or EN) — without a recognizable header row, that order is assumed. A zoo with a name that already exists is updated, new names are created. Safe to run multiple times.'],
+        'bz_done_summary'   => ['nl' => 'Klaar. %d nieuwe dierentuin(en) aangemaakt, %d bijgewerkt.', 'en' => 'Done. %d new zoo(s) created, %d updated.'],
+        'bz_skipped_summary' => ['nl' => '%d overgeslagen (geen website-link gevonden).', 'en' => '%d skipped (no website link found).'],
+        'to_zoos_check'     => ['nl' => 'Naar Dierentuinen', 'en' => 'Go to Zoos'],
+        'bulk_zoos_btn'     => ['nl' => 'Dierentuinen in bulk toevoegen', 'en' => 'Bulk-add zoos'],
     ];
 }
