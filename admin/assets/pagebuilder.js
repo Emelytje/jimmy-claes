@@ -106,6 +106,7 @@ var PB_DICT = {
   default_html_comment:['<!-- Eigen HTML -->','<!-- Custom HTML -->'],
   layout_label:['Layout','Layout'],
   zoo_none:['Geen zoo','No zoo'],
+  zoo_label:['Zoo','Zoo'],
   photos_on_site:["foto's op deze website",'photos on this website'],
   html_block_chars:['HTML-blok','HTML block'],
   html_block_chars_suffix:['tekens) — bewerk rechts &#8594;','characters) — edit on the right &#8594;'],
@@ -229,15 +230,16 @@ var BLOCKS = {
   image: {
     label:pbT('photo'), icon:'&#128247;', group:pbT('media'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
-    data:function(){ return {src:'', alt:'', caption:'', width:'full', link:'', aspectRatio:null, widthPct:''}; },
+    data:function(){ return {src:'', alt:'', caption:'', width:'full', link:'', aspectRatio:null, widthPct:'', zoo_id:null}; },
     render:function(d, s, id){
       if(!d.src) return wrap('image', id, s, '<div class="pbe-empty-col" style="min-height:140px">'+pbT('no_photo_chosen')+'</div>');
       var cls = d.width==='full' ? 'pb-img-full' : 'pb-img-contained';
       var arStyle = d.aspectRatio ? ' style="aspect-ratio:'+d.aspectRatio+';object-fit:cover;height:auto"' : '';
       var img = '<img src="'+esc(imgSrc(d.src))+'" alt="'+esc(d.alt)+'" class="'+cls+'"'+arStyle+'>';
       var cap = '<figcaption data-edit-field="caption">'+esc(d.caption||'')+'</figcaption>';
-      var figStyle = (d.widthPct!=null && d.widthPct!=='') ? ' style="max-width:'+d.widthPct+'%;margin-left:auto;margin-right:auto"' : '';
-      return wrap('image', id, s, '<figure class="pb-figure"'+figStyle+'>'+img+cap+'</figure>');
+      var figStyleParts = ['position:relative'];
+      if(d.widthPct!=null && d.widthPct!=='') figStyleParts.push('max-width:'+d.widthPct+'%','margin-left:auto','margin-right:auto');
+      return wrap('image', id, s, '<figure class="pb-figure" style="'+figStyleParts.join(';')+'">'+img+zooBadgeHtml(d.zoo_id)+cap+'</figure>');
     }
   },
   gallery: {
@@ -1243,6 +1245,10 @@ function contentFieldsHtml(block){
       break;
     case 'image':
       html += imageFieldHtml(d.src, 'src', pbT('photo'));
+      html += '<div class="pbe-field"><label>'+pbT('zoo_label')+'</label><select data-bind="data.zoo_id">'
+        + '<option value="">'+pbT('zoo_none')+'</option>'
+        + PBE_ZOOS.map(function(z){ return '<option value="'+z.id+'" '+(String(d.zoo_id||'')===String(z.id)?'selected':'')+'>'+esc(z.label||z.title)+'</option>'; }).join('')
+        + '</select></div>';
       html += '<div class="pbe-field"><label>'+pbT('alt_text_seo')+'</label><input type="text" data-bind="data.alt" value="'+esc(d.alt||'')+'"></div>';
       html += '<div class="pbe-field"><label>'+pbT('link_optional')+'</label><input type="text" data-bind="data.link" value="'+esc(d.link||'')+'" placeholder="https://..."></div>';
       html += '<div class="pbe-field"><label>'+pbT('width_label')+'</label><div class="pbe-seg" data-seg="data.width"><button type="button" data-val="contained" class="'+(d.width!=='full'?'is-active':'')+'">'+pbT('contained_label')+'</button><button type="button" data-val="full" class="'+(d.width==='full'?'is-active':'')+'">'+pbT('full_label')+'</button></div></div>';

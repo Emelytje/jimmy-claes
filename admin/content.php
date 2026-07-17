@@ -56,7 +56,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $q = trim($_GET['q'] ?? '');
 $klasse = (int)($_GET['klasse'] ?? 0);
-$noPhotos = !empty($_GET['nophotos']);
+$photoFilter = $_GET['photos'] ?? '';
+if(!in_array($photoFilter, ['with','without'], true)) $photoFilter = '';
 
 if($type === 'category'){
     $items = pbe_category_tree_flat();
@@ -106,7 +107,8 @@ if($type === 'category'){
         }
         unset($it);
 
-        if($noPhotos) $items = array_values(array_filter($items, function($it){ return $it['photo_count'] === 0; }));
+        if($photoFilter === 'without') $items = array_values(array_filter($items, function($it){ return $it['photo_count'] === 0; }));
+        elseif($photoFilter === 'with') $items = array_values(array_filter($items, function($it){ return $it['photo_count'] > 0; }));
     }
 }
 
@@ -158,10 +160,17 @@ admin_header($typeLabel, $info['nav']);
       </div>
       <?php endif; ?>
       <?php if($type === 'animal'): ?>
-      <label class="pbe-check" style="align-self:center"><input type="checkbox" name="nophotos" value="1" <?=$noPhotos?'checked':''?>> <?=e(t('no_photos_filter_label'))?></label>
+      <div class="a-field">
+        <label><?=e(t('photos_label'))?></label>
+        <select name="photos">
+          <option value=""><?=e(t('all_photo_states'))?></option>
+          <option value="with" <?=$photoFilter==='with'?'selected':''?>><?=e(t('with_photos_filter_label'))?></option>
+          <option value="without" <?=$photoFilter==='without'?'selected':''?>><?=e(t('no_photos_filter_label'))?></option>
+        </select>
+      </div>
       <?php endif; ?>
       <button class="a-btn" type="submit"><?=e(t('filter'))?></button>
-      <?php if($q !== '' || $klasse || $noPhotos): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>"><?=e(t('clear_filter'))?></a><?php endif; ?>
+      <?php if($q !== '' || $klasse || $photoFilter !== ''): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>"><?=e(t('clear_filter'))?></a><?php endif; ?>
     </form>
   </div>
 </div>

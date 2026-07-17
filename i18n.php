@@ -283,7 +283,9 @@ function i18n_dictionary(){
         'drive_url_label'   => ['nl' => 'Google Drive-link (optioneel)', 'en' => 'Google Drive link (optional)'],
         'drive_url_hint'    => ['nl' => 'Als je hier een link invult, opent een klik op eender welke foto van dit dier die Drive-map in een nieuw tabblad, in plaats van de normale foto-zoom.', 'en' => 'If you fill in a link here, clicking any photo of this animal will open that Drive folder in a new tab, instead of the normal photo zoom.'],
         'no_slideshow_photos_public' => ['nl' => 'Nog geen foto\'s in de slideshow.', 'en' => 'No photos in the slideshow yet.'],
-        'no_photos_filter_label' => ['nl' => 'Enkel dieren zonder foto\'s', 'en' => 'Only animals without photos'],
+        'no_photos_filter_label' => ['nl' => 'Zonder foto\'s', 'en' => 'Without photos'],
+        'with_photos_filter_label' => ['nl' => 'Met foto\'s', 'en' => 'With photos'],
+        'all_photo_states'  => ['nl' => 'Alle (met of zonder foto\'s)', 'en' => 'All (with or without photos)'],
         'photos_label'      => ['nl' => 'Foto\'s', 'en' => 'Photos'],
         'no_photos_pill'    => ['nl' => 'Geen foto\'s', 'en' => 'No photos'],
     ];
