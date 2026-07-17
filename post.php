@@ -4,8 +4,7 @@ if(!$p){ http_response_code(404); die(t('page_not_found')); }
 track_view('posts', $p['id']);
 $blocks = pb_decode_blocks($p['blocks'] ?? null);
 if($blocks){
-    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
-    $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
+    $headExtra = pb_page_head_extra($blocks);
     header_html($p['meta_title'] ?: $p['title'], $p['meta_description'] ?: $p['excerpt'], '', $headExtra);
     echo '<main class="pb-page">'.render_blocks($blocks).'</main>';
     footer_html();

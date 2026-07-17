@@ -275,6 +275,10 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-photocount-num{ font-family:var(--font-heading); font-size:clamp(2.4rem,5vw,3.6rem); font-weight:600; color:var(--pb-text-color,var(--primary)); line-height:1; }
 .pb-photocount-label{ font-size:.95rem; color:var(--pb-text-color,var(--ink-soft)); }
 
+/* ---------- wereldkaart (bezochte dierentuinen) ---------- */
+.pb-zoo-map{ width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border,#e2d8c8); }
+.pb-zoo-map-empty{ display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; border-radius:12px; border:1px dashed var(--border,#cabfa9); color:var(--ink-soft,#8a7c6c); background:rgba(0,0,0,.02); }
+
 /* ---------- gewervelde/ongewervelde keuzeblok (homepage) ---------- */
 .pb-class-split{ display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center; padding:20px; }
 .pb-class-split h2{ margin:0; }

@@ -32,6 +32,36 @@ function db(){
 function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function asset_v($absPath){ $v = @filemtime($absPath); return $v ?: time(); }
 
+// Gratis geocoding (OpenStreetMap Nominatim, geen API-sleutel nodig) van
+// "stad, land" naar [lat, lng], voor de kaart met bezochte dierentuinen.
+// Geeft null terug bij eender welk probleem (geen internet, niet gevonden,
+// enz.) zodat een mislukte opzoeking de rest van de pagina nooit breekt —
+// de admin kan het later gewoon opnieuw proberen door de zoo op te slaan.
+function geocode_city_country($city, $country){
+    $query = trim(trim($city).', '.trim($country), ', ');
+    if($query === '') return null;
+    $url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='.rawurlencode($query);
+    $userAgent = 'JimmyClaesSite/1.0 ('.(setting('contact_email','') ?: 'no-contact-set').')';
+    $body = null;
+    if(function_exists('curl_init')){
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['User-Agent: '.$userAgent],
+            CURLOPT_TIMEOUT => 8,
+        ]);
+        $body = curl_exec($ch);
+        curl_close($ch);
+    } elseif(ini_get('allow_url_fopen')){
+        $ctx = stream_context_create(['http' => ['header' => "User-Agent: $userAgent\r\n", 'timeout' => 8]]);
+        $body = @file_get_contents($url, false, $ctx);
+    }
+    if(!$body) return null;
+    $data = json_decode($body, true);
+    if(!is_array($data) || !isset($data[0]['lat'], $data[0]['lon'])) return null;
+    return [(float)$data[0]['lat'], (float)$data[0]['lon']];
+}
+
 // Bouwt een ingesprongen lijst van alle categorieën voor een <select>, met
 // optioneel een uitgesloten id + zijn afstammelingen (om te voorkomen dat een
 // categorie zichzelf of een eigen kind als bovenliggende categorie kiest).
@@ -175,4 +205,10 @@ function header_html($title='', $description='', $canonical='', $head_extra='', 
     echo lang_switch_html();
     echo '</nav></header>';
 }
-function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; '.t('footer_by').' <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }
+function footer_html(){
+    $leaflet = !empty($GLOBALS['pb_needs_leaflet'])
+        ? '<script src="assets/leaflet/leaflet.js?v='.asset_v(__DIR__.'/assets/leaflet/leaflet.js').'"></script>'
+        .'<script src="assets/zoo-map.js?v='.asset_v(__DIR__.'/assets/zoo-map.js').'"></script>'
+        : '';
+    echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; '.t('footer_by').' <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer>'.$leaflet.'<script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>';
+}

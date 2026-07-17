@@ -141,6 +141,35 @@ function pb_google_fonts_link_href($families){
     return 'https://fonts.googleapis.com/css2?'.implode('&',$parts).'&display=swap';
 }
 
+function pb_blocks_contain_type($blocks, $type){
+    foreach((array)$blocks as $b){
+        if(($b['type'] ?? '') === $type) return true;
+        if(($b['type'] ?? '') === 'columns'){
+            foreach(($b['data']['cols'] ?? []) as $col){ if(pb_blocks_contain_type($col['blocks'] ?? [], $type)) return true; }
+        }
+        if(($b['type'] ?? '') === 'row'){
+            foreach(($b['data']['cells'] ?? []) as $cell){ if(pb_blocks_contain_type($cell['blocks'] ?? [], $type)) return true; }
+        }
+    }
+    return false;
+}
+
+// Extra <head>-inhoud voor een pagina: lettertype-links (bestond al) plus,
+// enkel als de pagina er eentje bevat, de Leaflet-CSS voor de zoo-kaart.
+// Zet ook een globale vlag zodat footer_html() weet of Leaflet's JS nodig
+// is, zonder dat elke aanroeper van footer_html() de blokken hoeft door te
+// geven.
+function pb_page_head_extra($blocks){
+    $extra = '';
+    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
+    if($fontHref) $extra .= '<link rel="stylesheet" href="'.e($fontHref).'">';
+    if(pb_blocks_contain_type($blocks, 'zoo_map')){
+        $extra .= '<link rel="stylesheet" href="assets/leaflet/leaflet.css">';
+        $GLOBALS['pb_needs_leaflet'] = true;
+    }
+    return $extra;
+}
+
 function render_blocks($blocks, $depth=0, $ctx=[]){
     if(!is_array($blocks) || $depth > 2) return '';
     $out = '';
@@ -170,6 +199,7 @@ function render_block($block, $depth=0, $ctx=[]){
         case 'categories_grid': $inner = pb_render_categories_grid($data); break;
         case 'photocount': $inner = pb_render_photocount($data); break;
         case 'species_progress': $inner = pb_render_species_progress($data); break;
+        case 'zoo_map': $inner = pb_render_zoo_map($data); break;
         case 'class_split': $inner = pb_render_class_split($data); break;
         case 'slideshow':  $inner = pb_render_slideshow($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
@@ -673,6 +703,28 @@ function pb_render_species_progress($d){
     [$with, $total] = pb_species_progress();
     $label = trim($d['label'] ?? '') ?: t('species_progress_label_simple');
     return '<div class="pb-photocount"><span class="pb-photocount-num">'.number_format($with, 0, ',', '.').'</span><span class="pb-photocount-label">'.e($label).'</span></div>';
+}
+
+// Interactieve wereldkaart met alle dierentuinen die al een geocodeerde
+// locatie hebben (stad+land -> lat/lng, zie geocode_city_country() in
+// functions.php). De JS-kant (assets/zoo-map.js) leest data-zoos uit en
+// bouwt de Leaflet-kaart op; hier enkel de data verzamelen en doorgeven.
+function pb_render_zoo_map($d){
+    $zoos = [];
+    if(pb_has_column('zoos','lat') && pb_has_column('zoos','lng')){
+        try{
+            $rows = db()->query("SELECT title, url, city, country, lat, lng FROM zoos WHERE published=1 AND lat IS NOT NULL AND lng IS NOT NULL")->fetchAll();
+            foreach($rows as $r){
+                $zoos[] = ['label' => zoo_label($r), 'url' => $r['url'], 'lat' => (float)$r['lat'], 'lng' => (float)$r['lng']];
+            }
+        }catch(Exception $e){}
+    }
+    $height = (int)($d['height'] ?? 420);
+    $height = max(200, min(900, $height));
+    if(!$zoos){
+        return '<div class="pb-zoo-map-empty" style="min-height:'.$height.'px">'.e(t('zoo_map_empty')).'</div>';
+    }
+    return '<div class="pb-zoo-map" style="height:'.$height.'px" data-zoos="'.e(json_encode($zoos, JSON_UNESCAPED_UNICODE)).'"></div>';
 }
 
 function pb_render_photocount($d){

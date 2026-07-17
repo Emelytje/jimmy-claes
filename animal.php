@@ -7,8 +7,7 @@ $classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category
 $descLocalized = localized_field($a, 'description');
 $bodyAttrs = !empty($a['drive_url']) ? 'data-drive-url="'.e($a['drive_url']).'"' : '';
 if($blocks){
-    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
-    $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
+    $headExtra = pb_page_head_extra($blocks);
     header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $descLocalized, '', $headExtra, $bodyAttrs);
     echo '<section class="hero"'.($classColor ? ' style="background:'.e($classColor).'"' : '').'><div><h1>'.e($a['title']).'</h1></div></section>';
     echo pb_render_back_button();

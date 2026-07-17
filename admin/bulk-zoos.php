@@ -12,6 +12,8 @@ require __DIR__.'/inc.php';
 
 if(!pb_has_column('zoos','city')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN city VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
 if(!pb_has_column('zoos','country')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN country VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
+if(!pb_has_column('zoos','lat')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN lat DECIMAL(9,6) DEFAULT NULL"); }catch(Exception $e){} }
+if(!pb_has_column('zoos','lng')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN lng DECIMAL(9,6) DEFAULT NULL"); }catch(Exception $e){} }
 
 function bz_normalize_url($url){
     $url = trim($url);
@@ -87,21 +89,38 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     }
 
     $existing = [];
-    foreach(db()->query('SELECT id, title FROM zoos') as $z){
-        $existing[mb_strtolower(trim($z['title']))] = $z['id'];
+    foreach(db()->query('SELECT id, title, city, country FROM zoos') as $z){
+        $existing[mb_strtolower(trim($z['title']))] = $z;
     }
 
-    $ins = db()->prepare('INSERT INTO zoos(title,url,city,country) VALUES(?,?,?,?)');
-    $upd = db()->prepare('UPDATE zoos SET url=?, city=?, country=? WHERE id=?');
+    $ins = db()->prepare('INSERT INTO zoos(title,url,city,country,lat,lng) VALUES(?,?,?,?,?,?)');
+    $upd = db()->prepare('UPDATE zoos SET url=?, city=?, country=?, lat=?, lng=? WHERE id=?');
+    $updNoGeocode = db()->prepare('UPDATE zoos SET url=?, city=?, country=? WHERE id=?');
+    $first = true;
     foreach($rows as [$title, $city, $country, $url]){
         $url = bz_normalize_url($url);
         if($url === ''){ $stats['skipped']++; continue; }
         $key = mb_strtolower($title);
-        if(isset($existing[$key])){
-            $upd->execute([$url, $city !== '' ? $city : null, $country !== '' ? $country : null, $existing[$key]]);
+        $existingRow = $existing[$key] ?? null;
+        if($existingRow){
+            $cityChanged = ($existingRow['city'] ?? '') !== $city || ($existingRow['country'] ?? '') !== $country;
+            if($cityChanged && ($city !== '' || $country !== '')){
+                if(!$first) sleep(1); // Nominatim: max 1 verzoek per seconde
+                $first = false;
+                $coords = geocode_city_country($city, $country);
+                $upd->execute([$url, $city !== '' ? $city : null, $country !== '' ? $country : null, $coords[0] ?? null, $coords[1] ?? null, $existingRow['id']]);
+            } else {
+                $updNoGeocode->execute([$url, $city !== '' ? $city : null, $country !== '' ? $country : null, $existingRow['id']]);
+            }
             $stats['updated']++;
         } else {
-            $ins->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null]);
+            $coords = null;
+            if($city !== '' || $country !== ''){
+                if(!$first) sleep(1);
+                $first = false;
+                $coords = geocode_city_country($city, $country);
+            }
+            $ins->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null, $coords[0] ?? null, $coords[1] ?? null]);
             $stats['created']++;
         }
     }

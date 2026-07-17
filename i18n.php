@@ -308,5 +308,6 @@ function i18n_dictionary(){
         'bz_skipped_summary' => ['nl' => '%d overgeslagen (geen website-link gevonden).', 'en' => '%d skipped (no website link found).'],
         'to_zoos_check'     => ['nl' => 'Naar Dierentuinen', 'en' => 'Go to Zoos'],
         'bulk_zoos_btn'     => ['nl' => 'Dierentuinen in bulk toevoegen', 'en' => 'Bulk-add zoos'],
+        'zoo_map_empty'     => ['nl' => 'Nog geen dierentuinen met stad en land ingevuld om op de kaart te tonen.', 'en' => 'No zoos with city and country filled in yet to show on the map.'],
     ];
 }
