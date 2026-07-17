@@ -107,8 +107,8 @@ var PB_DICT = {
   layout_label:['Layout','Layout'],
   zoo_none:['Geen zoo','No zoo'],
   zoo_label:['Zoo','Zoo'],
-  species_progress:['Soorten-voortgang','Species progress'],
-  progress_label:['Voortgang','Progress'],
+  species_progress:['Soortenteller','Species counter'],
+  species_label_simple:['diersoorten al gefotografeerd','animal species photographed'],
   species_progress_live_preview:['Live voorbeeld verschijnt op de site zelf — toont automatisch hoeveel diersoorten al minstens één foto hebben.','A live preview appears on the site itself — automatically shows how many animal species already have at least one photo.'],
   photos_on_site:["foto's op deze website",'photos on this website'],
   html_block_chars:['HTML-blok','HTML block'],
@@ -400,9 +400,9 @@ var BLOCKS = {
   species_progress: {
     label:pbT('species_progress'), icon:'&#128200;', group:pbT('layout'),
     settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
-    data:function(){ return {label:pbT('progress_label')}; },
+    data:function(){ return {label:pbT('species_label_simple')}; },
     render:function(d, s, id){
-      var html = '<div class="pbe-empty-col" style="min-height:110px">'+pbT('species_progress_live_preview')+'</div>';
+      var html = '<div class="pb-photocount"><span class="pb-photocount-num">—</span><span class="pb-photocount-label">'+esc(d.label||pbT('species_label_simple'))+'</span></div>';
       return wrap('species_progress', id, s, html);
     }
   },
@@ -1337,8 +1337,7 @@ function contentFieldsHtml(block){
       html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('photos_on_site'))+'"></div>';
       break;
     case 'species_progress':
-      html += '<div class="pbe-field"><label>'+pbT('progress_label')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('progress_label'))+'"></div>';
-      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('species_progress_live_preview')+'</p>';
+      html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('species_label_simple'))+'"></div>';
       break;
     case 'class_split':
       html += '<div class="pbe-field"><label>'+pbT('title_optional')+'</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';

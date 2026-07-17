@@ -274,11 +274,6 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-photocount{ display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; padding:20px; }
 .pb-photocount-num{ font-family:var(--font-heading); font-size:clamp(2.4rem,5vw,3.6rem); font-weight:600; color:var(--pb-text-color,var(--primary)); line-height:1; }
 .pb-photocount-label{ font-size:.95rem; color:var(--pb-text-color,var(--ink-soft)); }
-.pb-species-progress{ max-width:480px; margin:0 auto; padding:20px; text-align:center; }
-.pb-species-progress-label{ font-family:var(--font-heading); font-size:1.2rem; font-weight:600; color:var(--pb-text-color,var(--ink)); margin-bottom:10px; }
-.pb-species-progress-bar{ width:100%; height:14px; border-radius:999px; background:rgba(0,0,0,.08); overflow:hidden; }
-.pb-species-progress-fill{ height:100%; border-radius:999px; background:var(--pb-text-color,var(--primary)); transition:width .6s var(--ease); }
-.pb-species-progress-text{ font-size:.9rem; color:var(--pb-text-color,var(--ink-soft)); margin-top:8px; }
 
 /* ---------- gewervelde/ongewervelde keuzeblok (homepage) ---------- */
 .pb-class-split{ display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center; padding:20px; }

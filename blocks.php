@@ -671,12 +671,8 @@ function pb_species_progress(){
 
 function pb_render_species_progress($d){
     [$with, $total] = pb_species_progress();
-    $pct = $total > 0 ? round(($with / $total) * 100) : 0;
-    $label = trim($d['label'] ?? '') ?: t('species_progress_label');
-    $text = sprintf(t('species_progress_text'), $with, $total);
-    return '<div class="pb-species-progress"><div class="pb-species-progress-label">'.e($label).'</div>'
-        .'<div class="pb-species-progress-bar"><div class="pb-species-progress-fill" style="width:'.$pct.'%"></div></div>'
-        .'<div class="pb-species-progress-text">'.e($text).'</div></div>';
+    $label = trim($d['label'] ?? '') ?: t('species_progress_label_simple');
+    return '<div class="pb-photocount"><span class="pb-photocount-num">'.number_format($with, 0, ',', '.').'</span><span class="pb-photocount-label">'.e($label).'</span></div>';
 }
 
 function pb_render_photocount($d){
