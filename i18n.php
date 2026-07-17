@@ -288,5 +288,6 @@ function i18n_dictionary(){
         'all_photo_states'  => ['nl' => 'Alle (met of zonder foto\'s)', 'en' => 'All (with or without photos)'],
         'photos_label'      => ['nl' => 'Foto\'s', 'en' => 'Photos'],
         'no_photos_pill'    => ['nl' => 'Geen foto\'s', 'en' => 'No photos'],
+        'drive_url_label_short' => ['nl' => 'Drive-link', 'en' => 'Drive link'],
     ];
 }

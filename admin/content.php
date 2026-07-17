@@ -50,6 +50,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $titleEn = trim($_POST['title_en'] ?? '');
         if(!pb_has_column('categories','title_en')) db()->exec('ALTER TABLE categories ADD COLUMN title_en VARCHAR(160) DEFAULT NULL');
         if($id) db()->prepare('UPDATE categories SET title_en=? WHERE id=?')->execute([$titleEn !== '' ? $titleEn : null, $id]);
+    } elseif($action==='update_drive_url' && $type==='animal'){
+        $id = (int)($_POST['id'] ?? 0);
+        $driveUrl = trim($_POST['drive_url'] ?? '');
+        if($driveUrl !== '' && !preg_match('~^https?://~i', $driveUrl)) $driveUrl = 'https://'.$driveUrl;
+        if(!pb_has_column('animals','drive_url')) db()->exec('ALTER TABLE animals ADD COLUMN drive_url VARCHAR(500) DEFAULT NULL');
+        if($id) db()->prepare('UPDATE animals SET drive_url=? WHERE id=?')->execute([$driveUrl !== '' ? $driveUrl : null, $id]);
     }
     header('Location: content.php?type='.$type); exit;
 }
@@ -181,13 +187,20 @@ admin_header($typeLabel, $info['nav']);
 <?php endif; ?>
 <?php if($items): ?>
   <div class="a-table-wrap"><table class="a-table">
-    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><th><?=e(t('photos_label'))?></th><?php endif; ?><?php if($type==='category'): ?><th><?=e(t('english_name'))?></th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
+    <tr><th><?=e(t('title_label'))?></th><?php if($type==='animal'): ?><th><?=e(t('category_label'))?></th><th><?=e(t('photos_label'))?></th><th><?=e(t('drive_url_label_short'))?></th><?php endif; ?><?php if($type==='category'): ?><th><?=e(t('english_name'))?></th><?php endif; ?><th><?=e(t('link'))?></th><th><?=e(t('status'))?></th><th><?=e(t('visits'))?></th><th><?=e(t('created'))?></th><th></th></tr>
     <?php foreach($items as $p): ?>
     <tr>
       <td data-label="<?=e(t('title_label'))?>"><strong><?=$type==='category' ? str_repeat('&mdash; ', $p['depth']) : ''?><?=e($p['title'])?></strong></td>
       <?php if($type==='animal'): ?>
       <td data-label="<?=e(t('category_label'))?>"><?=$p['category_title'] !== '' ? e($p['category_title']) : '<span style="color:var(--ink-soft)">'.e(t('none_dash')).'</span>'?></td>
       <td data-label="<?=e(t('photos_label'))?>"><?php if($p['photo_count']===0): ?><span class="a-pill a-pill-draft"><?=e(t('no_photos_pill'))?></span><?php else: ?><?=(int)$p['photo_count']?><?php endif; ?></td>
+      <td data-label="<?=e(t('drive_url_label_short'))?>">
+        <form method="post" class="a-inline-form" style="gap:6px">
+          <?=csrf_field()?><input type="hidden" name="action" value="update_drive_url"><input type="hidden" name="id" value="<?=$p['id']?>">
+          <input type="text" name="drive_url" value="<?=e($p['drive_url'] ?? '')?>" placeholder="https://drive.google.com/..." style="min-width:160px">
+          <button type="submit" class="a-btn a-btn-sm a-btn-ghost">✓</button>
+        </form>
+      </td>
       <?php endif; ?>
       <?php if($type==='category'): ?>
       <td data-label="<?=e(t('english_name'))?>">
