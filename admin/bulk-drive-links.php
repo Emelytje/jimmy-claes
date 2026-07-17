@@ -3,10 +3,12 @@
  * Plak-en-klaar tool om in één keer een Google Drive-link te koppelen aan
  * veel dieren tegelijk (bv. 500), i.p.v. elk dier apart open te doen. Elke
  * regel is "Naam<tab of komma>Link"; de naam wordt gematcht tegen de
- * diersoort-titel (exacte match, hoofdletterongevoelig). Titels die
- * bewust dubbel in de boom voorkomen (bv. Lathamus discolor) worden
- * overgeslagen — die kan je los koppelen via de Drive-link-kolom in de
- * Dieren-lijst zelf.
+ * diersoort-titel (hoofdletterongevoelig), eerst exact en anders op het
+ * stuk vóór het eerste " - " (Drive-mapnamen zijn vaak "Latijnse naam -
+ * Engelse naam - Nederlandse naam", de dier-titel is enkel de Latijnse
+ * naam). Titels die bewust dubbel in de boom voorkomen (bv. Lathamus
+ * discolor) worden overgeslagen — die kan je los koppelen via de
+ * Drive-link-kolom in de Dieren-lijst zelf.
  */
 require __DIR__.'/inc.php';
 
@@ -85,8 +87,21 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $upd = db()->prepare('UPDATE animals SET drive_url=? WHERE id=?');
     foreach($rows as [$name, $link]){
         if($link !== '' && !preg_match('~^https?://~i', $link)) $link = 'https://'.$link;
-        $key = mb_strtolower($name);
-        $ids = $byTitle[$key] ?? [];
+
+        // Drive-mapnamen zijn vaak "Latijnse naam - Engelse naam - Nederlandse
+        // naam" (zo geeft bv. het Apps Script het door), terwijl de dier-titel
+        // in de database enkel de Latijnse naam is. Probeer eerst een exacte
+        // match op de volledige naam, en anders op het stuk vóór het eerste
+        // liggend streepje.
+        $candidates = [$name];
+        if(strpos($name, ' - ') !== false){
+            $candidates[] = trim(explode(' - ', $name, 2)[0]);
+        }
+        $ids = [];
+        foreach($candidates as $cand){
+            $ids = $byTitle[mb_strtolower($cand)] ?? [];
+            if($ids) break;
+        }
         if(count($ids) === 0){
             $stats['notFound'][] = $name;
         } elseif(count($ids) > 1){
