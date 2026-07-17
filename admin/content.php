@@ -177,6 +177,7 @@ admin_header($typeLabel, $info['nav']);
       <?php endif; ?>
       <button class="a-btn" type="submit"><?=e(t('filter'))?></button>
       <?php if($q !== '' || $klasse || $photoFilter !== ''): ?><a class="a-btn a-btn-ghost" href="content.php?type=<?=e($type)?>"><?=e(t('clear_filter'))?></a><?php endif; ?>
+      <?php if($type === 'animal'): ?><a class="a-btn a-btn-ghost" href="bulk-drive-links.php" style="margin-left:auto"><?=e(t('bulk_drive_links_btn'))?></a><?php endif; ?>
     </form>
   </div>
 </div>
