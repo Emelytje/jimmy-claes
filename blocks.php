@@ -636,3 +636,52 @@ function pb_render_slideshow($d){
     }
     return $html.'</div>';
 }
+
+// Bouwt een blokken-array die overeenkomt met wat de live pagina toont via de
+// oude vaste opmaak (zie animal.php/category.php/album.php/post.php), voor
+// content die nog geen echte blokken heeft. Wordt enkel gebruikt om de
+// pagebuilder-editor te vullen zodat die niet leeg lijkt terwijl de live
+// pagina wél inhoud toont — wordt pas echt opgeslagen als de gebruiker zelf
+// op Opslaan drukt (zelfde principe als de homepage-omzet-knop).
+function pb_default_blocks_for($type, $row){
+    $defaultSettings = ['fontFamily'=>'','fontSize'=>'','textColor'=>'','bgColor'=>'','align'=>'left','paddingY'=>56,'paddingX'=>24,'radius'=>0,'shadow'=>'none','animation'=>'fade-up'];
+    $heroSettings = array_merge($defaultSettings, ['align'=>'center','paddingY'=>'','paddingX'=>'','animation'=>'fade-in']);
+    $blocks = [];
+
+    if($type === 'animal'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'hero', 'settings'=>$heroSettings,
+            'data'=>['title'=>$row['title'] ?? '', 'subtitle'=>$row['description'] ?? '', 'buttonText'=>'', 'buttonHref'=>'#', 'bgImage'=>'', 'overlay'=>45]];
+        $st = db()->prepare('SELECT * FROM photos WHERE animal_id=? ORDER BY sort_order,id DESC');
+        $st->execute([$row['id']]);
+        $photos = $st->fetchAll();
+        if($photos){
+            $images = [];
+            foreach($photos as $p) $images[] = ['src'=>$p['image_path'], 'alt'=>$p['title'] ?? '', 'caption'=>$p['caption'] ?? ''];
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'gallery', 'settings'=>$defaultSettings, 'data'=>['images'=>$images, 'columns'=>3, 'layout'=>'grid']];
+        }
+    } elseif($type === 'category'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'hero', 'settings'=>$heroSettings,
+            'data'=>['title'=>$row['title'] ?? '', 'subtitle'=>$row['description'] ?? '', 'buttonText'=>'', 'buttonHref'=>'#', 'bgImage'=>'', 'overlay'=>45]];
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'subcategories', 'settings'=>$defaultSettings, 'data'=>[]];
+    } elseif($type === 'album'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'hero', 'settings'=>$heroSettings,
+            'data'=>['title'=>$row['title'] ?? '', 'subtitle'=>$row['description'] ?? '', 'buttonText'=>'', 'buttonHref'=>'#', 'bgImage'=>'', 'overlay'=>45]];
+        $st = db()->prepare('SELECT * FROM album_photos WHERE album_id=? ORDER BY sort_order,id DESC');
+        $st->execute([$row['id']]);
+        $photos = $st->fetchAll();
+        if($photos){
+            $images = [];
+            foreach($photos as $p) $images[] = ['src'=>$p['image_path'], 'alt'=>$p['title'] ?? '', 'caption'=>$p['caption'] ?? ''];
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'gallery', 'settings'=>$defaultSettings, 'data'=>['images'=>$images, 'columns'=>3, 'layout'=>'grid']];
+        }
+    } elseif($type === 'post'){
+        $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'title', 'settings'=>$defaultSettings, 'data'=>['text'=>$row['title'] ?? '', 'level'=>'h1']];
+        if(!empty($row['cover_image'])){
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'image', 'settings'=>$defaultSettings, 'data'=>['src'=>$row['cover_image'], 'alt'=>'', 'caption'=>'', 'width'=>'full', 'link'=>'', 'aspectRatio'=>null, 'widthPct'=>'']];
+        }
+        if(!empty($row['content'])){
+            $blocks[] = ['id'=>pb_new_block_id(), 'type'=>'text', 'settings'=>$defaultSettings, 'data'=>['html'=>nl2br(e($row['content']))]];
+        }
+    }
+    return $blocks;
+}

@@ -23,6 +23,11 @@ $page = $st->fetch();
 if(!$page){ header('Location: '.$typeInfo['list']); exit; }
 
 $blocks = pb_decode_blocks($page['blocks'] ?? null);
+$usingFallbackPreview = false;
+if(!$blocks && $type !== 'page'){
+    $blocks = pb_default_blocks_for($type, $page);
+    $usingFallbackPreview = (bool)$blocks;
+}
 $initial = [
     'type' => $type,
     'id' => (int)$page['id'],
@@ -69,6 +74,9 @@ $initial = [
   <div class="pbe-col pbe-palette" id="pbePalette"></div>
 
   <div class="pbe-col pbe-canvas-wrap">
+    <?php if($usingFallbackPreview): ?>
+    <div class="notice" style="margin:12px 16px 0"><?=e(t('fallback_preview_notice'))?></div>
+    <?php endif; ?>
     <div class="pbe-canvas-scale" id="pbeCanvasScale">
       <div class="pbe-canvas pbe-sortable-zone" id="pbeCanvas"></div>
     </div>
