@@ -62,6 +62,107 @@ function geocode_city_country($city, $country){
     return [(float)$data[0]['lat'], (float)$data[0]['lon']];
 }
 
+// Automatisch de foto's uit een gekoppelde Google Drive-map ophalen, zodat
+// je niet elke foto apart naar de site moet uploaden. Vereist een Google
+// Drive API-key (GOOGLE_DRIVE_API_KEY in config.php) EN dat de map gedeeld
+// is als "Iedereen met de link" — een kale API-key kan geen privé-mappen
+// lezen. Zonder key of bij een niet-map-link blijft alles gewoon werken
+// zoals voorheen (enkel de handmatige Drive-link-doorklik).
+function drive_api_key(){
+    return defined('GOOGLE_DRIVE_API_KEY') ? trim(GOOGLE_DRIVE_API_KEY) : '';
+}
+
+function drive_extract_folder_id($url){
+    if(preg_match('~/folders/([a-zA-Z0-9_-]+)~', (string)$url, $m)) return $m[1];
+    return null;
+}
+
+function drive_thumbnail_url($fileId, $size=1600){
+    return 'https://drive.google.com/thumbnail?id='.rawurlencode($fileId).'&sz=w'.(int)$size;
+}
+function drive_file_view_url($fileId){
+    return 'https://drive.google.com/file/d/'.rawurlencode($fileId).'/view';
+}
+
+function drive_http_get($url){
+    if(function_exists('curl_init')){
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8]);
+        $body = curl_exec($ch);
+        curl_close($ch);
+        return $body ?: null;
+    } elseif(ini_get('allow_url_fopen')){
+        $ctx = stream_context_create(['http' => ['timeout' => 8]]);
+        return @file_get_contents($url, false, $ctx) ?: null;
+    }
+    return null;
+}
+
+function drive_fetch_folder_images_raw($folderId){
+    $key = drive_api_key();
+    if($key === '' || !$folderId) return [];
+    $images = [];
+    $pageToken = '';
+    $pages = 0;
+    do{
+        $q = rawurlencode("'".$folderId."' in parents and mimeType contains 'image/' and trashed=false");
+        $url = 'https://www.googleapis.com/drive/v3/files?q='.$q
+            .'&fields='.rawurlencode('nextPageToken,files(id,name)')
+            .'&pageSize=100&key='.rawurlencode($key);
+        if($pageToken !== '') $url .= '&pageToken='.rawurlencode($pageToken);
+        $body = drive_http_get($url);
+        if(!$body) break;
+        $data = json_decode($body, true);
+        if(!is_array($data) || !isset($data['files'])) break;
+        foreach($data['files'] as $f){
+            if(!empty($f['id'])) $images[] = ['id' => $f['id'], 'name' => $f['name'] ?? ''];
+        }
+        $pageToken = $data['nextPageToken'] ?? '';
+        $pages++;
+    } while($pageToken !== '' && $pages < 5);
+    return $images;
+}
+
+const DRIVE_CACHE_TTL = 21600; // 6 uur — genoeg marge tegen Drive-quota, kort genoeg om nieuwe foto's snel te tonen
+
+// Haalt de foto's van een Drive-map op, met caching in de DB. Bij een
+// mislukte live-opvraging (quota, netwerk, tijdelijk probleem) valt dit
+// terug op de laatst gekende cache in plaats van de sectie leeg te tonen.
+function drive_get_folder_images($folderUrl){
+    $folderId = drive_extract_folder_id($folderUrl);
+    if(!$folderId || drive_api_key() === '') return [];
+    try{
+        db()->exec("CREATE TABLE IF NOT EXISTS drive_cache(folder_id VARCHAR(120) PRIMARY KEY, images_json MEDIUMTEXT, fetched_at INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }catch(Exception $e){}
+
+    $cachedRow = null;
+    try{
+        $st = db()->prepare('SELECT images_json, fetched_at FROM drive_cache WHERE folder_id=?');
+        $st->execute([$folderId]);
+        $cachedRow = $st->fetch();
+        if($cachedRow && (time() - (int)$cachedRow['fetched_at']) < DRIVE_CACHE_TTL){
+            $decoded = json_decode($cachedRow['images_json'], true);
+            if(is_array($decoded)) return $decoded;
+        }
+    }catch(Exception $e){}
+
+    $images = drive_fetch_folder_images_raw($folderId);
+    if($images){
+        try{
+            $json = json_encode($images, JSON_UNESCAPED_UNICODE);
+            db()->prepare('INSERT INTO drive_cache(folder_id, images_json, fetched_at) VALUES(?,?,?) ON DUPLICATE KEY UPDATE images_json=VALUES(images_json), fetched_at=VALUES(fetched_at)')
+                ->execute([$folderId, $json, time()]);
+        }catch(Exception $e){}
+        return $images;
+    }
+
+    if($cachedRow){
+        $decoded = json_decode($cachedRow['images_json'], true);
+        if(is_array($decoded)) return $decoded;
+    }
+    return [];
+}
+
 // Bouwt een ingesprongen lijst van alle categorieën voor een <select>, met
 // optioneel een uitgesloten id + zijn afstammelingen (om te voorkomen dat een
 // categorie zichzelf of een eigen kind als bovenliggende categorie kiest).

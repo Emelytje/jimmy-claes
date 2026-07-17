@@ -246,6 +246,22 @@ function pb_render_image($d){
     return '<figure class="pb-figure" style="'.e(implode(';', $figureStyleDecls)).'">'.$img.$badge.$caption.'</figure>';
 }
 
+// Rendert de automatisch uit een Google Drive-map opgehaalde foto's (zie
+// drive_get_folder_images() in functions.php) als een gewone .gallery-grid,
+// zodat ze meteen meedoen met de bestaande lightbox-groepering in app.js.
+// Elke foto krijgt data-drive-file zodat een dubbelklik naar die precieze
+// Drive-foto kan doorklikken i.p.v. enkel naar de hele map.
+function pb_render_drive_gallery($images){
+    if(!$images) return '';
+    $html = '<div class="gallery pb-drive-gallery">';
+    foreach($images as $img){
+        $src = e(drive_thumbnail_url($img['id']));
+        $alt = e($img['name'] ?? '');
+        $html .= '<figure class="photo"><img src="'.$src.'" alt="'.$alt.'" loading="lazy" data-drive-file="'.e($img['id']).'"></figure>';
+    }
+    return $html.'</div>';
+}
+
 function pb_safe_aspect_ratio($v){
     $n = (float)$v;
     if($n < 0.2 || $n > 6) return null;
