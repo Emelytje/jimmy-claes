@@ -38,6 +38,44 @@
     });
   });
 
+  // Achtergrondkleur/-foto van een blok moet tot de schermrand doorlopen,
+  // ook wanneer het blok binnen een rij/kolom zit die zelf begrensd is op
+  // 1180px — zonder de inhoud (tekst, kolombreedte) zelf te verschuiven.
+  // Een zuivere CSS-truc (calc(50% - 50vw)) klopt enkel wanneer het blok
+  // toevallig gecentreerd staat, niet in bv. de rechterkolom van een
+  // 2-koloms rij. In plaats daarvan wordt hier een apart laagje
+  // (.pb-bleed-bg) ingevoegd waarvan de échte positie gemeten en exact
+  // gecorrigeerd wordt — de bestaande inline achtergrond op het blok zelf
+  // blijft gewoon staan als stille terugval zonder JS.
+  var bleedEls = document.querySelectorAll('[data-pb-bleed-color],[data-pb-bleed-image]');
+  if(bleedEls.length){
+    var bleedLayers = [];
+    bleedEls.forEach(function(el){
+      var bg = document.createElement('div');
+      bg.className = 'pb-bleed-bg';
+      if(el.dataset.pbBleedColor) bg.style.backgroundColor = el.dataset.pbBleedColor;
+      if(el.dataset.pbBleedImage) bg.style.backgroundImage = "url('" + el.dataset.pbBleedImage + "')";
+      el.insertBefore(bg, el.firstChild);
+      bleedLayers.push({ host: el, layer: bg });
+    });
+    var applyBleed = function(){
+      bleedLayers.forEach(function(pair){
+        pair.layer.style.left = '';
+        pair.layer.style.width = '';
+        var rect = pair.host.getBoundingClientRect();
+        pair.layer.style.left = (-rect.left) + 'px';
+        pair.layer.style.width = document.documentElement.clientWidth + 'px';
+      });
+    };
+    applyBleed();
+    window.addEventListener('load', applyBleed);
+    var bleedResizeTimer;
+    window.addEventListener('resize', function(){
+      clearTimeout(bleedResizeTimer);
+      bleedResizeTimer = setTimeout(applyBleed, 150);
+    });
+  }
+
   var animated = document.querySelectorAll('[data-animate]');
   if(animated.length){
     if('IntersectionObserver' in window){

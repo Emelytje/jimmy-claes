@@ -105,6 +105,25 @@ function pb_style_attr($settings, $extra=[]){
     return $decl ? ' style="'.e(implode(';',$decl)).'"' : '';
 }
 
+// Markeert een blok dat tot de schermrand moet doorlopen zodra het een
+// eigen achtergrondkleur of -foto heeft — ook wanneer het binnen een
+// rij/kolom zit die zelf op 1180px begrensd is. De gewone inline
+// achtergrond (via pb_style_attr) blijft staan als stille terugval zonder
+// JS; assets/app.js leest deze data-attributen om er een apart, exact
+// gepositioneerd laagje overheen te leggen dat wél tot de rand loopt,
+// zonder de eigenlijke inhoud (tekst/kolombreedte) te verschuiven — een
+// zuivere CSS-truc (calc(50% - 50vw)) klopt anders enkel toevallig
+// wanneer het blok gecentreerd staat, niet in bv. een rechterkolom.
+// $bgImageUrl wordt al HTML-geëscaped verwacht (zoals $bg in
+// pb_render_hero al is via e()) om dubbel escapen te vermijden.
+function pb_bleed_attr($settings, $bgImageUrl=''){
+    $s = $settings ?: [];
+    $attrs = '';
+    if(!empty($s['bgColor'])) $attrs .= ' data-pb-bleed-color="'.e(pb_safe_color($s['bgColor'])).'"';
+    if($bgImageUrl !== '') $attrs .= ' data-pb-bleed-image="'.$bgImageUrl.'"';
+    return $attrs;
+}
+
 function pb_safe_color($c){
     $c = trim((string)$c);
     if(preg_match('/^#[0-9a-fA-F]{3,8}$/', $c)) return $c;
@@ -210,7 +229,8 @@ function render_block($block, $depth=0, $ctx=[]){
 
     $style = pb_style_attr($settings);
     $anim = pb_animation_attrs($settings);
-    return '<section class="pb-block pb-'.e($type).'" data-block-id="'.$id.'"'.$style.$anim.'><div class="pb-inner">'.$inner.'</div></section>';
+    $bleed = pb_bleed_attr($settings);
+    return '<section class="pb-block pb-'.e($type).'" data-block-id="'.$id.'"'.$style.$anim.$bleed.'><div class="pb-inner">'.$inner.'</div></section>';
 }
 
 function pb_render_title($d){
@@ -395,7 +415,8 @@ function pb_render_hero($d, $settings, $id){
     $overlay = isset($d['overlay']) ? max(0,min(100,(int)$d['overlay'])) : 45;
     $style = pb_style_attr($settings, $bg ? ['background-image'=>"url('".addslashes($bg)."')"] : []);
     $anim = pb_animation_attrs($settings);
-    $html = '<section class="pb-block pb-hero'.($bg?' pb-hero-has-bg':'').'" data-block-id="'.$id.'"'.$style.$anim.'>';
+    $bleed = pb_bleed_attr($settings, $bg);
+    $html = '<section class="pb-block pb-hero'.($bg?' pb-hero-has-bg':'').'" data-block-id="'.$id.'"'.$style.$anim.$bleed.'>';
     if($bg) $html .= '<div class="pb-hero-overlay" style="opacity:'.($overlay/100).'"></div>';
     $html .= '<div class="pb-inner pb-hero-inner">';
     if(!empty($d['title'])) $html .= '<h1>'.e($d['title']).'</h1>';
