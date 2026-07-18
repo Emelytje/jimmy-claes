@@ -34,15 +34,20 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $city = trim($_POST['city'] ?? '');
         $country = trim($_POST['country'] ?? '');
         if($id && $title!=='' && $url!==''){
-            // Enkel opnieuw geocoderen als stad/land veranderd is t.o.v. wat
-            // er al stond — anders zou elke gewone opslag (bv. enkel de
-            // titel wijzigen) telkens opnieuw een Nominatim-verzoek doen.
+            // Opnieuw geocoderen als stad/land veranderd is t.o.v. wat er al
+            // stond, ÉN wanneer er nog geen coördinaten zijn (bv. een zoo die
+            // stad/land al had vóór deze functie bestond) — anders zou elke
+            // gewone opslag (bv. enkel de titel wijzigen) telkens opnieuw een
+            // Nominatim-verzoek doen, maar zonder deze tweede voorwaarde zou
+            // een zoo zonder wijzigingen nooit met terugwerkende kracht
+            // gegeocodeerd worden.
             $cur = db()->prepare('SELECT city, country, lat, lng FROM zoos WHERE id=?');
             $cur->execute([$id]);
             $curRow = $cur->fetch();
             $lat = $curRow['lat'] ?? null; $lng = $curRow['lng'] ?? null;
             $cityChanged = ($curRow['city'] ?? '') !== $city || ($curRow['country'] ?? '') !== $country;
-            if($cityChanged && ($city !== '' || $country !== '')){
+            $needsGeocode = $cityChanged || $lat === null || $lng === null;
+            if($needsGeocode && ($city !== '' || $country !== '')){
                 $coords = geocode_city_country($city, $country);
                 if($coords){ $lat = $coords[0]; $lng = $coords[1]; }
             }

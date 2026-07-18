@@ -38,6 +38,44 @@
     });
   });
 
+  // Achtergrondkleur/-foto van een blok moet tot de schermrand doorlopen,
+  // ook wanneer het blok binnen een rij/kolom zit die zelf begrensd is op
+  // 1180px — zonder de inhoud (tekst, kolombreedte) zelf te verschuiven.
+  // Een zuivere CSS-truc (calc(50% - 50vw)) klopt enkel wanneer het blok
+  // toevallig gecentreerd staat, niet in bv. de rechterkolom van een
+  // 2-koloms rij. In plaats daarvan wordt hier een apart laagje
+  // (.pb-bleed-bg) ingevoegd waarvan de échte positie gemeten en exact
+  // gecorrigeerd wordt — de bestaande inline achtergrond op het blok zelf
+  // blijft gewoon staan als stille terugval zonder JS.
+  var bleedEls = document.querySelectorAll('[data-pb-bleed-color],[data-pb-bleed-image]');
+  if(bleedEls.length){
+    var bleedLayers = [];
+    bleedEls.forEach(function(el){
+      var bg = document.createElement('div');
+      bg.className = 'pb-bleed-bg';
+      if(el.dataset.pbBleedColor) bg.style.backgroundColor = el.dataset.pbBleedColor;
+      if(el.dataset.pbBleedImage) bg.style.backgroundImage = "url('" + el.dataset.pbBleedImage + "')";
+      el.insertBefore(bg, el.firstChild);
+      bleedLayers.push({ host: el, layer: bg });
+    });
+    var applyBleed = function(){
+      bleedLayers.forEach(function(pair){
+        pair.layer.style.left = '';
+        pair.layer.style.width = '';
+        var rect = pair.host.getBoundingClientRect();
+        pair.layer.style.left = (-rect.left) + 'px';
+        pair.layer.style.width = document.documentElement.clientWidth + 'px';
+      });
+    };
+    applyBleed();
+    window.addEventListener('load', applyBleed);
+    var bleedResizeTimer;
+    window.addEventListener('resize', function(){
+      clearTimeout(bleedResizeTimer);
+      bleedResizeTimer = setTimeout(applyBleed, 150);
+    });
+  }
+
   var animated = document.querySelectorAll('[data-animate]');
   if(animated.length){
     if('IntersectionObserver' in window){
@@ -113,35 +151,23 @@
     }
     preventImageSaving(boxImg);
 
-    // Enkele klik zoomt altijd in de lightbox (ook wanneer er een Drive-link
-    // is ingesteld) — een dubbelklik opent Google Drive: de precieze foto
-    // als die uit een gekoppelde Drive-map komt (data-drive-file), anders
-    // de hele gekoppelde map (data-drive-url op <body>). De lightbox is een
-    // fullscreen overlay die na de eerste klik van een dubbelklik meteen
-    // opent, dus zonder vertraging zou de tweede klik op die overlay landen
-    // i.p.v. op de foto en zou 'dblclick' nooit vuren — vandaar de korte
-    // wachttijd, enkel wanneer er effectief een Drive-doel is.
+    // Enkele klik opent Google Drive rechtstreeks wanneer er een Drive-doel
+    // is: de precieze foto als die uit een gekoppelde Drive-map komt
+    // (data-drive-file), anders de hele gekoppelde map (data-drive-url op
+    // <body>) — geen lightbox-zoom in dat geval. Zonder Drive-koppeling
+    // blijft een gewone foto gewoon inzoomen zoals altijd.
     var driveUrl = document.body.getAttribute('data-drive-url') || '';
     groups.forEach(function(group){
       group.forEach(function(img, idx){
         preventImageSaving(img);
         var driveFileId = img.getAttribute('data-drive-file');
         var driveTarget = driveFileId ? ('https://drive.google.com/file/d/' + encodeURIComponent(driveFileId) + '/view') : driveUrl;
-        if(driveTarget) img.title = img.title || 'Dubbelklik voor Google Drive';
-        var clickTimer = null;
+        img.style.cursor = driveTarget ? 'pointer' : 'zoom-in';
         img.addEventListener('click', function(e){
           if(img.closest('a')) e.preventDefault();
-          if(!driveTarget){ openBox(group, idx); return; }
-          if(clickTimer) clearTimeout(clickTimer);
-          clickTimer = setTimeout(function(){ clickTimer = null; openBox(group, idx); }, 280);
+          if(driveTarget){ window.open(driveTarget, '_blank', 'noopener'); return; }
+          openBox(group, idx);
         });
-        if(driveTarget){
-          img.addEventListener('dblclick', function(e){
-            if(img.closest('a')) e.preventDefault();
-            if(clickTimer){ clearTimeout(clickTimer); clickTimer = null; }
-            window.open(driveTarget, '_blank', 'noopener');
-          });
-        }
       });
     });
     box.addEventListener('click', function(e){ if(e.target === box) closeBox(); });

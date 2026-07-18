@@ -34,6 +34,7 @@ body{
   margin:0; background:var(--paper); color:var(--ink);
   font-family:var(--font-body); font-size:17px; line-height:1.65;
   -webkit-font-smoothing:antialiased;
+  overflow-x:hidden; /* nodig voor de 100vw-uitbraaktruc bij blok-achtergrondkleuren */
 }
 img{ max-width:100%; display:block; }
 a{ color:var(--primary); text-decoration:none; }
@@ -162,6 +163,15 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 /* ---------- pagebuilder block base ---------- */
 .pb-block{ position:relative; }
 .pb-inner{ max-width:1180px; margin:0 auto; padding:0 24px; }
+/* Losstaand laagje dat assets/app.js tot de schermrand positioneert voor
+   een blok-achtergrondkleur/-foto, zonder de inhoud zelf te verschuiven.
+   .pb-block heeft bewust géén eigen stacking-context (geen isolation, geen
+   z-index) — zo "ontsnapt" de negatieve z-index van dit laagje helemaal
+   tot de root, en blijft gewone (niet-gepositioneerde) inhoud van élk blok
+   op de pagina er automatisch bovenop staan, ook die van een ander,
+   later-in-de-DOM buurblok. top/bottom blijven wel begrensd tot de hoogte
+   van het eigen blok, dankzij position:relative op .pb-block hierboven. */
+.pb-bleed-bg{ position:absolute; top:0; bottom:0; z-index:-1; pointer-events:none; background-size:cover; background-position:center; }
 .pb-title h1,.pb-title h2,.pb-title h3{ margin:0; }
 .pb-text{ font-size:1.05rem; color:var(--pb-text-color,var(--ink-soft)); max-width:760px; margin-left:auto; margin-right:auto; }
 .pb-text a{ text-decoration:underline; }

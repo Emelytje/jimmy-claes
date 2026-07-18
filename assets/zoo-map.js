@@ -3,13 +3,14 @@
   document.querySelectorAll('.pb-zoo-map[data-zoos]').forEach(function(el){
     var zoos;
     try{ zoos = JSON.parse(el.getAttribute('data-zoos')); }catch(e){ zoos = []; }
-    if(!zoos.length) return;
 
     var map = L.map(el);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
       maxZoom: 18
     }).addTo(map);
+
+    if(!zoos.length){ map.setView([20, 0], 2); return; }
 
     var bounds = [];
     zoos.forEach(function(z){
