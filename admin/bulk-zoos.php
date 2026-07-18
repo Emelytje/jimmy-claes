@@ -89,7 +89,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     }
 
     $existing = [];
-    foreach(db()->query('SELECT id, title, city, country FROM zoos') as $z){
+    foreach(db()->query('SELECT id, title, city, country, lat, lng FROM zoos') as $z){
         $existing[mb_strtolower(trim($z['title']))] = $z;
     }
 
@@ -104,7 +104,8 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
         $existingRow = $existing[$key] ?? null;
         if($existingRow){
             $cityChanged = ($existingRow['city'] ?? '') !== $city || ($existingRow['country'] ?? '') !== $country;
-            if($cityChanged && ($city !== '' || $country !== '')){
+            $needsGeocode = $cityChanged || $existingRow['lat'] === null || $existingRow['lng'] === null;
+            if($needsGeocode && ($city !== '' || $country !== '')){
                 if(!$first) sleep(1); // Nominatim: max 1 verzoek per seconde
                 $first = false;
                 $coords = geocode_city_country($city, $country);

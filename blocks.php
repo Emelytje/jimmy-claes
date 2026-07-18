@@ -741,9 +741,9 @@ function pb_render_zoo_map($d){
     }
     $height = (int)($d['height'] ?? 420);
     $height = max(200, min(900, $height));
-    if(!$zoos){
-        return '<div class="pb-zoo-map-empty" style="min-height:'.$height.'px">'.e(t('zoo_map_empty')).'</div>';
-    }
+    // Ook zonder (nog) gegeocodeerde zoo's gewoon een lege wereldkaart tonen
+    // i.p.v. een tekstmelding — data-zoos="[]" laat zoo-map.js weten dat er
+    // geen markers zijn, maar de kaart zelf blijft altijd zichtbaar.
     return '<div class="pb-zoo-map" style="height:'.$height.'px" data-zoos="'.e(json_encode($zoos, JSON_UNESCAPED_UNICODE)).'"></div>';
 }
 
