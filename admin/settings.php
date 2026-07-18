@@ -78,6 +78,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             }
             set_setting($f, $val);
         }
+        if(!empty($_POST['remove_logo'])){
+            set_setting('site_logo', '');
+        } elseif(!empty($_FILES['site_logo']['tmp_name'])){
+            try{
+                $path = upload_image($_FILES['site_logo']);
+                if($path) set_setting('site_logo', $path);
+            }catch(Exception $e){}
+        }
         foreach($classColorMap as [$key, $default]){
             $val = trim($_POST[$key] ?? '');
             if(!preg_match('/^#[0-9a-fA-F]{6}$/', $val)) $val = $default;
@@ -89,6 +97,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $values = [];
 foreach($fields as $f) $values[$f] = setting($f, '');
+$currentLogo = setting('site_logo', '');
 
 $currentUser = null;
 if(!empty($_SESSION['admin_id'])){
@@ -102,9 +111,19 @@ admin_header(t('admin_settings'), 'settings');
 <?php if($saved): ?><div class="notice" style="margin-bottom:20px"><?=e(t('settings_saved'))?></div><?php endif; ?>
 <div class="a-card">
   <div class="a-card-pad">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="site">
+
+      <div class="a-field">
+        <label><?=e(t('site_logo_label'))?></label>
+        <?php if($currentLogo): ?>
+          <div style="margin-bottom:8px"><img src="../<?=e($currentLogo)?>" alt="" style="max-height:70px;max-width:220px;display:block"></div>
+          <label class="pbe-check-inline" style="font-weight:normal"><input type="checkbox" name="remove_logo" value="1"> <?=e(t('remove_logo_label'))?></label>
+        <?php endif; ?>
+        <input type="file" name="site_logo" accept="image/png,image/jpeg,image/webp,image/gif">
+        <p style="font-size:.78rem;color:#8a7c6c;margin-top:4px"><?=e(t('site_logo_hint'))?></p>
+      </div>
 
       <div class="a-field"><label><?=e(t('site_name'))?></label><input type="text" name="site_title" value="<?=e($values['site_title'])?>"></div>
       <div class="a-field"><label><?=e(t('intro_title_label'))?></label><input type="text" name="intro_title" value="<?=e($values['intro_title'])?>"></div>

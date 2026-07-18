@@ -372,7 +372,10 @@ function header_html($title='', $description='', $canonical='', $head_extra='', 
     if($head_extra) echo $head_extra;
     echo '</head><body'.($body_attrs ? ' '.$body_attrs : '').'>';
     echo '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><span></span></button>';
-    echo '<header class="top"><a class="brand" href="index.php">'.e(setting('site_title','Jimbo Animal Species of the World')).'</a><nav><a href="index.php">'.t('nav_home').'</a>';
+    $siteTitle = setting('site_title','Jimbo Animal Species of the World');
+    $logo = setting('site_logo', '');
+    $brandInner = $logo ? '<img src="'.e($logo).'" alt="'.e($siteTitle).'" class="brand-logo">' : e($siteTitle);
+    echo '<header class="top"><a class="brand" href="index.php">'.$brandInner.'</a><nav><a href="index.php">'.t('nav_home').'</a>';
     echo nav_render_zoos();
     try{ foreach(db()->query('SELECT title,slug FROM pages WHERE published=1 AND show_in_nav=1 AND is_homepage=0 ORDER BY sort_order,title') as $p){ echo '<a href="page.php?slug='.e($p['slug']).'">'.e($p['title']).'</a>'; }}catch(Exception $e){}
     echo '<a href="contact.php">'.t('nav_contact').'</a>';

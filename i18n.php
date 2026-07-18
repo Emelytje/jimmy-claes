@@ -185,6 +185,9 @@ function i18n_dictionary(){
         'confirm_delete_message' => ['nl' => 'Bericht definitief verwijderen?', 'en' => 'Permanently delete this message?'],
 
         // site-instellingen
+        'site_logo_label'   => ['nl' => 'Logo', 'en' => 'Logo'],
+        'site_logo_hint'    => ['nl' => 'Vervangt de sitenaam-tekst bovenaan elke pagina door dit logo (bij voorkeur een afbeelding met transparante achtergrond).', 'en' => 'Replaces the site name text at the top of every page with this logo (a transparent-background image works best).'],
+        'remove_logo_label' => ['nl' => 'Logo verwijderen (terug naar tekst)', 'en' => 'Remove logo (back to text)'],
         'site_name'         => ['nl' => 'Sitenaam', 'en' => 'Site name'],
         'intro_title_label' => ['nl' => 'Introtitel (homepage)', 'en' => 'Intro title (homepage)'],
         'intro_text_label'  => ['nl' => 'Introtekst (homepage)', 'en' => 'Intro text (homepage)'],
