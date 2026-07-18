@@ -7,6 +7,7 @@ $classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category
 $descLocalized = localized_field($a, 'description');
 $bodyAttrs = !empty($a['drive_url']) ? 'data-drive-url="'.e($a['drive_url']).'"' : '';
 $driveImages = !empty($a['drive_url']) ? drive_get_folder_images($a['drive_url']) : [];
+if($driveImages) drive_maybe_set_animal_cover($a, $driveImages);
 $driveGalleryHtml = $driveImages ? '<div class="pb-drive-section"><h2>'.e(t('drive_auto_gallery_title')).'</h2>'.pb_render_drive_gallery($driveImages).'</div>' : '';
 if($blocks){
     $headExtra = pb_page_head_extra($blocks);

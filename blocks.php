@@ -250,14 +250,18 @@ function pb_render_image($d){
 // drive_get_folder_images() in functions.php) als een gewone .gallery-grid,
 // zodat ze meteen meedoen met de bestaande lightbox-groepering in app.js.
 // Elke foto krijgt data-drive-file zodat een dubbelklik naar die precieze
-// Drive-foto kan doorklikken i.p.v. enkel naar de hele map.
+// Drive-foto kan doorklikken i.p.v. enkel naar de hele map. De zoo-badge
+// wordt best-effort uit de bestandsnaam herkend (drive_guess_zoo_id) —
+// geen match betekent gewoon geen badge, niets breekt daardoor.
 function pb_render_drive_gallery($images){
     if(!$images) return '';
     $html = '<div class="gallery pb-drive-gallery">';
     foreach($images as $img){
         $src = e(drive_thumbnail_url($img['id']));
         $alt = e($img['name'] ?? '');
-        $html .= '<figure class="photo"><img src="'.$src.'" alt="'.$alt.'" loading="lazy" data-drive-file="'.e($img['id']).'"></figure>';
+        $zooId = drive_guess_zoo_id($img['name'] ?? '');
+        $badge = pb_gallery_zoo_badge($zooId);
+        $html .= '<figure class="photo pb-gallery-item"><img src="'.$src.'" alt="'.$alt.'" loading="lazy" data-drive-file="'.e($img['id']).'">'.$badge.'</figure>';
     }
     return $html.'</div>';
 }

@@ -84,15 +84,15 @@ function drive_file_view_url($fileId){
     return 'https://drive.google.com/file/d/'.rawurlencode($fileId).'/view';
 }
 
-function drive_http_get($url){
+function drive_http_get($url, $timeout=8){
     if(function_exists('curl_init')){
         $ch = curl_init($url);
-        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8]);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout]);
         $body = curl_exec($ch);
         curl_close($ch);
         return $body ?: null;
     } elseif(ini_get('allow_url_fopen')){
-        $ctx = stream_context_create(['http' => ['timeout' => 8]]);
+        $ctx = stream_context_create(['http' => ['timeout' => $timeout]]);
         return @file_get_contents($url, false, $ctx) ?: null;
     }
     return null;
@@ -161,6 +161,79 @@ function drive_get_folder_images($folderUrl){
         if(is_array($decoded)) return $decoded;
     }
     return [];
+}
+
+// Downloadt één foto uit Drive naar uploads/, zodat een dier dat enkel via
+// Drive gekoppeld is toch overal een miniatuur heeft (categorie-overzicht,
+// "recent toegevoegd", admin-lijst...) — niet enkel op de eigen
+// detailpagina, waar de Drive-galerij zelf al rechtstreeks toont. Faalt
+// stil (null) bij eender welk probleem; de aanroeper beslist dan gewoon
+// niets te veranderen.
+function drive_download_image_to_uploads($fileId){
+    $key = drive_api_key();
+    if($key === '' || !$fileId) return null;
+    $url = 'https://www.googleapis.com/drive/v3/files/'.rawurlencode($fileId).'?alt=media&key='.rawurlencode($key);
+    $body = drive_http_get($url, 20);
+    if(!$body || strlen($body) > 15*1024*1024) return null;
+
+    $tmp = tempnam(sys_get_temp_dir(), 'drv');
+    file_put_contents($tmp, $body);
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+    $mime = @mime_content_type($tmp);
+    if(!isset($allowed[$mime]) || !@getimagesize($tmp)){ @unlink($tmp); return null; }
+
+    if(!is_dir(__DIR__.'/uploads')) mkdir(__DIR__.'/uploads', 0775, true);
+    $name = date('YmdHis').'-'.bin2hex(random_bytes(4)).'.'.$allowed[$mime];
+    $dest = __DIR__.'/uploads/'.$name;
+    if(!@rename($tmp, $dest)){ @unlink($tmp); return null; }
+    return 'uploads/'.$name;
+}
+
+// Als een dier via Drive gekoppeld is maar nog geen coverfoto heeft, wordt
+// de eerste Drive-foto eenmalig gedownload en als coverfoto ingesteld —
+// zodat het dier ook buiten zijn eigen pagina (categorie-overzicht, "recent
+// toegevoegd", admin-lijst) een miniatuur heeft, niet enkel in de eigen
+// Drive-galerij. Gebeurt maar één keer: zodra cover_image niet meer leeg
+// is, wordt dit pad nooit meer uitgevoerd voor dat dier.
+function drive_maybe_set_animal_cover($animal, $driveImages){
+    if(!empty($animal['cover_image']) || !$driveImages) return;
+    $path = drive_download_image_to_uploads($driveImages[0]['id']);
+    if($path){
+        try{ db()->prepare('UPDATE animals SET cover_image=? WHERE id=?')->execute([$path, $animal['id']]); }
+        catch(Exception $e){}
+    }
+}
+
+// Probeert uit een Drive-bestandsnaam te herkennen in welke (al bestaande)
+// dierentuin de foto genomen is, bv. "Serpentarium Blankenberge - BELGIE -
+// 06/07/2017.jpg" → zoo "Serpentarium Blankenberge". Maakt nooit zelf een
+// nieuwe zoo aan (te veel kans op rommelige duplicaten door wisselende
+// naamgeving) — enkel een match tegen een naam die al in de zoo-lijst
+// staat, hoofdletterongevoelig en met een beetje speling (substring beide
+// kanten) omdat foto-bestandsnamen niet altijd exact de zoo-titel gebruiken.
+function drive_guess_zoo_id($filename){
+    static $zoos = null;
+    if($zoos === null){
+        try{ $zoos = db()->query('SELECT id, title FROM zoos')->fetchAll(); }
+        catch(Exception $e){ $zoos = []; }
+    }
+    if(!$zoos) return null;
+    // Geen pathinfo() hier: Drive-bestandsnamen bevatten soms letterlijke
+    // '/'-tekens (bv. een datum "06/07/2017.jpg"), die pathinfo() als
+    // pad-scheidingstekens leest en zo alles vóór de laatste '/' wegkapt.
+    $name = preg_replace('/\.[a-zA-Z0-9]{2,5}$/', '', (string)$filename);
+    $parts = array_filter(array_map('trim', explode(' - ', $name)));
+    foreach($parts as $part){
+        if(mb_strlen($part) < 3) continue;
+        foreach($zoos as $z){
+            $zt = trim($z['title']);
+            if($zt === '' || mb_strlen($zt) < 3) continue;
+            if(mb_stripos($part, $zt) !== false || mb_stripos($zt, $part) !== false){
+                return (int)$z['id'];
+            }
+        }
+    }
+    return null;
 }
 
 // Bouwt een ingesprongen lijst van alle categorieën voor een <select>, met
