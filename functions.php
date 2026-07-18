@@ -62,6 +62,95 @@ function geocode_city_country($city, $country){
     return [(float)$data[0]['lat'], (float)$data[0]['lon']];
 }
 
+// Automatische vertaling (DeepL). Een gratis-tier key eindigt op ":fx" en
+// moet naar api-free.deepl.com, een betaalde key naar api.deepl.com. Geeft
+// null terug bij eender welk probleem (geen key, quota op, netwerk) zodat
+// een mislukte vertaling nooit de pagina breekt — de Nederlandse tekst
+// blijft dan gewoon staan totdat het later opnieuw lukt.
+function deepl_api_key(){
+    return defined('DEEPL_API_KEY') ? trim(DEEPL_API_KEY) : '';
+}
+
+// $htmlTags=true laat DeepL de tags in HTML-tekst (bv. een tekstblok met
+// <p>/<strong>) met rust en enkel de tekst ertussen vertalen. $context is
+// extra, zelf niet vertaalde achtergrondtekst die dubbelzinnige korte
+// woorden (bv. "Vissen" als categorienaam vs. de werkwoordsvorm) helpt
+// correct te vertalen.
+function deepl_translate_batch($texts, $sourceLang='NL', $targetLang='EN', $htmlTags=false, $context=''){
+    $key = deepl_api_key();
+    $texts = array_values($texts);
+    if($key === '' || !$texts) return null;
+    $host = str_ends_with($key, ':fx') ? 'api-free.deepl.com' : 'api.deepl.com';
+    $url = 'https://'.$host.'/v2/translate';
+    $fields = ['source_lang' => $sourceLang, 'target_lang' => $targetLang];
+    if($htmlTags) $fields['tag_handling'] = 'html';
+    if($context !== '') $fields['context'] = $context;
+    $body = http_build_query($fields);
+    foreach($texts as $t) $body .= '&text='.rawurlencode((string)$t);
+    $headers = ['Authorization: DeepL-Auth-Key '.$key, 'Content-Type: application/x-www-form-urlencoded'];
+
+    $response = null;
+    if(function_exists('curl_init')){
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $body,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_TIMEOUT => 15,
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
+    } elseif(ini_get('allow_url_fopen')){
+        $ctx = stream_context_create(['http' => [
+            'method' => 'POST',
+            'header' => implode("\r\n", $headers)."\r\n",
+            'content' => $body,
+            'timeout' => 15,
+        ]]);
+        $response = @file_get_contents($url, false, $ctx);
+    }
+    if(!$response) return null;
+    $data = json_decode($response, true);
+    if(!is_array($data) || !isset($data['translations'])) return null;
+    $out = [];
+    foreach($data['translations'] as $t) $out[] = $t['text'] ?? '';
+    return count($out) === count($texts) ? $out : null;
+}
+
+function deepl_translate($text, $sourceLang='NL', $targetLang='EN', $htmlTags=false, $context=''){
+    if(trim((string)$text) === '') return '';
+    $result = deepl_translate_batch([$text], $sourceLang, $targetLang, $htmlTags, $context);
+    return $result ? $result[0] : null;
+}
+
+// Vertaalt en cachet een veld op een rij automatisch: als de kolom
+// "{$field}_en" al een waarde heeft (handmatig ingevuld of eerder al
+// vertaald) wordt die gerespecteerd en niet overschreven. Anders wordt de
+// Nederlandse waarde vertaald en meteen opgeslagen, zodat dezelfde tekst
+// maar één keer de DeepL-quota kost. $context helpt bij korte,
+// dubbelzinnige tekst (bv. een categorienaam als "Vissen").
+function auto_translate_field($table, $id, $field, $nlValue, $htmlTags=false, $context=''){
+    $nlValue = trim((string)$nlValue);
+    $enCol = $field.'_en';
+    if(!pb_has_column($table, $enCol)){
+        try{ db()->exec("ALTER TABLE `$table` ADD COLUMN `$enCol` TEXT DEFAULT NULL"); }
+        catch(Exception $e){ return; }
+    }
+    if($nlValue === '') return;
+    try{
+        $st = db()->prepare("SELECT `$enCol` FROM `$table` WHERE id=?");
+        $st->execute([$id]);
+        $existing = $st->fetchColumn();
+        if($existing !== false && trim((string)$existing) !== '') return;
+    }catch(Exception $e){ return; }
+
+    $translated = deepl_translate($nlValue, 'NL', 'EN', $htmlTags, $context);
+    if($translated === null || trim($translated) === '') return;
+    try{ db()->prepare("UPDATE `$table` SET `$enCol`=? WHERE id=?")->execute([$translated, $id]); }
+    catch(Exception $e){}
+}
+
 // Automatisch de foto's uit een gekoppelde Google Drive-map ophalen, zodat
 // je niet elke foto apart naar de site moet uploaden. Vereist een Google
 // Drive API-key (GOOGLE_DRIVE_API_KEY in config.php) EN dat de map gedeeld
@@ -161,47 +250,6 @@ function drive_get_folder_images($folderUrl){
         if(is_array($decoded)) return $decoded;
     }
     return [];
-}
-
-// Downloadt één foto uit Drive naar uploads/, zodat een dier dat enkel via
-// Drive gekoppeld is toch overal een miniatuur heeft (categorie-overzicht,
-// "recent toegevoegd", admin-lijst...) — niet enkel op de eigen
-// detailpagina, waar de Drive-galerij zelf al rechtstreeks toont. Faalt
-// stil (null) bij eender welk probleem; de aanroeper beslist dan gewoon
-// niets te veranderen.
-function drive_download_image_to_uploads($fileId){
-    $key = drive_api_key();
-    if($key === '' || !$fileId) return null;
-    $url = 'https://www.googleapis.com/drive/v3/files/'.rawurlencode($fileId).'?alt=media&key='.rawurlencode($key);
-    $body = drive_http_get($url, 20);
-    if(!$body || strlen($body) > 15*1024*1024) return null;
-
-    $tmp = tempnam(sys_get_temp_dir(), 'drv');
-    file_put_contents($tmp, $body);
-    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-    $mime = @mime_content_type($tmp);
-    if(!isset($allowed[$mime]) || !@getimagesize($tmp)){ @unlink($tmp); return null; }
-
-    if(!is_dir(__DIR__.'/uploads')) mkdir(__DIR__.'/uploads', 0775, true);
-    $name = date('YmdHis').'-'.bin2hex(random_bytes(4)).'.'.$allowed[$mime];
-    $dest = __DIR__.'/uploads/'.$name;
-    if(!@rename($tmp, $dest)){ @unlink($tmp); return null; }
-    return 'uploads/'.$name;
-}
-
-// Als een dier via Drive gekoppeld is maar nog geen coverfoto heeft, wordt
-// de eerste Drive-foto eenmalig gedownload en als coverfoto ingesteld —
-// zodat het dier ook buiten zijn eigen pagina (categorie-overzicht, "recent
-// toegevoegd", admin-lijst) een miniatuur heeft, niet enkel in de eigen
-// Drive-galerij. Gebeurt maar één keer: zodra cover_image niet meer leeg
-// is, wordt dit pad nooit meer uitgevoerd voor dat dier.
-function drive_maybe_set_animal_cover($animal, $driveImages){
-    if(!empty($animal['cover_image']) || !$driveImages) return;
-    $path = drive_download_image_to_uploads($driveImages[0]['id']);
-    if($path){
-        try{ db()->prepare('UPDATE animals SET cover_image=? WHERE id=?')->execute([$path, $animal['id']]); }
-        catch(Exception $e){}
-    }
 }
 
 // Probeert uit een Drive-bestandsnaam te herkennen in welke (al bestaande)

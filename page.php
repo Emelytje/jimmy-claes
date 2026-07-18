@@ -7,7 +7,7 @@ $page = $st->fetch();
 if(!$page){ http_response_code(404); die(t('page_not_found')); }
 track_view('pages', $page['id']);
 
-$blocks = pb_decode_blocks($page['blocks']);
+$blocks = pb_get_translated_blocks('pages', $page['id'], pb_decode_blocks($page['blocks']));
 $headExtra = pb_page_head_extra($blocks);
 
 header_html($page['meta_title'] ?: $page['title'], $page['meta_description'] ?: '', '', $headExtra);

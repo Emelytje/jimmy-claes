@@ -13,3 +13,10 @@ define('SITE_URL', ''); // leeg laten mag
 // Leeg laten = die functie staat gewoon uit, de handmatige Drive-link
 // (dubbelklik op een foto) blijft altijd werken zonder key nodig.
 define('GOOGLE_DRIVE_API_KEY', '');
+
+// Optioneel: DeepL API-key voor automatische NL->EN vertaling van
+// categorieën, dieromschrijvingen en pagina-blokken (titels, tekstvakken).
+// Gratis-tier keys eindigen op ":fx". Leeg laten = automatisch vertalen
+// staat gewoon uit, je kan wel nog altijd handmatig een Engelse variant
+// invullen waar dat al kon.
+define('DEEPL_API_KEY', '');

@@ -4,6 +4,9 @@ header('Content-Type: application/json');
 
 const PBS_TABLES = ['page'=>'pages', 'animal'=>'animals', 'album'=>'albums', 'post'=>'posts', 'category'=>'categories'];
 const PBS_DESC_COLS = ['animal'=>'description', 'album'=>'description', 'post'=>'excerpt', 'category'=>'description'];
+// Korte categorienamen zijn zonder context dubbelzinnig voor DeepL (bv.
+// "Vissen" als diercategorie vs. de werkwoordsvorm "to fish").
+const PBS_CATEGORY_TRANSLATE_CONTEXT = 'Diercategorie op een website over dierentuinen, zoals Zoogdieren, Vogels, Reptielen.';
 
 // Loopt van $parentId omhoog via parent_id-links en geeft true terug als
 // $id ergens in die keten voorkomt (voorkomt dat een categorie zichzelf of
@@ -71,6 +74,8 @@ if($type === 'page'){
     if($parent_id && pbs_category_creates_cycle($id, $parent_id)) $parent_id = null;
     $st = db()->prepare('UPDATE categories SET title=?, slug=?, blocks=?, published=?, cover_image=?, description=?, parent_id=?, meta_title=?, meta_description=? WHERE id=?');
     $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $parent_id, $meta_title, $meta_description, $id]);
+    auto_translate_field('categories', $id, 'title', $title, false, PBS_CATEGORY_TRANSLATE_CONTEXT);
+    auto_translate_field('categories', $id, 'description', $description);
 } else {
     $cover_image = trim((string)($body['cover_image'] ?? ''));
     $description = trim((string)($body['description'] ?? ''));
@@ -82,10 +87,22 @@ if($type === 'page'){
         if($drive_url !== '' && !preg_match('~^https?://~i', $drive_url)) $drive_url = 'https://'.$drive_url;
         $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, category_id=?, drive_url=?, meta_title=?, meta_description=? WHERE id=?");
         $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $category_id, $drive_url !== '' ? $drive_url : null, $meta_title, $meta_description, $id]);
+        // Diersoortnamen zijn Latijn en worden nooit vertaald — enkel de
+        // beschrijving (indien ingevuld) kan een Engelse variant krijgen.
+        auto_translate_field('animals', $id, $descCol, $description);
     } else {
         $st = db()->prepare("UPDATE $table SET title=?, slug=?, blocks=?, published=?, cover_image=?, $descCol=?, meta_title=?, meta_description=? WHERE id=?");
         $st->execute([$title, $slug, $blocksJson, $published, $cover_image, $description, $meta_title, $meta_description, $id]);
+        auto_translate_field($table, $id, 'title', $title);
+        auto_translate_field($table, $id, $descCol, $description);
     }
 }
+
+// Elke pagina/dier/categorie/album/post kan ook eigen pagebuilder-blokken
+// hebben (titels, tekstvakken, citaten...) — die krijgen apart een
+// gecachete Engelse versie, zie pb_get_translated_blocks() in blocks.php.
+// Cache hier ongeldig maken (niet meteen vertalen): dat gebeurt lazy bij
+// de eerste EN-weergave, zodat opslaan in de editor niet trager wordt.
+pb_invalidate_blocks_translation($table, $id);
 
 echo json_encode(['ok'=>true, 'slug'=>$slug]);

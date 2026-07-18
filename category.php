@@ -5,7 +5,7 @@ $st->execute([$slug]);
 $c = $st->fetch();
 if(!$c){ http_response_code(404); die(t('page_not_found')); }
 track_view('categories', $c['id']);
-$blocks = pb_decode_blocks($c['blocks'] ?? null);
+$blocks = pb_get_translated_blocks('categories', $c['id'], pb_decode_blocks($c['blocks'] ?? null));
 $ctx = ['category_id' => (int)$c['id']];
 $classColor = pb_class_theme_color((int)$c['id']);
 $titleLocalized = localized_field($c, 'title');

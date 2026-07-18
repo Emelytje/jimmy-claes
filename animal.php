@@ -1,13 +1,12 @@
 <?php require 'functions.php'; $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM animals WHERE slug=? AND published=1'); $st->execute([$slug]); $a=$st->fetch(); if(!$a){ http_response_code(404); die(t('page_not_found')); }
 track_view('animals', $a['id']);
-$blocks = pb_decode_blocks($a['blocks'] ?? null);
+$blocks = pb_get_translated_blocks('animals', $a['id'], pb_decode_blocks($a['blocks'] ?? null));
 $classColor = !empty($a['category_id']) ? pb_class_theme_color((int)$a['category_id']) : '';
 // Soortnamen zijn al Latijn en worden nooit vertaald — enkel de beschrijving
 // (indien ingevuld) kan een Engelse variant hebben.
 $descLocalized = localized_field($a, 'description');
 $bodyAttrs = !empty($a['drive_url']) ? 'data-drive-url="'.e($a['drive_url']).'"' : '';
 $driveImages = !empty($a['drive_url']) ? drive_get_folder_images($a['drive_url']) : [];
-if($driveImages) drive_maybe_set_animal_cover($a, $driveImages);
 $driveGalleryHtml = $driveImages ? '<div class="pb-drive-section"><h2>'.e(t('drive_auto_gallery_title')).'</h2>'.pb_render_drive_gallery($driveImages).'</div>' : '';
 if($blocks){
     $headExtra = pb_page_head_extra($blocks);

@@ -56,6 +56,117 @@ function pb_encode_blocks($blocks){
     return json_encode($blocks, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
 }
 
+// Welke data-velden van een bloktype vertaalbare tekst bevatten, en of dat
+// veld HTML-opmaak bevat (bv. het tekstblok) — DeepL moet dan de tags met
+// rust laten (tag_handling=html) en enkel de tekst ertussen vertalen.
+function pb_block_text_fields($type){
+    switch($type){
+        case 'title':            return ['text' => false];
+        case 'text':              return ['html' => true];
+        case 'quote':             return ['text' => false, 'author' => false];
+        case 'hero':              return ['title' => false, 'subtitle' => false, 'buttonText' => false];
+        case 'button':            return ['text' => false];
+        case 'class_split':       return ['title' => false, 'gewerveldeLabel' => false, 'ongewerveldeLabel' => false];
+        case 'contact':           return ['title' => false, 'buttonText' => false];
+        case 'photocount':        return ['label' => false];
+        case 'species_progress':  return ['label' => false];
+        default:                  return [];
+    }
+}
+
+// Verzamelt referenties naar elk vertaalbaar tekstveld in de (geneste)
+// blokkenboom, via PHP-referenties zodat de vertaling er later rechtstreeks
+// in teruggeschreven kan worden zonder de hele structuur te moeten
+// herbouwen. $collected krijgt items van de vorm ['ref'=>&...,'html'=>bool].
+function pb_collect_translatable(&$blocks, &$collected){
+    if(!is_array($blocks)) return;
+    foreach($blocks as &$block){
+        $type = $block['type'] ?? '';
+        if($type === 'columns' && isset($block['data']['cols'])){
+            foreach($block['data']['cols'] as &$col){
+                if(isset($col['blocks'])) pb_collect_translatable($col['blocks'], $collected);
+            }
+            unset($col);
+        }
+        if($type === 'row' && isset($block['data']['cells'])){
+            foreach($block['data']['cells'] as &$cell){
+                if(isset($cell['blocks'])) pb_collect_translatable($cell['blocks'], $collected);
+            }
+            unset($cell);
+        }
+        foreach(pb_block_text_fields($type) as $field => $isHtml){
+            if(!empty($block['data'][$field]) && trim((string)$block['data'][$field]) !== ''){
+                $collected[] = ['ref' => &$block['data'][$field], 'html' => $isHtml];
+            }
+        }
+    }
+    unset($block);
+}
+
+// Vertaalt alle tekstvelden in een blokkenboom in-place (retourneert de
+// aangepaste boom) — platte tekst en HTML-tekst apart gebundeld in telkens
+// één DeepL-aanroep, ongeacht hoeveel velden er zijn. Mislukt een aanroep
+// (geen key, quota, netwerk), dan blijft dat specifieke veld gewoon
+// onvertaald staan i.p.v. de hele pagina te breken.
+function pb_translate_blocks_now($blocks){
+    if(!is_array($blocks) || !$blocks) return $blocks;
+    $collected = [];
+    pb_collect_translatable($blocks, $collected);
+    if(!$collected) return $blocks;
+
+    $plainIdx = []; $plainTexts = [];
+    $htmlIdx = []; $htmlTexts = [];
+    foreach($collected as $i => $item){
+        if($item['html']){ $htmlIdx[] = $i; $htmlTexts[] = $item['ref']; }
+        else { $plainIdx[] = $i; $plainTexts[] = $item['ref']; }
+    }
+    if($plainTexts){
+        $translated = deepl_translate_batch($plainTexts, 'NL', 'EN', false);
+        if($translated) foreach($plainIdx as $k => $i) $collected[$i]['ref'] = $translated[$k];
+    }
+    if($htmlTexts){
+        $translated = deepl_translate_batch($htmlTexts, 'NL', 'EN', true);
+        if($translated) foreach($htmlIdx as $k => $i) $collected[$i]['ref'] = $translated[$k];
+    }
+    return $blocks;
+}
+
+// Geeft de blokkenboom in de huidige taal terug. Voor EN wordt een eerder
+// gecachete vertaling herbruikt (kolom blocks_en), of anders nu vertaald en
+// meteen gecachet — zo kost dezelfde pagina maar één keer DeepL-quota. Voor
+// NL (of zonder key/inhoud) wordt gewoon de originele boom teruggegeven.
+function pb_get_translated_blocks($table, $id, $blocks){
+    if(current_lang() !== 'en' || !$blocks) return $blocks;
+    if(!pb_has_column($table, 'blocks_en')){
+        try{ db()->exec("ALTER TABLE `$table` ADD COLUMN blocks_en LONGTEXT DEFAULT NULL"); }
+        catch(Exception $e){ return $blocks; }
+    }
+    try{
+        $st = db()->prepare("SELECT blocks_en FROM `$table` WHERE id=?");
+        $st->execute([$id]);
+        $cached = $st->fetchColumn();
+        if($cached !== false && $cached !== null && trim((string)$cached) !== ''){
+            $decoded = json_decode($cached, true);
+            if(is_array($decoded)) return $decoded;
+        }
+    }catch(Exception $e){ return $blocks; }
+
+    $translated = pb_translate_blocks_now($blocks);
+    try{ db()->prepare("UPDATE `$table` SET blocks_en=? WHERE id=?")->execute([pb_encode_blocks($translated), $id]); }
+    catch(Exception $e){}
+    return $translated;
+}
+
+// Maakt de gecachete Engelse vertaling van een item ongeldig (bv. na het
+// opslaan van nieuwe/gewijzigde blokken) — vertaalt niet meteen opnieuw
+// (dat zou elke opslag in de editor trager maken), enkel de cache leegmaken
+// zodat de eerstvolgende EN-weergave opnieuw vertaalt.
+function pb_invalidate_blocks_translation($table, $id){
+    if(!pb_has_column($table, 'blocks_en')) return;
+    try{ db()->prepare("UPDATE `$table` SET blocks_en=NULL WHERE id=?")->execute([$id]); }
+    catch(Exception $e){}
+}
+
 function pb_clean_text_html($html){
     $html = (string)$html;
     $html = strip_tags($html, PB_ALLOWED_TEXT_TAGS);
