@@ -113,16 +113,35 @@
     }
     preventImageSaving(boxImg);
 
+    // Enkele klik zoomt altijd in de lightbox (ook wanneer er een Drive-link
+    // is ingesteld) — een dubbelklik opent Google Drive: de precieze foto
+    // als die uit een gekoppelde Drive-map komt (data-drive-file), anders
+    // de hele gekoppelde map (data-drive-url op <body>). De lightbox is een
+    // fullscreen overlay die na de eerste klik van een dubbelklik meteen
+    // opent, dus zonder vertraging zou de tweede klik op die overlay landen
+    // i.p.v. op de foto en zou 'dblclick' nooit vuren — vandaar de korte
+    // wachttijd, enkel wanneer er effectief een Drive-doel is.
     var driveUrl = document.body.getAttribute('data-drive-url') || '';
     groups.forEach(function(group){
       group.forEach(function(img, idx){
         preventImageSaving(img);
-        img.style.cursor = driveUrl ? 'pointer' : 'zoom-in';
+        var driveFileId = img.getAttribute('data-drive-file');
+        var driveTarget = driveFileId ? ('https://drive.google.com/file/d/' + encodeURIComponent(driveFileId) + '/view') : driveUrl;
+        if(driveTarget) img.title = img.title || 'Dubbelklik voor Google Drive';
+        var clickTimer = null;
         img.addEventListener('click', function(e){
           if(img.closest('a')) e.preventDefault();
-          if(driveUrl){ window.open(driveUrl, '_blank', 'noopener'); return; }
-          openBox(group, idx);
+          if(!driveTarget){ openBox(group, idx); return; }
+          if(clickTimer) clearTimeout(clickTimer);
+          clickTimer = setTimeout(function(){ clickTimer = null; openBox(group, idx); }, 280);
         });
+        if(driveTarget){
+          img.addEventListener('dblclick', function(e){
+            if(img.closest('a')) e.preventDefault();
+            if(clickTimer){ clearTimeout(clickTimer); clickTimer = null; }
+            window.open(driveTarget, '_blank', 'noopener');
+          });
+        }
       });
     });
     box.addEventListener('click', function(e){ if(e.target === box) closeBox(); });

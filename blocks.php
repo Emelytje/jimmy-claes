@@ -141,6 +141,35 @@ function pb_google_fonts_link_href($families){
     return 'https://fonts.googleapis.com/css2?'.implode('&',$parts).'&display=swap';
 }
 
+function pb_blocks_contain_type($blocks, $type){
+    foreach((array)$blocks as $b){
+        if(($b['type'] ?? '') === $type) return true;
+        if(($b['type'] ?? '') === 'columns'){
+            foreach(($b['data']['cols'] ?? []) as $col){ if(pb_blocks_contain_type($col['blocks'] ?? [], $type)) return true; }
+        }
+        if(($b['type'] ?? '') === 'row'){
+            foreach(($b['data']['cells'] ?? []) as $cell){ if(pb_blocks_contain_type($cell['blocks'] ?? [], $type)) return true; }
+        }
+    }
+    return false;
+}
+
+// Extra <head>-inhoud voor een pagina: lettertype-links (bestond al) plus,
+// enkel als de pagina er eentje bevat, de Leaflet-CSS voor de zoo-kaart.
+// Zet ook een globale vlag zodat footer_html() weet of Leaflet's JS nodig
+// is, zonder dat elke aanroeper van footer_html() de blokken hoeft door te
+// geven.
+function pb_page_head_extra($blocks){
+    $extra = '';
+    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
+    if($fontHref) $extra .= '<link rel="stylesheet" href="'.e($fontHref).'">';
+    if(pb_blocks_contain_type($blocks, 'zoo_map')){
+        $extra .= '<link rel="stylesheet" href="assets/leaflet/leaflet.css">';
+        $GLOBALS['pb_needs_leaflet'] = true;
+    }
+    return $extra;
+}
+
 function render_blocks($blocks, $depth=0, $ctx=[]){
     if(!is_array($blocks) || $depth > 2) return '';
     $out = '';
@@ -169,6 +198,8 @@ function render_block($block, $depth=0, $ctx=[]){
         case 'subcategories': $inner = pb_render_subcategories($data, $ctx); break;
         case 'categories_grid': $inner = pb_render_categories_grid($data); break;
         case 'photocount': $inner = pb_render_photocount($data); break;
+        case 'species_progress': $inner = pb_render_species_progress($data); break;
+        case 'zoo_map': $inner = pb_render_zoo_map($data); break;
         case 'class_split': $inner = pb_render_class_split($data); break;
         case 'slideshow':  $inner = pb_render_slideshow($data); break;
         case 'hero':       return pb_render_hero($data, $settings, $id);
@@ -213,6 +244,26 @@ function pb_render_image($d){
         $figureStyleDecls[] = 'max-width:'.$wp.'%'; $figureStyleDecls[] = 'margin-left:auto'; $figureStyleDecls[] = 'margin-right:auto';
     }
     return '<figure class="pb-figure" style="'.e(implode(';', $figureStyleDecls)).'">'.$img.$badge.$caption.'</figure>';
+}
+
+// Rendert de automatisch uit een Google Drive-map opgehaalde foto's (zie
+// drive_get_folder_images() in functions.php) als een gewone .gallery-grid,
+// zodat ze meteen meedoen met de bestaande lightbox-groepering in app.js.
+// Elke foto krijgt data-drive-file zodat een dubbelklik naar die precieze
+// Drive-foto kan doorklikken i.p.v. enkel naar de hele map. De zoo-badge
+// wordt best-effort uit de bestandsnaam herkend (drive_guess_zoo_id) —
+// geen match betekent gewoon geen badge, niets breekt daardoor.
+function pb_render_drive_gallery($images){
+    if(!$images) return '';
+    $html = '<div class="gallery pb-drive-gallery">';
+    foreach($images as $img){
+        $src = e(drive_thumbnail_url($img['id']));
+        $alt = e($img['name'] ?? '');
+        $zooId = drive_guess_zoo_id($img['name'] ?? '');
+        $badge = pb_gallery_zoo_badge($zooId);
+        $html .= '<figure class="photo pb-gallery-item"><img src="'.$src.'" alt="'.$alt.'" loading="lazy" data-drive-file="'.e($img['id']).'">'.$badge.'</figure>';
+    }
+    return $html.'</div>';
 }
 
 function pb_safe_aspect_ratio($v){
@@ -427,6 +478,11 @@ function pb_category_ancestors($categoryId){
 // admin/settings.php (kleurenpicker), zodat ze nooit uit elkaar kunnen lopen.
 function pb_class_color_map(){
     return [
+        // Homepage-achtergrondkleur: geen echte dierklasse, maar hergebruikt
+        // hetzelfde instellingen-mechanisme (kleurenkiezer + opslaan) als de
+        // klasse-banners hieronder. Leeg (geen standaardkleur) zolang niet
+        // ingesteld, zodat de homepage er niet ongevraagd anders uitziet.
+        'homepage'      => ['class_color_homepage',       ''],
         // "Gewervelde" is geen echte categorie (bewuste keuze), maar
         // gewervelde.php gebruikt deze zelfde instelling rechtstreeks voor
         // zijn eigen banner — vandaar toch een plek hier.
@@ -638,6 +694,57 @@ function pb_count_total_photos(){
         }
         return $cached = $count;
     }catch(Exception $e){ return 0; }
+}
+
+// Aantal diersoorten met minstens één foto (oude photos-tabel of blokken)
+// t.o.v. het totaal aantal aangemaakte diersoorten — voor de "X van de Y
+// soorten al gefotografeerd"-voortgangsbalk.
+function pb_species_progress(){
+    static $cached = null;
+    if($cached !== null) return $cached;
+    try{
+        $animals = db()->query('SELECT id, blocks FROM animals')->fetchAll();
+        $total = count($animals);
+        if(!$total) return $cached = [0, 0];
+        $legacyCounts = [];
+        foreach(db()->query('SELECT animal_id, COUNT(*) c FROM photos GROUP BY animal_id') as $row){
+            $legacyCounts[(int)$row['animal_id']] = (int)$row['c'];
+        }
+        $with = 0;
+        foreach($animals as $a){
+            $has = ($legacyCounts[(int)$a['id']] ?? 0) > 0 || pb_count_blocks_images(pb_decode_blocks($a['blocks'] ?? null)) > 0;
+            if($has) $with++;
+        }
+        return $cached = [$with, $total];
+    }catch(Exception $e){ return [0, 0]; }
+}
+
+function pb_render_species_progress($d){
+    [$with, $total] = pb_species_progress();
+    $label = trim($d['label'] ?? '') ?: t('species_progress_label_simple');
+    return '<div class="pb-photocount"><span class="pb-photocount-num">'.number_format($with, 0, ',', '.').'</span><span class="pb-photocount-label">'.e($label).'</span></div>';
+}
+
+// Interactieve wereldkaart met alle dierentuinen die al een geocodeerde
+// locatie hebben (stad+land -> lat/lng, zie geocode_city_country() in
+// functions.php). De JS-kant (assets/zoo-map.js) leest data-zoos uit en
+// bouwt de Leaflet-kaart op; hier enkel de data verzamelen en doorgeven.
+function pb_render_zoo_map($d){
+    $zoos = [];
+    if(pb_has_column('zoos','lat') && pb_has_column('zoos','lng')){
+        try{
+            $rows = db()->query("SELECT title, url, city, country, lat, lng FROM zoos WHERE published=1 AND lat IS NOT NULL AND lng IS NOT NULL")->fetchAll();
+            foreach($rows as $r){
+                $zoos[] = ['label' => zoo_label($r), 'url' => $r['url'], 'lat' => (float)$r['lat'], 'lng' => (float)$r['lng']];
+            }
+        }catch(Exception $e){}
+    }
+    $height = (int)($d['height'] ?? 420);
+    $height = max(200, min(900, $height));
+    if(!$zoos){
+        return '<div class="pb-zoo-map-empty" style="min-height:'.$height.'px">'.e(t('zoo_map_empty')).'</div>';
+    }
+    return '<div class="pb-zoo-map" style="height:'.$height.'px" data-zoos="'.e(json_encode($zoos, JSON_UNESCAPED_UNICODE)).'"></div>';
 }
 
 function pb_render_photocount($d){

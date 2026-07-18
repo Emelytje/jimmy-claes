@@ -4,6 +4,8 @@ require __DIR__.'/inc.php';
 db()->exec("CREATE TABLE IF NOT EXISTS zoos(id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(160) NOT NULL, url VARCHAR(500) NOT NULL, sort_order INT DEFAULT 0, published TINYINT DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 if(!pb_has_column('zoos','city')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN city VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
 if(!pb_has_column('zoos','country')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN country VARCHAR(160) DEFAULT NULL"); }catch(Exception $e){} }
+if(!pb_has_column('zoos','lat')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN lat DECIMAL(9,6) DEFAULT NULL"); }catch(Exception $e){} }
+if(!pb_has_column('zoos','lng')){ try{ db()->exec("ALTER TABLE zoos ADD COLUMN lng DECIMAL(9,6) DEFAULT NULL"); }catch(Exception $e){} }
 
 function zoos_normalize_url($url){
     $url = trim($url);
@@ -21,8 +23,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $city = trim($_POST['city'] ?? '');
         $country = trim($_POST['country'] ?? '');
         if($title!=='' && $url!==''){
-            $st = db()->prepare('INSERT INTO zoos(title,url,city,country) VALUES(?,?,?,?)');
-            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null]);
+            $coords = ($city !== '' || $country !== '') ? geocode_city_country($city, $country) : null;
+            $st = db()->prepare('INSERT INTO zoos(title,url,city,country,lat,lng) VALUES(?,?,?,?,?,?)');
+            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null, $coords[0] ?? null, $coords[1] ?? null]);
         }
     } elseif($action==='update'){
         $id = (int)($_POST['id'] ?? 0);
@@ -31,8 +34,20 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $city = trim($_POST['city'] ?? '');
         $country = trim($_POST['country'] ?? '');
         if($id && $title!=='' && $url!==''){
-            $st = db()->prepare('UPDATE zoos SET title=?, url=?, city=?, country=? WHERE id=?');
-            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null, $id]);
+            // Enkel opnieuw geocoderen als stad/land veranderd is t.o.v. wat
+            // er al stond — anders zou elke gewone opslag (bv. enkel de
+            // titel wijzigen) telkens opnieuw een Nominatim-verzoek doen.
+            $cur = db()->prepare('SELECT city, country, lat, lng FROM zoos WHERE id=?');
+            $cur->execute([$id]);
+            $curRow = $cur->fetch();
+            $lat = $curRow['lat'] ?? null; $lng = $curRow['lng'] ?? null;
+            $cityChanged = ($curRow['city'] ?? '') !== $city || ($curRow['country'] ?? '') !== $country;
+            if($cityChanged && ($city !== '' || $country !== '')){
+                $coords = geocode_city_country($city, $country);
+                if($coords){ $lat = $coords[0]; $lng = $coords[1]; }
+            }
+            $st = db()->prepare('UPDATE zoos SET title=?, url=?, city=?, country=?, lat=?, lng=? WHERE id=?');
+            $st->execute([$title, $url, $city !== '' ? $city : null, $country !== '' ? $country : null, $lat, $lng, $id]);
         }
     } elseif($action==='delete'){
         $id = (int)($_POST['id'] ?? 0);
@@ -66,6 +81,7 @@ admin_header(t('admin_zoos'), 'zoos');
   <div class="a-card-pad">
     <h2 style="margin-top:0"><?=e(t('zoos_heading'))?></h2>
     <p style="color:#8a7c6c;font-size:.9rem"><?=e(t('zoos_desc'))?></p>
+    <p><a class="a-btn a-btn-ghost" href="bulk-zoos.php"><?=e(t('bulk_zoos_btn'))?></a></p>
     <form method="post" class="a-inline-form">
       <?=csrf_field()?>
       <input type="hidden" name="action" value="create">

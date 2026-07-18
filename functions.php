@@ -32,6 +32,210 @@ function db(){
 function e($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function asset_v($absPath){ $v = @filemtime($absPath); return $v ?: time(); }
 
+// Gratis geocoding (OpenStreetMap Nominatim, geen API-sleutel nodig) van
+// "stad, land" naar [lat, lng], voor de kaart met bezochte dierentuinen.
+// Geeft null terug bij eender welk probleem (geen internet, niet gevonden,
+// enz.) zodat een mislukte opzoeking de rest van de pagina nooit breekt —
+// de admin kan het later gewoon opnieuw proberen door de zoo op te slaan.
+function geocode_city_country($city, $country){
+    $query = trim(trim($city).', '.trim($country), ', ');
+    if($query === '') return null;
+    $url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='.rawurlencode($query);
+    $userAgent = 'JimmyClaesSite/1.0 ('.(setting('contact_email','') ?: 'no-contact-set').')';
+    $body = null;
+    if(function_exists('curl_init')){
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['User-Agent: '.$userAgent],
+            CURLOPT_TIMEOUT => 8,
+        ]);
+        $body = curl_exec($ch);
+        curl_close($ch);
+    } elseif(ini_get('allow_url_fopen')){
+        $ctx = stream_context_create(['http' => ['header' => "User-Agent: $userAgent\r\n", 'timeout' => 8]]);
+        $body = @file_get_contents($url, false, $ctx);
+    }
+    if(!$body) return null;
+    $data = json_decode($body, true);
+    if(!is_array($data) || !isset($data[0]['lat'], $data[0]['lon'])) return null;
+    return [(float)$data[0]['lat'], (float)$data[0]['lon']];
+}
+
+// Automatisch de foto's uit een gekoppelde Google Drive-map ophalen, zodat
+// je niet elke foto apart naar de site moet uploaden. Vereist een Google
+// Drive API-key (GOOGLE_DRIVE_API_KEY in config.php) EN dat de map gedeeld
+// is als "Iedereen met de link" — een kale API-key kan geen privé-mappen
+// lezen. Zonder key of bij een niet-map-link blijft alles gewoon werken
+// zoals voorheen (enkel de handmatige Drive-link-doorklik).
+function drive_api_key(){
+    return defined('GOOGLE_DRIVE_API_KEY') ? trim(GOOGLE_DRIVE_API_KEY) : '';
+}
+
+function drive_extract_folder_id($url){
+    if(preg_match('~/folders/([a-zA-Z0-9_-]+)~', (string)$url, $m)) return $m[1];
+    return null;
+}
+
+function drive_thumbnail_url($fileId, $size=1600){
+    return 'https://drive.google.com/thumbnail?id='.rawurlencode($fileId).'&sz=w'.(int)$size;
+}
+function drive_file_view_url($fileId){
+    return 'https://drive.google.com/file/d/'.rawurlencode($fileId).'/view';
+}
+
+function drive_http_get($url, $timeout=8){
+    if(function_exists('curl_init')){
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout]);
+        $body = curl_exec($ch);
+        curl_close($ch);
+        return $body ?: null;
+    } elseif(ini_get('allow_url_fopen')){
+        $ctx = stream_context_create(['http' => ['timeout' => $timeout]]);
+        return @file_get_contents($url, false, $ctx) ?: null;
+    }
+    return null;
+}
+
+function drive_fetch_folder_images_raw($folderId){
+    $key = drive_api_key();
+    if($key === '' || !$folderId) return [];
+    $images = [];
+    $pageToken = '';
+    $pages = 0;
+    do{
+        $q = rawurlencode("'".$folderId."' in parents and mimeType contains 'image/' and trashed=false");
+        $url = 'https://www.googleapis.com/drive/v3/files?q='.$q
+            .'&fields='.rawurlencode('nextPageToken,files(id,name)')
+            .'&pageSize=100&key='.rawurlencode($key);
+        if($pageToken !== '') $url .= '&pageToken='.rawurlencode($pageToken);
+        $body = drive_http_get($url);
+        if(!$body) break;
+        $data = json_decode($body, true);
+        if(!is_array($data) || !isset($data['files'])) break;
+        foreach($data['files'] as $f){
+            if(!empty($f['id'])) $images[] = ['id' => $f['id'], 'name' => $f['name'] ?? ''];
+        }
+        $pageToken = $data['nextPageToken'] ?? '';
+        $pages++;
+    } while($pageToken !== '' && $pages < 5);
+    return $images;
+}
+
+const DRIVE_CACHE_TTL = 21600; // 6 uur — genoeg marge tegen Drive-quota, kort genoeg om nieuwe foto's snel te tonen
+
+// Haalt de foto's van een Drive-map op, met caching in de DB. Bij een
+// mislukte live-opvraging (quota, netwerk, tijdelijk probleem) valt dit
+// terug op de laatst gekende cache in plaats van de sectie leeg te tonen.
+function drive_get_folder_images($folderUrl){
+    $folderId = drive_extract_folder_id($folderUrl);
+    if(!$folderId || drive_api_key() === '') return [];
+    try{
+        db()->exec("CREATE TABLE IF NOT EXISTS drive_cache(folder_id VARCHAR(120) PRIMARY KEY, images_json MEDIUMTEXT, fetched_at INT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }catch(Exception $e){}
+
+    $cachedRow = null;
+    try{
+        $st = db()->prepare('SELECT images_json, fetched_at FROM drive_cache WHERE folder_id=?');
+        $st->execute([$folderId]);
+        $cachedRow = $st->fetch();
+        if($cachedRow && (time() - (int)$cachedRow['fetched_at']) < DRIVE_CACHE_TTL){
+            $decoded = json_decode($cachedRow['images_json'], true);
+            if(is_array($decoded)) return $decoded;
+        }
+    }catch(Exception $e){}
+
+    $images = drive_fetch_folder_images_raw($folderId);
+    if($images){
+        try{
+            $json = json_encode($images, JSON_UNESCAPED_UNICODE);
+            db()->prepare('INSERT INTO drive_cache(folder_id, images_json, fetched_at) VALUES(?,?,?) ON DUPLICATE KEY UPDATE images_json=VALUES(images_json), fetched_at=VALUES(fetched_at)')
+                ->execute([$folderId, $json, time()]);
+        }catch(Exception $e){}
+        return $images;
+    }
+
+    if($cachedRow){
+        $decoded = json_decode($cachedRow['images_json'], true);
+        if(is_array($decoded)) return $decoded;
+    }
+    return [];
+}
+
+// Downloadt één foto uit Drive naar uploads/, zodat een dier dat enkel via
+// Drive gekoppeld is toch overal een miniatuur heeft (categorie-overzicht,
+// "recent toegevoegd", admin-lijst...) — niet enkel op de eigen
+// detailpagina, waar de Drive-galerij zelf al rechtstreeks toont. Faalt
+// stil (null) bij eender welk probleem; de aanroeper beslist dan gewoon
+// niets te veranderen.
+function drive_download_image_to_uploads($fileId){
+    $key = drive_api_key();
+    if($key === '' || !$fileId) return null;
+    $url = 'https://www.googleapis.com/drive/v3/files/'.rawurlencode($fileId).'?alt=media&key='.rawurlencode($key);
+    $body = drive_http_get($url, 20);
+    if(!$body || strlen($body) > 15*1024*1024) return null;
+
+    $tmp = tempnam(sys_get_temp_dir(), 'drv');
+    file_put_contents($tmp, $body);
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+    $mime = @mime_content_type($tmp);
+    if(!isset($allowed[$mime]) || !@getimagesize($tmp)){ @unlink($tmp); return null; }
+
+    if(!is_dir(__DIR__.'/uploads')) mkdir(__DIR__.'/uploads', 0775, true);
+    $name = date('YmdHis').'-'.bin2hex(random_bytes(4)).'.'.$allowed[$mime];
+    $dest = __DIR__.'/uploads/'.$name;
+    if(!@rename($tmp, $dest)){ @unlink($tmp); return null; }
+    return 'uploads/'.$name;
+}
+
+// Als een dier via Drive gekoppeld is maar nog geen coverfoto heeft, wordt
+// de eerste Drive-foto eenmalig gedownload en als coverfoto ingesteld —
+// zodat het dier ook buiten zijn eigen pagina (categorie-overzicht, "recent
+// toegevoegd", admin-lijst) een miniatuur heeft, niet enkel in de eigen
+// Drive-galerij. Gebeurt maar één keer: zodra cover_image niet meer leeg
+// is, wordt dit pad nooit meer uitgevoerd voor dat dier.
+function drive_maybe_set_animal_cover($animal, $driveImages){
+    if(!empty($animal['cover_image']) || !$driveImages) return;
+    $path = drive_download_image_to_uploads($driveImages[0]['id']);
+    if($path){
+        try{ db()->prepare('UPDATE animals SET cover_image=? WHERE id=?')->execute([$path, $animal['id']]); }
+        catch(Exception $e){}
+    }
+}
+
+// Probeert uit een Drive-bestandsnaam te herkennen in welke (al bestaande)
+// dierentuin de foto genomen is, bv. "Serpentarium Blankenberge - BELGIE -
+// 06/07/2017.jpg" → zoo "Serpentarium Blankenberge". Maakt nooit zelf een
+// nieuwe zoo aan (te veel kans op rommelige duplicaten door wisselende
+// naamgeving) — enkel een match tegen een naam die al in de zoo-lijst
+// staat, hoofdletterongevoelig en met een beetje speling (substring beide
+// kanten) omdat foto-bestandsnamen niet altijd exact de zoo-titel gebruiken.
+function drive_guess_zoo_id($filename){
+    static $zoos = null;
+    if($zoos === null){
+        try{ $zoos = db()->query('SELECT id, title FROM zoos')->fetchAll(); }
+        catch(Exception $e){ $zoos = []; }
+    }
+    if(!$zoos) return null;
+    // Geen pathinfo() hier: Drive-bestandsnamen bevatten soms letterlijke
+    // '/'-tekens (bv. een datum "06/07/2017.jpg"), die pathinfo() als
+    // pad-scheidingstekens leest en zo alles vóór de laatste '/' wegkapt.
+    $name = preg_replace('/\.[a-zA-Z0-9]{2,5}$/', '', (string)$filename);
+    $parts = array_filter(array_map('trim', explode(' - ', $name)));
+    foreach($parts as $part){
+        if(mb_strlen($part) < 3) continue;
+        foreach($zoos as $z){
+            $zt = trim($z['title']);
+            if($zt === '' || mb_strlen($zt) < 3) continue;
+            if(mb_stripos($part, $zt) !== false || mb_stripos($zt, $part) !== false){
+                return (int)$z['id'];
+            }
+        }
+    }
+    return null;
+}
+
 // Bouwt een ingesprongen lijst van alle categorieën voor een <select>, met
 // optioneel een uitgesloten id + zijn afstammelingen (om te voorkomen dat een
 // categorie zichzelf of een eigen kind als bovenliggende categorie kiest).
@@ -175,4 +379,10 @@ function header_html($title='', $description='', $canonical='', $head_extra='', 
     echo lang_switch_html();
     echo '</nav></header>';
 }
-function footer_html(){ echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; '.t('footer_by').' <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer><script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>'; }
+function footer_html(){
+    $leaflet = !empty($GLOBALS['pb_needs_leaflet'])
+        ? '<script src="assets/leaflet/leaflet.js?v='.asset_v(__DIR__.'/assets/leaflet/leaflet.js').'"></script>'
+        .'<script src="assets/zoo-map.js?v='.asset_v(__DIR__.'/assets/zoo-map.js').'"></script>'
+        : '';
+    echo '<footer>© <a class="secret" href="login.php">'.date('Y').'</a> '.e(setting('site_title','Jimbo Animal Species of the World')).' &middot; '.t('footer_by').' <a href="https://myemitdreams.nl" target="_blank" rel="noopener">MyEmitdreams</a></footer>'.$leaflet.'<script src="assets/app.js?v='.asset_v(__DIR__.'/assets/app.js').'"></script></body></html>';
+}

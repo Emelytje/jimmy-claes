@@ -84,6 +84,10 @@ footer .secret{ color:inherit; }
 
 .pb-empty-photos{ text-align:center; padding:64px 24px; margin-top:16px; background:var(--paper-soft,rgba(0,0,0,.03)); border:1.5px dashed var(--line); border-radius:var(--radius-lg); color:var(--ink-soft); }
 
+/* ---------- automatisch opgehaalde foto's uit Google Drive ---------- */
+.pb-drive-section{ max-width:1180px; margin:40px auto 0; padding:0 24px; }
+.pb-drive-section h2{ text-align:center; margin-bottom:24px; }
+
 /* ---------- back button (category/animal pages) ---------- */
 .pb-back-bar{ max-width:1100px; margin:24px auto 0; padding:0 24px; }
 .pb-back-link{
@@ -274,6 +278,10 @@ form.box button:hover,form button:hover{ background:var(--primary-dark); transfo
 .pb-photocount{ display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; padding:20px; }
 .pb-photocount-num{ font-family:var(--font-heading); font-size:clamp(2.4rem,5vw,3.6rem); font-weight:600; color:var(--pb-text-color,var(--primary)); line-height:1; }
 .pb-photocount-label{ font-size:.95rem; color:var(--pb-text-color,var(--ink-soft)); }
+
+/* ---------- wereldkaart (bezochte dierentuinen) ---------- */
+.pb-zoo-map{ width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border,#e2d8c8); }
+.pb-zoo-map-empty{ display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; border-radius:12px; border:1px dashed var(--border,#cabfa9); color:var(--ink-soft,#8a7c6c); background:rgba(0,0,0,.02); }
 
 /* ---------- gewervelde/ongewervelde keuzeblok (homepage) ---------- */
 .pb-class-split{ display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center; padding:20px; }

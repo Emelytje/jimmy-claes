@@ -8,8 +8,7 @@ if(!$page){ http_response_code(404); die(t('page_not_found')); }
 track_view('pages', $page['id']);
 
 $blocks = pb_decode_blocks($page['blocks']);
-$fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
-$headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
+$headExtra = pb_page_head_extra($blocks);
 
 header_html($page['meta_title'] ?: $page['title'], $page['meta_description'] ?: '', '', $headExtra);
 ?>

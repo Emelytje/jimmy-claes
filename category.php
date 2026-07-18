@@ -11,8 +11,7 @@ $classColor = pb_class_theme_color((int)$c['id']);
 $titleLocalized = localized_field($c, 'title');
 $descLocalized = localized_field($c, 'description');
 if($blocks){
-    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
-    $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
+    $headExtra = pb_page_head_extra($blocks);
     header_html($c['meta_title'] ?: $titleLocalized, $c['meta_description'] ?: $descLocalized, '', $headExtra);
     echo '<section class="hero"'.($classColor ? ' style="background:'.e($classColor).'"' : '').'><div><h1>'.e($titleLocalized).'</h1></div></section>';
     echo pb_render_back_button();

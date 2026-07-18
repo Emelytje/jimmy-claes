@@ -2,8 +2,7 @@
 track_view('albums', $a['id']);
 $blocks = pb_decode_blocks($a['blocks'] ?? null);
 if($blocks){
-    $fontHref = pb_google_fonts_link_href(pb_font_families_used($blocks));
-    $headExtra = $fontHref ? '<link rel="stylesheet" href="'.e($fontHref).'">' : '';
+    $headExtra = pb_page_head_extra($blocks);
     header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description'], '', $headExtra);
     echo '<main class="pb-page">'.render_blocks($blocks).'</main>';
     footer_html();

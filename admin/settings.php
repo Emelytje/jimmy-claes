@@ -4,6 +4,7 @@ require __DIR__.'/inc.php';
 $fields = ['site_title','intro_title','intro_text','primary_color','accent_color','font','meta_description','contact_email'];
 $classColorMap = pb_class_color_map();
 $classColorLabels = current_lang() === 'en' ? [
+    'homepage'      => 'Homepage',
     'gewervelde'    => 'Vertebrates (entry page)',
     'vissen'        => 'Fish',
     'vogels'        => 'Birds',
@@ -14,6 +15,7 @@ $classColorLabels = current_lang() === 'en' ? [
     'spinachtigen'  => 'Arachnids',
     'schijfkwallen' => 'Moon jellyfish',
 ] : [
+    'homepage'      => 'Homepage',
     'gewervelde'    => 'Gewervelde (ingangspagina)',
     'vissen'        => 'Vissen',
     'vogels'        => 'Vogels',
@@ -130,7 +132,7 @@ admin_header(t('admin_settings'), 'settings');
         <?php foreach($classColorMap as $key => [$settingKey, $default]): ?>
         <div class="a-field" style="flex:1;min-width:160px">
           <label><?=e($classColorLabels[$key] ?? $key)?></label>
-          <input type="color" name="<?=e($settingKey)?>" value="<?=e(setting($settingKey, $default))?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer">
+          <input type="color" name="<?=e($settingKey)?>" value="<?=e(setting($settingKey, $default) ?: '#ffffff')?>" style="height:44px;width:100%;border:1.5px solid var(--a-line);border-radius:8px;padding:2px;cursor:pointer">
         </div>
         <?php endforeach; ?>
       </div>

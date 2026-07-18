@@ -281,7 +281,8 @@ function i18n_dictionary(){
         'fda_explain2'      => ['nl' => 'Categorie, publicatiestatus en coverfoto worden overgenomen als het overblijvende exemplaar die zelf nog niet had. Niets gaat verloren. Veilig om meermaals te draaien.', 'en' => 'Category, publish status and cover photo are copied over if the remaining copy did not already have them. Nothing is lost. Safe to run multiple times.'],
         'fallback_preview_notice' => ['nl' => 'Dit item heeft nog geen eigen blokken — dit is een voorbeeld dat overeenkomt met wat nu live staat. Druk op Opslaan om het echt om te zetten naar bewerkbare blokken.', 'en' => 'This item doesn\'t have its own blocks yet — this is a preview matching what is currently live. Press Save to actually convert it to editable blocks.'],
         'drive_url_label'   => ['nl' => 'Google Drive-link (optioneel)', 'en' => 'Google Drive link (optional)'],
-        'drive_url_hint'    => ['nl' => 'Als je hier een link invult, opent een klik op eender welke foto van dit dier die Drive-map in een nieuw tabblad, in plaats van de normale foto-zoom.', 'en' => 'If you fill in a link here, clicking any photo of this animal will open that Drive folder in a new tab, instead of the normal photo zoom.'],
+        'drive_url_hint'    => ['nl' => 'Vul hier de link naar de Drive-map van dit dier in. Een dubbelklik op eender welke foto opent die map in Drive. Is er een Drive API-key ingesteld (config.php) en staat de map op "Iedereen met de link"? Dan worden de foto\'s uit die map ook automatisch als extra galerij op de pagina getoond, zonder dat je ze zelf moet uploaden.', 'en' => 'Fill in the link to this animal\'s Drive folder here. Double-clicking any photo opens that folder in Drive. If a Drive API key is configured (config.php) and the folder is shared as "Anyone with the link", the photos in that folder are also automatically shown as an extra gallery on the page, without you having to upload them yourself.'],
+        'drive_auto_gallery_title' => ['nl' => 'Automatisch geladen vanuit Google Drive', 'en' => 'Automatically loaded from Google Drive'],
         'no_slideshow_photos_public' => ['nl' => 'Nog geen foto\'s in de slideshow.', 'en' => 'No photos in the slideshow yet.'],
         'no_photos_filter_label' => ['nl' => 'Zonder foto\'s', 'en' => 'Without photos'],
         'with_photos_filter_label' => ['nl' => 'Met foto\'s', 'en' => 'With photos'],
@@ -301,5 +302,13 @@ function i18n_dictionary(){
         'bdl_ambiguous_label' => ['nl' => 'Overgeslagen (naam komt dubbel voor, bewust twee dieren met deze titel):', 'en' => 'Skipped (name occurs twice, intentionally two animals with this title):'],
         'bdl_do_more'       => ['nl' => 'Nog een lijst koppelen', 'en' => 'Link another list'],
         'bulk_drive_links_btn' => ['nl' => 'Drive-links in bulk koppelen', 'en' => 'Bulk-link Drive links'],
+        'species_progress_label_simple' => ['nl' => 'diersoorten al gefotografeerd', 'en' => 'animal species photographed'],
+        'bz_title'          => ['nl' => 'Dierentuinen in bulk toevoegen', 'en' => 'Bulk-add zoos'],
+        'bz_explain'        => ['nl' => 'Upload een CSV-bestand (bv. opgeslagen vanuit Excel, LibreOffice/.ods of Google Sheets als "CSV"). Herkende kolomnamen: Naam, Stad, Land, Website (in eender welke volgorde, NL of EN) — zonder herkenbare kopregel wordt die volgorde aangenomen. Een dierentuin met een naam die al bestaat wordt bijgewerkt, nieuwe namen worden aangemaakt. Veilig om meermaals te draaien.', 'en' => 'Upload a CSV file (e.g. saved from Excel, LibreOffice/.ods or Google Sheets as "CSV"). Recognized column names: Name, City, Country, Website (in any order, NL or EN) — without a recognizable header row, that order is assumed. A zoo with a name that already exists is updated, new names are created. Safe to run multiple times.'],
+        'bz_done_summary'   => ['nl' => 'Klaar. %d nieuwe dierentuin(en) aangemaakt, %d bijgewerkt.', 'en' => 'Done. %d new zoo(s) created, %d updated.'],
+        'bz_skipped_summary' => ['nl' => '%d overgeslagen (geen website-link gevonden).', 'en' => '%d skipped (no website link found).'],
+        'to_zoos_check'     => ['nl' => 'Naar Dierentuinen', 'en' => 'Go to Zoos'],
+        'bulk_zoos_btn'     => ['nl' => 'Dierentuinen in bulk toevoegen', 'en' => 'Bulk-add zoos'],
+        'zoo_map_empty'     => ['nl' => 'Nog geen dierentuinen met stad en land ingevuld om op de kaart te tonen.', 'en' => 'No zoos with city and country filled in yet to show on the map.'],
     ];
 }

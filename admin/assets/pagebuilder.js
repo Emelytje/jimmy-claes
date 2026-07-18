@@ -107,6 +107,13 @@ var PB_DICT = {
   layout_label:['Layout','Layout'],
   zoo_none:['Geen zoo','No zoo'],
   zoo_label:['Zoo','Zoo'],
+  species_progress:['Soortenteller','Species counter'],
+  species_label_simple:['diersoorten al gefotografeerd','animal species photographed'],
+  species_progress_live_preview:['Live voorbeeld verschijnt op de site zelf — toont automatisch hoeveel diersoorten al minstens één foto hebben.','A live preview appears on the site itself — automatically shows how many animal species already have at least one photo.'],
+  zoo_map_label:['Wereldkaart (zoo\'s)','World map (zoos)'],
+  zoo_map_live_preview:['Live voorbeeld verschijnt op de site zelf — toont automatisch een kaart met alle dierentuinen/aquaria die stad + land hebben ingevuld.','A live preview appears on the site itself — automatically shows a map with all zoos/aquariums that have city + country filled in.'],
+  map_height_px:['Hoogte kaart (px)','Map height (px)'],
+  tip_zoo_map:['Toont automatisch een wereldkaart met alle gepubliceerde dierentuinen/aquaria die een stad en land hebben (via Dierentuinen in het admin-menu). Zonder coördinaten verschijnt een lege melding.','Automatically shows a world map with all published zoos/aquariums that have a city and country (via Zoos in the admin menu). Without coordinates, an empty-state message appears.'],
   photos_on_site:["foto's op deze website",'photos on this website'],
   html_block_chars:['HTML-blok','HTML block'],
   html_block_chars_suffix:['tekens) — bewerk rechts &#8594;','characters) — edit on the right &#8594;'],
@@ -392,6 +399,24 @@ var BLOCKS = {
     render:function(d, s, id){
       var html = '<div class="pb-photocount"><span class="pb-photocount-num">—</span><span class="pb-photocount-label">'+esc(d.label||pbT('photos_on_site'))+'</span></div>';
       return wrap('photocount', id, s, html);
+    }
+  },
+  species_progress: {
+    label:pbT('species_progress'), icon:'&#128200;', group:pbT('layout'),
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS, {align:'center'}); },
+    data:function(){ return {label:pbT('species_label_simple')}; },
+    render:function(d, s, id){
+      var html = '<div class="pb-photocount"><span class="pb-photocount-num">—</span><span class="pb-photocount-label">'+esc(d.label||pbT('species_label_simple'))+'</span></div>';
+      return wrap('species_progress', id, s, html);
+    }
+  },
+  zoo_map: {
+    label:pbT('zoo_map_label'), icon:'&#127758;', group:pbT('layout'),
+    settings:function(){ return Object.assign({}, DEFAULT_SETTINGS); },
+    data:function(){ return {height:420}; },
+    render:function(d, s, id){
+      var html = '<div class="pbe-empty-col" style="min-height:110px">'+pbT('zoo_map_live_preview')+'</div>';
+      return wrap('zoo_map', id, s, html);
     }
   },
   class_split: {
@@ -1324,6 +1349,9 @@ function contentFieldsHtml(block){
     case 'photocount':
       html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('photos_on_site'))+'"></div>';
       break;
+    case 'species_progress':
+      html += '<div class="pbe-field"><label>'+pbT('text_next_to_number')+'</label><input type="text" data-bind="data.label" value="'+esc(d.label||pbT('species_label_simple'))+'"></div>';
+      break;
     case 'class_split':
       html += '<div class="pbe-field"><label>'+pbT('title_optional')+'</label><input type="text" data-bind="data.title" value="'+esc(d.title||'')+'"></div>';
       html += imageFieldHtml(d.gewerveldeImage, 'gewerveldeImage', pbT('photo_vertebrates'));
@@ -1337,6 +1365,10 @@ function contentFieldsHtml(block){
       break;
     case 'categories_grid':
       html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_categories_grid')+'</p>';
+      break;
+    case 'zoo_map':
+      html += '<div class="pbe-field"><label>'+pbT('map_height_px')+'</label><input type="number" min="200" max="900" data-bind="data.height" value="'+(d.height!=null?d.height:420)+'"></div>';
+      html += '<p style="font-size:.78rem;color:#8a7c6c">'+pbT('tip_zoo_map')+'</p>';
       break;
   }
   html += '</div>';
