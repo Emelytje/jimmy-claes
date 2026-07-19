@@ -1,4 +1,7 @@
-<?php require 'functions.php';
+<?php
+// TIJDELIJK: zie gewervelde.php voor uitleg — weer weghalen na diagnose.
+if(($_GET['debugjimmy'] ?? '') === '2026'){ ini_set('display_errors', '1'); error_reporting(E_ALL); }
+require 'functions.php';
 $slug = $_GET['slug'] ?? '';
 $st = db()->prepare('SELECT * FROM categories WHERE slug=? AND published=1');
 $st->execute([$slug]);
