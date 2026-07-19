@@ -1,4 +1,9 @@
-<?php require 'functions.php';
+<?php
+// TIJDELIJK: maakt de echte PHP-foutmelding zichtbaar i.p.v. een kale 500,
+// enkel met dit specifieke sleutelwoord in de URL — nooit voor gewone
+// bezoekers. Weer weghalen zodra de oorzaak van de 500 gevonden is.
+if(($_GET['debugjimmy'] ?? '') === '2026'){ ini_set('display_errors', '1'); error_reporting(E_ALL); }
+require 'functions.php';
 
 // Geen echte "Gewervelde"-categorie in de database (bewust — dat wilden we
 // niet), enkel een vaste ingangspagina die naar de 5 echte klassen linkt.
