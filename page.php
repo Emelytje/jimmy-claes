@@ -11,8 +11,9 @@ $blocks = pb_get_translated_blocks('pages', $page['id'], pb_decode_blocks($page[
 $headExtra = pb_page_head_extra($blocks);
 
 header_html($page['meta_title'] ?: $page['title'], $page['meta_description'] ?: '', '', $headExtra);
+$bgStyle = !empty($page['bg_color']) ? ' style="background:'.e($page['bg_color']).'"' : '';
 ?>
-<main class="pb-page">
+<main class="pb-page"<?=$bgStyle?>>
 <?php
 if(isset($_GET['msg']) && $_GET['msg']==='sent') echo '<div class="wrap" style="padding-bottom:0"><div class="notice">'.e(t('thanks_message')).'</div></div>';
 if(isset($_GET['msg']) && $_GET['msg']==='error') echo '<div class="wrap" style="padding-bottom:0"><div class="notice" style="background:var(--danger-bg);color:var(--danger)">'.e(t('fill_required')).'</div></div>';

@@ -38,6 +38,7 @@ $initial = [
     'published' => (bool)$page['published'],
     'show_in_nav' => (bool)($page['show_in_nav'] ?? false),
     'is_homepage' => (bool)($page['is_homepage'] ?? false),
+    'bg_color' => $type === 'page' ? ($page['bg_color'] ?? '') : '',
     'cover_image' => $page['cover_image'] ?? '',
     'description' => $typeInfo['desc_col'] ? ($page[$typeInfo['desc_col']] ?? '') : '',
     'drive_url' => $type === 'animal' ? ($page['drive_url'] ?? '') : '',
@@ -103,6 +104,14 @@ try{
     <label class="pbe-check"><input type="checkbox" id="pbeShowNav" <?=$page['show_in_nav']?'checked':''?>> <?=e(t('show_in_main_menu'))?></label>
     <label class="pbe-check"><input type="checkbox" id="pbeIsHomepage" <?=!empty($page['is_homepage'])?'checked':''?>> <?=e(t('set_as_homepage'))?></label>
     <p style="font-size:.78rem;color:#8a7c6c;margin-top:-8px"><?=e(t('homepage_hint'))?></p>
+    <div class="pbe-field">
+      <label><?=e(t('page_bg_color_label'))?></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="color" id="pbePageBgColor" value="<?=e($page['bg_color'] ?? '') ?: '#ffffff'?>" style="height:40px;width:60px;border:1.5px solid #cabfa9;border-radius:8px;padding:2px;cursor:pointer">
+        <button type="button" class="pbe-clear-btn" id="pbePageBgColorClear"><?=e(t('clear_label'))?></button>
+      </div>
+      <p style="font-size:.78rem;color:#8a7c6c;margin-top:4px"><?=e(t('page_bg_color_hint'))?></p>
+    </div>
     <?php else: ?>
     <div class="pbe-field">
       <label><?=e(t('cover_photo_label'))?></label>

@@ -106,16 +106,18 @@ function pb_collect_translatable(&$blocks, &$collected, $depth=0){
     unset($block);
 }
 
-// Vertaalt alle tekstvelden in een blokkenboom in-place (retourneert de
-// aangepaste boom) — platte tekst en HTML-tekst apart gebundeld in telkens
-// één DeepL-aanroep, ongeacht hoeveel velden er zijn. Mislukt een aanroep
-// (geen key, quota, netwerk), dan blijft dat specifieke veld gewoon
-// onvertaald staan i.p.v. de hele pagina te breken.
+// Vertaalt alle tekstvelden in een blokkenboom in-place — platte tekst en
+// HTML-tekst apart gebundeld in telkens één DeepL-aanroep, ongeacht hoeveel
+// velden er zijn. Geeft [$blocks, $ok] terug: $ok is false zodra er geen
+// DeepL-key is of een aanroep mislukte, zodat de aanroeper zo'n onvolledige
+// (of helemaal niet vertaalde) poging nooit als "de" Engelse cache opslaat —
+// anders zou bv. een bezoek vóórdat de key correct stond, de Nederlandse
+// tekst permanent als Engelse vertaling laten hangen.
 function pb_translate_blocks_now($blocks){
-    if(!is_array($blocks) || !$blocks) return $blocks;
+    if(!is_array($blocks) || !$blocks) return [$blocks, false];
     $collected = [];
     pb_collect_translatable($blocks, $collected);
-    if(!$collected) return $blocks;
+    if(!$collected) return [$blocks, true];
 
     $plainIdx = []; $plainTexts = [];
     $htmlIdx = []; $htmlTexts = [];
@@ -123,21 +125,26 @@ function pb_translate_blocks_now($blocks){
         if($item['html']){ $htmlIdx[] = $i; $htmlTexts[] = $item['ref']; }
         else { $plainIdx[] = $i; $plainTexts[] = $item['ref']; }
     }
+    $ok = true;
     if($plainTexts){
         $translated = deepl_translate_batch($plainTexts, 'NL', 'EN', false);
         if($translated) foreach($plainIdx as $k => $i) $collected[$i]['ref'] = $translated[$k];
+        else $ok = false;
     }
     if($htmlTexts){
         $translated = deepl_translate_batch($htmlTexts, 'NL', 'EN', true);
         if($translated) foreach($htmlIdx as $k => $i) $collected[$i]['ref'] = $translated[$k];
+        else $ok = false;
     }
-    return $blocks;
+    return [$blocks, $ok];
 }
 
 // Geeft de blokkenboom in de huidige taal terug. Voor EN wordt een eerder
-// gecachete vertaling herbruikt (kolom blocks_en), of anders nu vertaald en
-// meteen gecachet — zo kost dezelfde pagina maar één keer DeepL-quota. Voor
-// NL (of zonder key/inhoud) wordt gewoon de originele boom teruggegeven.
+// gecachete vertaling herbruikt (kolom blocks_en), of anders nu vertaald.
+// Enkel een volledig geslaagde vertaling wordt gecachet — zo kost dezelfde
+// pagina maar één keer DeepL-quota, zonder ooit een mislukte poging als
+// definitieve Engelse versie te bewaren. Voor NL (of zonder inhoud) wordt
+// gewoon de originele boom teruggegeven.
 function pb_get_translated_blocks($table, $id, $blocks){
     if(current_lang() !== 'en' || !$blocks) return $blocks;
     if(!pb_has_column($table, 'blocks_en')){
@@ -154,9 +161,11 @@ function pb_get_translated_blocks($table, $id, $blocks){
         }
     }catch(Exception $e){ return $blocks; }
 
-    $translated = pb_translate_blocks_now($blocks);
-    try{ db()->prepare("UPDATE `$table` SET blocks_en=? WHERE id=?")->execute([pb_encode_blocks($translated), $id]); }
-    catch(Exception $e){}
+    [$translated, $ok] = pb_translate_blocks_now($blocks);
+    if($ok){
+        try{ db()->prepare("UPDATE `$table` SET blocks_en=? WHERE id=?")->execute([pb_encode_blocks($translated), $id]); }
+        catch(Exception $e){}
+    }
     return $translated;
 }
 
