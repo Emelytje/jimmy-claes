@@ -185,6 +185,9 @@ function i18n_dictionary(){
         'confirm_delete_message' => ['nl' => 'Bericht definitief verwijderen?', 'en' => 'Permanently delete this message?'],
 
         // site-instellingen
+        'site_logo_label'   => ['nl' => 'Logo', 'en' => 'Logo'],
+        'site_logo_hint'    => ['nl' => 'Vervangt de sitenaam-tekst bovenaan elke pagina door dit logo (bij voorkeur een afbeelding met transparante achtergrond).', 'en' => 'Replaces the site name text at the top of every page with this logo (a transparent-background image works best).'],
+        'remove_logo_label' => ['nl' => 'Logo verwijderen (terug naar tekst)', 'en' => 'Remove logo (back to text)'],
         'site_name'         => ['nl' => 'Sitenaam', 'en' => 'Site name'],
         'intro_title_label' => ['nl' => 'Introtitel (homepage)', 'en' => 'Intro title (homepage)'],
         'intro_text_label'  => ['nl' => 'Introtekst (homepage)', 'en' => 'Intro text (homepage)'],
@@ -264,11 +267,11 @@ function i18n_dictionary(){
         'at_done'           => ['nl' => 'Klaar.', 'en' => 'Done.'],
         'at_db_updated'     => ['nl' => ' Database aangepast voor tweetaligheid.', 'en' => ' Database updated for bilingual support.'],
         'at_add_btn'        => ['nl' => 'Vertalingen toevoegen', 'en' => 'Add translations'],
-        'at_translated_summary' => ['nl' => '%d categorienaam/namen vertaald, %d hadden al een Engelse naam (ongemoeid gelaten)', 'en' => '%d category name(s) translated, %d already had an English name (left untouched)'],
-        'at_nomatch_summary' => ['nl' => ', %d herkende ik niet uit de standaardboom (zelf aangemaakte categorie?) — die kan je los vertalen bij het bewerken van die categorie.', 'en' => ', %d I did not recognise from the standard tree (a category you created yourself?) — you can translate those separately when editing that category.'],
+        'at_translated_summary' => ['nl' => '%d categorienaam/namen automatisch vertaald, %d hadden al een Engelse naam (ongemoeid gelaten)', 'en' => '%d category name(s) automatically translated, %d already had an English name (left untouched)'],
+        'at_no_key'         => ['nl' => 'Geen DEEPL_API_KEY ingesteld in config.php — automatisch vertalen staat uit.', 'en' => 'No DEEPL_API_KEY set in config.php — automatic translation is off.'],
         'to_categories'     => ['nl' => 'Naar Categorieën', 'en' => 'Go to Categories'],
         'view_english_site' => ['nl' => 'Bekijk de Engelse site', 'en' => 'View the English site'],
-        'at_explain'        => ['nl' => 'De site heeft nu een taalknop (NL/EN) rechtsboven. Deze knop hier vult automatisch de Engelse naam in voor elke categorie die overeenkomt met de standaard taxonomieboom (bv. "Vissen" → "Fish"). Dieren-titels worden niet aangepast — dat zijn al Latijnse soortnamen. Veilig om te herdraaien: bestaande Engelse namen (ook zelf ingevulde) worden nooit overschreven.', 'en' => 'The site now has a language button (NL/EN) in the top right. This button automatically fills in the English name for every category that matches the standard taxonomy tree (e.g. "Vissen" → "Fish"). Animal titles are not changed — those are already Latin species names. Safe to run again: existing English names (including ones you typed yourself) are never overwritten.'],
+        'at_explain'        => ['nl' => 'De site heeft nu een taalknop (NL/EN) rechtsboven. Nieuwe of gewijzigde categorieën worden voortaan automatisch vertaald (via DeepL) zodra je ze opslaat. Deze knop hier vertaalt in één keer alle bestaande categorieën die dat nog niet hebben. Dieren-titels worden niet aangepast — dat zijn al Latijnse soortnamen, enkel de beschrijving (indien ingevuld) krijgt een Engelse variant. Veilig om te herdraaien: bestaande Engelse namen (ook zelf ingevulde) worden nooit overschreven.', 'en' => 'The site now has a language button (NL/EN) in the top right. New or edited categories are now automatically translated (via DeepL) as soon as you save them. This button translates all existing categories that don\'t have one yet, in one go. Animal titles are not changed — those are already Latin species names, only the description (if filled in) gets an English variant. Safe to run again: existing English names (including ones you typed yourself) are never overwritten.'],
 
         'fda_title'         => ['nl' => 'Dubbele dieren opruimen', 'en' => 'Clean up duplicate animals'],
         'cleanup_btn'       => ['nl' => 'Opruimen', 'en' => 'Clean up'],

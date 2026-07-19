@@ -1,6 +1,6 @@
 <?php require 'functions.php'; $slug=$_GET['slug']??''; $st=db()->prepare('SELECT * FROM albums WHERE slug=? AND published=1'); $st->execute([$slug]); $a=$st->fetch(); if(!$a){ http_response_code(404); die(t('page_not_found')); }
 track_view('albums', $a['id']);
-$blocks = pb_decode_blocks($a['blocks'] ?? null);
+$blocks = pb_get_translated_blocks('albums', $a['id'], pb_decode_blocks($a['blocks'] ?? null));
 if($blocks){
     $headExtra = pb_page_head_extra($blocks);
     header_html($a['meta_title'] ?: $a['title'], $a['meta_description'] ?: $a['description'], '', $headExtra);

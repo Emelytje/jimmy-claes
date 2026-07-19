@@ -6,7 +6,7 @@ $homeBgStyle = $homeBgColor ? ' style="background:'.e($homeBgColor).'"' : '';
 $homepage = db()->query("SELECT * FROM pages WHERE is_homepage=1 AND published=1 LIMIT 1")->fetch();
 if($homepage){
     track_view('pages', $homepage['id']);
-    $blocks = pb_decode_blocks($homepage['blocks']);
+    $blocks = pb_get_translated_blocks('pages', $homepage['id'], pb_decode_blocks($homepage['blocks']));
     $headExtra = pb_page_head_extra($blocks);
     header_html($homepage['meta_title'] ?: '', $homepage['meta_description'] ?: setting('meta_description'), '', $headExtra);
     echo '<main class="pb-page"'.$homeBgStyle.'>'.render_blocks($blocks).'</main>';
