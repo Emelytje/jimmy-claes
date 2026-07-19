@@ -65,8 +65,11 @@ if($type === 'page'){
     $show_in_nav = !empty($body['show_in_nav']) ? 1 : 0;
     $is_homepage = !empty($body['is_homepage']) ? 1 : 0;
     if($is_homepage) db()->exec('UPDATE pages SET is_homepage=0');
-    $st = db()->prepare('UPDATE pages SET title=?, slug=?, blocks=?, published=?, show_in_nav=?, is_homepage=?, meta_title=?, meta_description=? WHERE id=?');
-    $st->execute([$title, $slug, $blocksJson, $published, $show_in_nav, $is_homepage, $meta_title, $meta_description, $id]);
+    if(!pb_has_column('pages','bg_color')){ try{ db()->exec("ALTER TABLE pages ADD COLUMN bg_color VARCHAR(7) DEFAULT NULL"); }catch(Exception $e){} }
+    $bg_color = trim((string)($body['bg_color'] ?? ''));
+    if($bg_color !== '' && !preg_match('/^#[0-9a-fA-F]{6}$/', $bg_color)) $bg_color = '';
+    $st = db()->prepare('UPDATE pages SET title=?, slug=?, blocks=?, published=?, show_in_nav=?, is_homepage=?, meta_title=?, meta_description=?, bg_color=? WHERE id=?');
+    $st->execute([$title, $slug, $blocksJson, $published, $show_in_nav, $is_homepage, $meta_title, $meta_description, $bg_color !== '' ? $bg_color : null, $id]);
 } elseif($type === 'category'){
     $cover_image = trim((string)($body['cover_image'] ?? ''));
     $description = trim((string)($body['description'] ?? ''));

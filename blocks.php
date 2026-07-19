@@ -78,19 +78,22 @@ function pb_block_text_fields($type){
 // blokkenboom, via PHP-referenties zodat de vertaling er later rechtstreeks
 // in teruggeschreven kan worden zonder de hele structuur te moeten
 // herbouwen. $collected krijgt items van de vorm ['ref'=>&...,'html'=>bool].
-function pb_collect_translatable(&$blocks, &$collected){
-    if(!is_array($blocks)) return;
+// $depth is dezelfde begrenzing als render_blocks() gebruikt — zonder die
+// cap zou geneste rij/kolom-inhoud (of, bij kapotte data, een circulaire
+// verwijzing) tot een oneindige recursie kunnen leiden.
+function pb_collect_translatable(&$blocks, &$collected, $depth=0){
+    if(!is_array($blocks) || $depth > 2) return;
     foreach($blocks as &$block){
         $type = $block['type'] ?? '';
         if($type === 'columns' && isset($block['data']['cols'])){
             foreach($block['data']['cols'] as &$col){
-                if(isset($col['blocks'])) pb_collect_translatable($col['blocks'], $collected);
+                if(isset($col['blocks'])) pb_collect_translatable($col['blocks'], $collected, $depth+1);
             }
             unset($col);
         }
         if($type === 'row' && isset($block['data']['cells'])){
             foreach($block['data']['cells'] as &$cell){
-                if(isset($cell['blocks'])) pb_collect_translatable($cell['blocks'], $collected);
+                if(isset($cell['blocks'])) pb_collect_translatable($cell['blocks'], $collected, $depth+1);
             }
             unset($cell);
         }
@@ -103,16 +106,18 @@ function pb_collect_translatable(&$blocks, &$collected){
     unset($block);
 }
 
-// Vertaalt alle tekstvelden in een blokkenboom in-place (retourneert de
-// aangepaste boom) — platte tekst en HTML-tekst apart gebundeld in telkens
-// één DeepL-aanroep, ongeacht hoeveel velden er zijn. Mislukt een aanroep
-// (geen key, quota, netwerk), dan blijft dat specifieke veld gewoon
-// onvertaald staan i.p.v. de hele pagina te breken.
+// Vertaalt alle tekstvelden in een blokkenboom in-place — platte tekst en
+// HTML-tekst apart gebundeld in telkens één DeepL-aanroep, ongeacht hoeveel
+// velden er zijn. Geeft [$blocks, $ok] terug: $ok is false zodra er geen
+// DeepL-key is of een aanroep mislukte, zodat de aanroeper zo'n onvolledige
+// (of helemaal niet vertaalde) poging nooit als "de" Engelse cache opslaat —
+// anders zou bv. een bezoek vóórdat de key correct stond, de Nederlandse
+// tekst permanent als Engelse vertaling laten hangen.
 function pb_translate_blocks_now($blocks){
-    if(!is_array($blocks) || !$blocks) return $blocks;
+    if(!is_array($blocks) || !$blocks) return [$blocks, false];
     $collected = [];
     pb_collect_translatable($blocks, $collected);
-    if(!$collected) return $blocks;
+    if(!$collected) return [$blocks, true];
 
     $plainIdx = []; $plainTexts = [];
     $htmlIdx = []; $htmlTexts = [];
@@ -120,21 +125,26 @@ function pb_translate_blocks_now($blocks){
         if($item['html']){ $htmlIdx[] = $i; $htmlTexts[] = $item['ref']; }
         else { $plainIdx[] = $i; $plainTexts[] = $item['ref']; }
     }
+    $ok = true;
     if($plainTexts){
         $translated = deepl_translate_batch($plainTexts, 'NL', 'EN', false);
         if($translated) foreach($plainIdx as $k => $i) $collected[$i]['ref'] = $translated[$k];
+        else $ok = false;
     }
     if($htmlTexts){
         $translated = deepl_translate_batch($htmlTexts, 'NL', 'EN', true);
         if($translated) foreach($htmlIdx as $k => $i) $collected[$i]['ref'] = $translated[$k];
+        else $ok = false;
     }
-    return $blocks;
+    return [$blocks, $ok];
 }
 
 // Geeft de blokkenboom in de huidige taal terug. Voor EN wordt een eerder
-// gecachete vertaling herbruikt (kolom blocks_en), of anders nu vertaald en
-// meteen gecachet — zo kost dezelfde pagina maar één keer DeepL-quota. Voor
-// NL (of zonder key/inhoud) wordt gewoon de originele boom teruggegeven.
+// gecachete vertaling herbruikt (kolom blocks_en), of anders nu vertaald.
+// Enkel een volledig geslaagde vertaling wordt gecachet — zo kost dezelfde
+// pagina maar één keer DeepL-quota, zonder ooit een mislukte poging als
+// definitieve Engelse versie te bewaren. Voor NL (of zonder inhoud) wordt
+// gewoon de originele boom teruggegeven.
 function pb_get_translated_blocks($table, $id, $blocks){
     if(current_lang() !== 'en' || !$blocks) return $blocks;
     if(!pb_has_column($table, 'blocks_en')){
@@ -151,9 +161,11 @@ function pb_get_translated_blocks($table, $id, $blocks){
         }
     }catch(Exception $e){ return $blocks; }
 
-    $translated = pb_translate_blocks_now($blocks);
-    try{ db()->prepare("UPDATE `$table` SET blocks_en=? WHERE id=?")->execute([pb_encode_blocks($translated), $id]); }
-    catch(Exception $e){}
+    [$translated, $ok] = pb_translate_blocks_now($blocks);
+    if($ok){
+        try{ db()->prepare("UPDATE `$table` SET blocks_en=? WHERE id=?")->execute([pb_encode_blocks($translated), $id]); }
+        catch(Exception $e){}
+    }
     return $translated;
 }
 
@@ -271,14 +283,18 @@ function pb_google_fonts_link_href($families){
     return 'https://fonts.googleapis.com/css2?'.implode('&',$parts).'&display=swap';
 }
 
-function pb_blocks_contain_type($blocks, $type){
+// $depth begrensd zoals render_blocks() — zonder cap zou geneste
+// rij/kolom-inhoud (of, bij kapotte data, een circulaire verwijzing) tot
+// oneindige recursie kunnen leiden. Draait op elke publieke pagina-load.
+function pb_blocks_contain_type($blocks, $type, $depth=0){
+    if($depth > 2) return false;
     foreach((array)$blocks as $b){
         if(($b['type'] ?? '') === $type) return true;
         if(($b['type'] ?? '') === 'columns'){
-            foreach(($b['data']['cols'] ?? []) as $col){ if(pb_blocks_contain_type($col['blocks'] ?? [], $type)) return true; }
+            foreach(($b['data']['cols'] ?? []) as $col){ if(pb_blocks_contain_type($col['blocks'] ?? [], $type, $depth+1)) return true; }
         }
         if(($b['type'] ?? '') === 'row'){
-            foreach(($b['data']['cells'] ?? []) as $cell){ if(pb_blocks_contain_type($cell['blocks'] ?? [], $type)) return true; }
+            foreach(($b['data']['cells'] ?? []) as $cell){ if(pb_blocks_contain_type($cell['blocks'] ?? [], $type, $depth+1)) return true; }
         }
     }
     return false;

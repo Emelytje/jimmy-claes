@@ -1654,6 +1654,7 @@ function collectPayload(){
   if(contentType === 'page'){
     payload.show_in_nav = document.getElementById('pbeShowNav').checked;
     payload.is_homepage = document.getElementById('pbeIsHomepage').checked;
+    payload.bg_color = pageBgColorCleared ? '' : document.getElementById('pbePageBgColor').value;
   } else {
     payload.cover_image = coverImage;
     payload.description = document.getElementById('pbeDescription').value;
@@ -1687,9 +1688,23 @@ function saveNow(){
   }).catch(function(){ saveStateEl.textContent = pbT('save_failed_network'); });
 }
 document.getElementById('pbeSaveBtn').addEventListener('click', saveNow);
+var pageBgColorCleared = contentType === 'page' && !PAGE.bg_color;
 var watchedSettingsFields = [titleInput, document.getElementById('pbeMetaTitle'), document.getElementById('pbeMetaDesc'), document.getElementById('pbePublished')];
 if(contentType === 'page'){
   watchedSettingsFields.push(document.getElementById('pbeShowNav'), document.getElementById('pbeIsHomepage'));
+  var pageBgColorEl = document.getElementById('pbePageBgColor');
+  var pageBgColorClearBtn = document.getElementById('pbePageBgColorClear');
+  if(pageBgColorEl){
+    watchedSettingsFields.push(pageBgColorEl);
+    pageBgColorEl.addEventListener('input', function(){ pageBgColorCleared = false; });
+  }
+  if(pageBgColorClearBtn){
+    pageBgColorClearBtn.addEventListener('click', function(){
+      pageBgColorCleared = true;
+      pageBgColorEl.value = '#ffffff';
+      markDirty();
+    });
+  }
 } else {
   watchedSettingsFields.push(document.getElementById('pbeDescription'));
   var parentCategoryEl = document.getElementById('pbeParentCategory');
