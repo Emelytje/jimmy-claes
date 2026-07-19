@@ -78,19 +78,22 @@ function pb_block_text_fields($type){
 // blokkenboom, via PHP-referenties zodat de vertaling er later rechtstreeks
 // in teruggeschreven kan worden zonder de hele structuur te moeten
 // herbouwen. $collected krijgt items van de vorm ['ref'=>&...,'html'=>bool].
-function pb_collect_translatable(&$blocks, &$collected){
-    if(!is_array($blocks)) return;
+// $depth is dezelfde begrenzing als render_blocks() gebruikt — zonder die
+// cap zou geneste rij/kolom-inhoud (of, bij kapotte data, een circulaire
+// verwijzing) tot een oneindige recursie kunnen leiden.
+function pb_collect_translatable(&$blocks, &$collected, $depth=0){
+    if(!is_array($blocks) || $depth > 2) return;
     foreach($blocks as &$block){
         $type = $block['type'] ?? '';
         if($type === 'columns' && isset($block['data']['cols'])){
             foreach($block['data']['cols'] as &$col){
-                if(isset($col['blocks'])) pb_collect_translatable($col['blocks'], $collected);
+                if(isset($col['blocks'])) pb_collect_translatable($col['blocks'], $collected, $depth+1);
             }
             unset($col);
         }
         if($type === 'row' && isset($block['data']['cells'])){
             foreach($block['data']['cells'] as &$cell){
-                if(isset($cell['blocks'])) pb_collect_translatable($cell['blocks'], $collected);
+                if(isset($cell['blocks'])) pb_collect_translatable($cell['blocks'], $collected, $depth+1);
             }
             unset($cell);
         }
@@ -271,14 +274,18 @@ function pb_google_fonts_link_href($families){
     return 'https://fonts.googleapis.com/css2?'.implode('&',$parts).'&display=swap';
 }
 
-function pb_blocks_contain_type($blocks, $type){
+// $depth begrensd zoals render_blocks() — zonder cap zou geneste
+// rij/kolom-inhoud (of, bij kapotte data, een circulaire verwijzing) tot
+// oneindige recursie kunnen leiden. Draait op elke publieke pagina-load.
+function pb_blocks_contain_type($blocks, $type, $depth=0){
+    if($depth > 2) return false;
     foreach((array)$blocks as $b){
         if(($b['type'] ?? '') === $type) return true;
         if(($b['type'] ?? '') === 'columns'){
-            foreach(($b['data']['cols'] ?? []) as $col){ if(pb_blocks_contain_type($col['blocks'] ?? [], $type)) return true; }
+            foreach(($b['data']['cols'] ?? []) as $col){ if(pb_blocks_contain_type($col['blocks'] ?? [], $type, $depth+1)) return true; }
         }
         if(($b['type'] ?? '') === 'row'){
-            foreach(($b['data']['cells'] ?? []) as $cell){ if(pb_blocks_contain_type($cell['blocks'] ?? [], $type)) return true; }
+            foreach(($b['data']['cells'] ?? []) as $cell){ if(pb_blocks_contain_type($cell['blocks'] ?? [], $type, $depth+1)) return true; }
         }
     }
     return false;
